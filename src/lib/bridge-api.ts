@@ -4,16 +4,35 @@ export type PrivacyRail="confidential-token"|"private-payments";
 export interface Corridor {id:string;origin_country:string;destination_country:string;asset_code:string;asset_issuer:string|null;privacy_rail:PrivacyRail;}
 export interface TransactionObservation {hash:string;status:"SUCCESS"|"FAILED";ledger:number;closed_at_unix:string;latest_ledger:number;source:"stellar-rpc";}
 export class ApiUnavailable extends Error {
- constructor(public readonly status:number,public readonly endpoint:string){
-  super(status===503?"The data service is not configured or available.":"The data service returned HTTP "+status+".");this.name="ApiUnavailable";
+ constructor(public readonly status:number,public readonly endpoint:string,
+  public readonly code:string|null=null,public readonly traceId:string|null=null){
+  const summary=status===503?"The data service is not configured or available.":"The data service returned HTTP "+status+".";
+  super(summary+(code?" Error code: "+code+".":"")+(traceId?" Request ID: "+traceId+".":""));this.name="ApiUnavailable";
  }
 }
 async function read<T>(path:string,signal?:AbortSignal):Promise<T>{
  const res=await fetch("/api/bridge/"+path,{cache:"no-store",signal});
- if(!res.ok)throw new ApiUnavailable(res.status,path);
+ if(!res.ok){
+  const rawCode=res.headers.get("x-error-code"),rawTraceId=res.headers.get("x-request-id");
+  const code=rawCode&&/^[A-Z][A-Z0-9_]{0,63}$/.test(rawCode)?rawCode:null;
+  const traceId=rawTraceId&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(rawTraceId)?rawTraceId:null;
+  await res.body?.cancel().catch(()=>{});
+  throw new ApiUnavailable(res.status,path,code,traceId);
+ }
  return res.json() as Promise<T>;
 }
-export function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){return read<T>((endpoint==="ready"?"":"v1/")+endpoint,signal);}
+function capabilitiesResponse(value:unknown):value is Capabilities{
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const flags=value as Record<string,unknown>;
+ return ["payments_enabled","confidential_token_verified","private_payments_verified","fiat_payouts_enabled"]
+  .every(key=>typeof flags[key]==="boolean");
+}
+export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
+ const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
+ if(endpoint==="capabilities"&&!capabilitiesResponse(value))
+  throw new Error("Capabilities response was invalid. Payment controls remain disabled.");
+ return value as T;
+}
 export const validTransactionHash=(s:string)=>/^[a-f0-9]{64}$/i.test(s);
 export function readTransaction(hash:string,signal?:AbortSignal):Promise<TransactionObservation>{
  if(!validTransactionHash(hash))throw new TypeError("Transaction hash must be 64 hexadecimal characters.");
@@ -53,7 +72,7 @@ export async function readCorridorPage(after?:string,signal?:AbortSignal):Promis
 
 /** Dependency readiness, not approval to move money. */
 export interface ServiceReadiness {
- status:"ready"|"degraded";stellar_rpc:"connected"|"unavailable";database:"connected"|"unavailable";payments:"disabled";
+ status:"ready"|"degraded";stellar_rpc:"connected"|"unavailable";database:"connected"|"unavailable"|"not-configured";payments:"disabled";
 }
 
 /** Canonical, currently undeployed Testnet contract manifest as seen by backend. */

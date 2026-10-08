@@ -1,5 +1,5 @@
 "use client";
-import {useCallback,useEffect,useRef,useState} from "react";
+import {useCallback,useEffect,useRef,useState,type Dispatch,type SetStateAction} from "react";
 import {readBridge,readCorridorPage,type Capabilities,type Corridor,type NetworkStatus,type ServiceReadiness,type ObservedLedgerCheckpoint,type ContractDiscovery} from "@/lib/bridge-api";
 
 type Remote<T> = { data: T | null; error: string | null; loading: boolean };
@@ -20,20 +20,20 @@ export function useBridge() {
   const refresh=useCallback(()=>{pageController.current?.abort();setRevision(n=>n+1);},[]);
   useEffect(()=>{
     const controller=new AbortController();
-    const load=<T,>(key:"network"|"corridors"|"capabilities"|"ready"|"observer"|"contracts",update:(r:Remote<T>)=>void)=>{
-      update({data:null,error:null,loading:true});
+    const load=<T,>(key:"network"|"corridors"|"capabilities"|"ready"|"observer"|"contracts",update:Dispatch<SetStateAction<Remote<T>>>)=>{
+      update(previous=>({...previous,error:null,loading:true}));
       readBridge<T>(key,controller.signal)
         .then(data=>{if(!controller.signal.aborted)update({data,error:null,loading:false});})
-        .catch(e=>{if(!controller.signal.aborted)update({data:null,error:errorText(e),loading:false});});
+        .catch(e=>{if(!controller.signal.aborted)update(previous=>({...previous,error:errorText(e),loading:false}));});
     };
     load("network",setNetwork);
-    setCorridors(initial<Corridor[]>());
+    setCorridors(previous=>({...previous,error:null,loading:true}));
     setNextCursor(null);
     setPageError(null);
     setLoadingMore(false);
     readCorridorPage(undefined,controller.signal)
       .then(page=>{if(!controller.signal.aborted){setCorridors({data:page.items,error:null,loading:false});setNextCursor(page.next_cursor);}})
-      .catch(e=>{if(!controller.signal.aborted)setCorridors({data:null,error:errorText(e),loading:false});});
+      .catch(e=>{if(!controller.signal.aborted)setCorridors(previous=>({...previous,error:errorText(e),loading:false}));});
     load("capabilities",setCapabilities);
     load("ready",setReadiness);
     load("observer",setObserver);
