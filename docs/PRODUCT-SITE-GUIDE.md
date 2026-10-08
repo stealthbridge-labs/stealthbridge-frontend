@@ -81,3 +81,7 @@ Technical preview now rejects empty cursor-bearing pages, repeated or out-of-ord
 ## Shared contract discovery and Freighter checks
 
 The technical Business and Send workspaces now read `/api/bridge/v1/contracts` from the real Rust backend, which serves the pinned canonical Testnet manifest. They clearly report **not deployed** when no Soroban address exists; the status panel cannot activate a transfer. Freighter connection requires the exact Stellar Testnet passphrase. The UI also checks the active wallet address and network again on tab focus/visibility changes, clears stale wallet state when the account or network changes, and distinguishes local wallet connectivity from successfully verified backend RPC identity. No secrets or transaction payloads leave the wallet; no contract interaction is claimed until a real on-chain deployment can be verified.
+
+## Registry interface visibility
+
+The technical preview also reports how many read methods are defined in the source-validated CorridorRegistry and PolicyRegistry method inventory. Those are **compiled-source interface definitions**, not chain executions. The backend and SDK independently validate the manifest's declared status, and the UI never provides a contract-call or payment button while deployment verification is absent.

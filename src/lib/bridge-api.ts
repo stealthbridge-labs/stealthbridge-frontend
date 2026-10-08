@@ -62,6 +62,12 @@ export interface ContractDiscovery {
  source:"stealthbridge-contracts/deployments/testnet/manifest.json";
  on_chain_verified:false;
  payment_execution_enabled:false;
+ public_interface:{
+  schemaVersion:1;
+  network:"testnet";
+  status:"source-interface-only";
+  contracts:Record<string,{source:string;reads:Record<string,{args:string[];returns:string}>;writes:string[]}>;
+ };
  manifest:{
   schemaVersion:1;network:"testnet";status:"not-deployed";verified:false;
   contractAddresses:Record<string,never>;
