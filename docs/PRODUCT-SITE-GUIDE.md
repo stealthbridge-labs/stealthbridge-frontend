@@ -47,3 +47,7 @@ Review desktop/mobile screenshots of the deployed site, accessibility audits, co
 ## Accessible product education and FAQ
 
 Business, Send and Platform pages now contain product-specific native `details/summary` sections with truthful answers about supported privacy boundaries, settlement status, financial availability and deployment responsibilities. The FAQ is keyboard-operable without JavaScript, mobile responsive and reduced-motion friendly. Mobile navigation closes with Escape as well as the toggle. Browser tests cover these interactions. Do not replace this content with fictitious provider details, balances or launch dates.
+
+## Technical corridor discovery pagination
+
+The same-origin Next.js backend proxy allows the bounded `/v1/corridors/page` route in **preview mode only**. It forwards only `limit` (1–100) and `after` (well-formed UUID), rejecting unknown query keys and duplicates. No user-controlled URL or arbitrary RPC method is forwarded. The public marketing site continues returning 404 for this route in landing mode.
