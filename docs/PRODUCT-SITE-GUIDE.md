@@ -55,3 +55,9 @@ The same-origin Next.js backend proxy allows the bounded `/v1/corridors/page` ro
 ## Public-ledger checkpoint visibility in staging
 
 `/api/bridge/v1/observer` is now allowlisted **only in explicit preview mode**. It returns the last real backend-observed Testnet ledger head when an operator has enabled the durable observer; absent state and storage failure remain explicit errors. This is a read-only operational health signal, not proof that any settlement or user transfer occurred.
+
+## Progressive corridor discovery in engineering preview
+
+The existing internal Business/Send workspaces now request `GET /v1/corridors/page?limit=25` instead of downloading every configured corridor up front. A visible **Load more corridors** control follows the API's opaque UUID cursor; loaded records stay on screen if the next page fails, and the UI clearly explains that search covers *currently loaded entries*. Refresh resets pages. This keeps the marketing routes unchanged and reduces data transfer and memory use as the actual operator catalog expands.
+
+Pagination is not proof a corridor is financially active. No synthetic countries, asset issuers or completed payments are seeded.

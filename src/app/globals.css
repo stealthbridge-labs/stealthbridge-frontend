@@ -252,3 +252,8 @@
  .story-faq-item p{margin:0 20px 24px 49px;font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.story-faq-item,.story-faq-item summary svg{transition:none!important}}
+
+.corridor-page-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:14px 0 24px}
+.corridor-page-actions>span{font-size:12px;color:#97c4b9}
+.corridor-page-actions [data-slot="button"]{min-height:42px}
+@media(max-width:520px){.corridor-page-actions [data-slot="button"]{width:100%}}

@@ -24,3 +24,20 @@ export function readTransaction(hash:string,signal?:AbortSignal):Promise<Transac
 export interface ObservedLedgerCheckpoint {
  ledger_sequence:number;ledger_hash:string;ledger_closed_at_unix:string;source:"stellar-rpc";
 }
+
+/** Actual operator-enabled corridor keyset page; never a quote or payout list. */
+export interface CorridorPage {items:Corridor[];next_cursor:string|null;}
+const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
+export async function readCorridorPage(after?:string,signal?:AbortSignal):Promise<CorridorPage>{
+ if(after!==undefined&&!UUID.test(after))throw new TypeError("Invalid corridor cursor");
+ const params=new URLSearchParams({limit:"25"});
+ if(after)params.set("after",after.toLowerCase());
+ const page=await read<CorridorPage>("v1/corridors/page?"+params,signal);
+ if(!page||!Array.isArray(page.items)||page.items.length>25||
+    page.items.some(c=>!c||typeof c.id!=="string"||!UUID.test(c.id)||
+      typeof c.origin_country!=="string"||typeof c.destination_country!=="string"||
+      !["private-payments","confidential-token"].includes(c.privacy_rail))||
+    !(page.next_cursor===null||(typeof page.next_cursor==="string"&&UUID.test(page.next_cursor))))
+  throw new Error("Configured corridor API returned an invalid page.");
+ return page;
+}

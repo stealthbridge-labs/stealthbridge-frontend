@@ -11,7 +11,7 @@ import type {PrivacyRail} from "@/lib/bridge-api";
 export function Workspace({mode}:{mode:"business"|"send"}){
  const business=mode==="business";
  const rail:PrivacyRail=business?"confidential-token":"private-payments";
- const {network,corridors,capabilities,refresh}=useBridge();
+ const {network,corridors,capabilities,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
  const [selected,setSelected]=useState("");
  const [filter,setFilter]=useState("");
  const available=useMemo(()=>corridors.data?.filter(c=>c.privacy_rail===rail && [c.origin_country,c.destination_country,c.asset_code,c.asset_issuer??""].some(v=>v.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())))??[],[corridors.data,rail,filter]);
@@ -37,7 +37,12 @@ export function Workspace({mode}:{mode:"business"|"send"}){
      <option value="">Select an enabled corridor</option>
      {available.map(c=><option key={c.id} value={c.id}>{c.origin_country} → {c.destination_country} · {c.asset_code}</option>)}
     </select>
-    {corridors.loading?<p className="state-muted" role="status">Loading authorized corridor records…</p>:corridors.error?<p className="state-error" role="alert"><AlertTriangle size={17} aria-hidden/>{corridors.error} No corridor information will be fabricated.</p>:available.length===0?<div className="empty-panel"><Database size={22} aria-hidden/><strong>No configured corridors yet</strong><p>Corridors appear here when operators register and enable real testnet assets and endpoints. Nothing is prefilled.</p></div>:null}
+    {corridors.loading?<p className="state-muted" role="status">Loading authorized corridor records…</p>:corridors.error?<p className="state-error" role="alert"><AlertTriangle size={17} aria-hidden/>{corridors.error} No corridor information will be fabricated.</p>:available.length===0?<div className="empty-panel"><Database size={22} aria-hidden/><strong>{filter.trim()?"No matching loaded corridors":"No configured corridors yet"}</strong><p>{nextCursor?"More configured records are available; load another page to continue searching.":"Corridors appear here only when operators register and enable actual testnet assets and endpoints. Nothing is prefilled."}</p></div>:null}
+    {corridors.data&&<div className="corridor-page-actions">
+      <span role="status">{corridors.data.length.toLocaleString()} configured corridor records loaded{nextCursor?" · more available":""}</span>
+      {nextCursor&&<Button type="button" variant="outline" size="sm" disabled={loadingMore} onClick={loadMore}>{loadingMore?"Loading more…":"Load more corridors"} <ArrowRight size={15} aria-hidden/></Button>}
+    </div>}
+    {pageError&&<p className="state-error" role="alert"><AlertTriangle size={16} aria-hidden/> {pageError} Existing records remain available.</p>}
     {corridor?<div className="corridor-details"><strong>Selected corridor</strong><p>{corridor.origin_country} → {corridor.destination_country} · {corridor.asset_code}</p><p>Privacy rail: {corridor.privacy_rail}</p>{corridor.asset_issuer?<p>Issuer: <code>{corridor.asset_issuer}</code></p>:null}</div>:null}
     <WalletConnect/>
     <div className="capability-row"><span>Payment initiation</span><strong>{capabilities.loading?"Checking…":capabilities.error?"Unavailable":capabilities.data?.payments_enabled?"Supported":"Not enabled"}</strong></div>

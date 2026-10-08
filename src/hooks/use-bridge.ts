@@ -1,6 +1,6 @@
 "use client";
-import {useCallback,useEffect,useState} from "react";
-import {readBridge,type Capabilities,type Corridor,type NetworkStatus} from "@/lib/bridge-api";
+import {useCallback,useEffect,useRef,useState} from "react";
+import {readBridge,readCorridorPage,type Capabilities,type Corridor,type NetworkStatus} from "@/lib/bridge-api";
 
 type Remote<T> = { data: T | null; error: string | null; loading: boolean };
 const initial = <T,>():Remote<T>=>({data:null,error:null,loading:true});
@@ -10,7 +10,11 @@ export function useBridge() {
   const [corridors,setCorridors]=useState<Remote<Corridor[]>>(initial());
   const [capabilities,setCapabilities]=useState<Remote<Capabilities>>(initial());
   const [revision,setRevision]=useState(0);
-  const refresh=useCallback(()=>setRevision(n=>n+1),[]);
+  const [nextCursor,setNextCursor]=useState<string|null>(null);
+  const [loadingMore,setLoadingMore]=useState(false);
+  const [pageError,setPageError]=useState<string|null>(null);
+  const pageController=useRef<AbortController|null>(null);
+  const refresh=useCallback(()=>{pageController.current?.abort();setRevision(n=>n+1);},[]);
   useEffect(()=>{
     const controller=new AbortController();
     const load=<T,>(key:"network"|"corridors"|"capabilities",update:(r:Remote<T>)=>void)=>{
@@ -20,9 +24,32 @@ export function useBridge() {
         .catch(e=>{if(!controller.signal.aborted)update({data:null,error:errorText(e),loading:false});});
     };
     load("network",setNetwork);
-    load("corridors",setCorridors);
+    setCorridors(initial<Corridor[]>());
+    setNextCursor(null);
+    setPageError(null);
+    setLoadingMore(false);
+    readCorridorPage(undefined,controller.signal)
+      .then(page=>{if(!controller.signal.aborted){setCorridors({data:page.items,error:null,loading:false});setNextCursor(page.next_cursor);}})
+      .catch(e=>{if(!controller.signal.aborted)setCorridors({data:null,error:errorText(e),loading:false});});
     load("capabilities",setCapabilities);
-    return ()=>controller.abort();
+    return ()=>{controller.abort();pageController.current?.abort();};
   },[revision]);
-  return {network,corridors,capabilities,refresh};
+
+  const loadMore=useCallback(()=>{
+    if(!nextCursor||loadingMore)return;
+    pageController.current?.abort();
+    const controller=new AbortController();
+    pageController.current=controller;
+    setLoadingMore(true);
+    setPageError(null);
+    readCorridorPage(nextCursor,controller.signal)
+      .then(page=>{
+        if(controller.signal.aborted)return;
+        setCorridors(previous=>({...previous,data:[...(previous.data??[]),...page.items]}));
+        setNextCursor(page.next_cursor);
+      })
+      .catch(error=>{if(!controller.signal.aborted)setPageError(errorText(error));})
+      .finally(()=>{if(!controller.signal.aborted)setLoadingMore(false);});
+  },[nextCursor,loadingMore]);
+  return {network,corridors,capabilities,refresh,nextCursor,loadingMore,pageError,loadMore};
 }
