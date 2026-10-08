@@ -61,3 +61,7 @@ The same-origin Next.js backend proxy allows the bounded `/v1/corridors/page` ro
 The existing internal Business/Send workspaces now request `GET /v1/corridors/page?limit=25` instead of downloading every configured corridor up front. A visible **Load more corridors** control follows the API's opaque UUID cursor; loaded records stay on screen if the next page fails, and the UI clearly explains that search covers *currently loaded entries*. Refresh resets pages. This keeps the marketing routes unchanged and reduces data transfer and memory use as the actual operator catalog expands.
 
 Pagination is not proof a corridor is financially active. No synthetic countries, asset issuers or completed payments are seeded.
+
+## Separating system availability from payment availability
+
+Technical Business/Send staging workspaces query the backend's `GET /ready` through a specifically allowlisted proxy endpoint. If the service returns 503 (for example, no configured database) the interface states **Degraded or unavailable** rather than pretending the payment product is ready. Even a green readiness result is labeled *dependency connectivity only* and never activates transfer controls.

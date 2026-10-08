@@ -11,7 +11,7 @@ import type {PrivacyRail} from "@/lib/bridge-api";
 export function Workspace({mode}:{mode:"business"|"send"}){
  const business=mode==="business";
  const rail:PrivacyRail=business?"confidential-token":"private-payments";
- const {network,corridors,capabilities,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
+ const {network,corridors,capabilities,readiness,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
  const [selected,setSelected]=useState("");
  const [filter,setFilter]=useState("");
  const available=useMemo(()=>corridors.data?.filter(c=>c.privacy_rail===rail && [c.origin_country,c.destination_country,c.asset_code,c.asset_issuer??""].some(v=>v.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())))??[],[corridors.data,rail,filter]);
@@ -57,6 +57,10 @@ export function Workspace({mode}:{mode:"business"|"send"}){
      <div><Globe2 size={19} aria-hidden/><div><strong>Actual network data</strong><p>Ledger information is returned by the backend after verification against Stellar Testnet.</p></div></div>
      <div><CheckCircle2 size={19} aria-hidden/><div><strong>Fiat settlement</strong><p>{capabilities.data?.fiat_payouts_enabled?"Provider integration supported":"No licensed payout integrations are enabled."}</p></div></div>
     </div>
+    <div className="capability-row"><span>Observation service readiness</span>
+     <strong>{readiness.loading?"Checking…":readiness.error?"Degraded or unavailable":readiness.data?.status==="ready"?"Dependencies connected":"Degraded"}</strong>
+    </div>
+    <p className="state-muted">This measures RPC and database dependencies only—not private transfers, approved issuers, or fiat payouts.</p>
     <Button variant="outline" className="refresh-button" onClick={refresh}><RefreshCw size={16} aria-hidden/> Refresh from backend</Button>
     <div className="insight-note"><AlertTriangle size={18} aria-hidden/><div><strong>Technical preview</strong><p>A successful network check does not establish protected payment availability. Amount privacy and consumer anonymity require separate verified cryptographic implementations.</p></div></div>
    </aside>
