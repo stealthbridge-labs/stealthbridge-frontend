@@ -11,7 +11,7 @@ import type {PrivacyRail} from "@/lib/bridge-api";
 export function Workspace({mode}:{mode:"business"|"send"}){
  const business=mode==="business";
  const rail:PrivacyRail=business?"confidential-token":"private-payments";
- const {network,corridors,capabilities,readiness,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
+ const {network,corridors,capabilities,readiness,observer,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
  const [selected,setSelected]=useState("");
  const [filter,setFilter]=useState("");
  const available=useMemo(()=>corridors.data?.filter(c=>c.privacy_rail===rail && [c.origin_country,c.destination_country,c.asset_code,c.asset_issuer??""].some(v=>v.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())))??[],[corridors.data,rail,filter]);
@@ -61,6 +61,17 @@ export function Workspace({mode}:{mode:"business"|"send"}){
      <strong>{readiness.loading?"Checking…":readiness.error?"Degraded or unavailable":readiness.data?.status==="ready"?"Dependencies connected":"Degraded"}</strong>
     </div>
     <p className="state-muted">This measures RPC and database dependencies only—not private transfers, approved issuers, or fiat payouts.</p>
+    <div className="observer-card">
+      <div className="observer-header"><Database size={18} aria-hidden/><strong>Stored Testnet ledger checkpoint</strong></div>
+      {observer.loading?<p role="status">Checking persisted observer…</p>:
+        observer.error?<p>Not available: {observer.error} The observer may not be enabled or may not have written its first checkpoint.</p>:
+        observer.data?<div className="observer-details"><strong>Ledger {observer.data.ledger_sequence.toLocaleString()}</strong>
+          <span>Close time: {formatLedgerTime(observer.data.ledger_closed_at_unix)}</span>
+          <span>Source: Stellar RPC (last persisted)</span>
+        </div>:null}
+      <p>This checkpoint may be stale and is never evidence of a payment or payout.</p>
+    </div>
+
     <Button variant="outline" className="refresh-button" onClick={refresh}><RefreshCw size={16} aria-hidden/> Refresh from backend</Button>
     <div className="insight-note"><AlertTriangle size={18} aria-hidden/><div><strong>Technical preview</strong><p>A successful network check does not establish protected payment availability. Amount privacy and consumer anonymity require separate verified cryptographic implementations.</p></div></div>
    </aside>

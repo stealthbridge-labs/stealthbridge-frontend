@@ -257,3 +257,11 @@
 .corridor-page-actions>span{font-size:12px;color:#97c4b9}
 .corridor-page-actions [data-slot="button"]{min-height:42px}
 @media(max-width:520px){.corridor-page-actions [data-slot="button"]{width:100%}}
+
+/* Persisted observation is visually distinct from a payment confirmation. */
+.observer-card{border:1px solid rgba(123,220,212,.2);background:rgba(9,51,57,.35);border-radius:16px;padding:20px;margin-top:20px;color:#b5d8d2;font-size:12px;line-height:1.65}
+.observer-header{display:flex;gap:11px;align-items:center;color:#d7fcf5;margin-bottom:11px}
+.observer-header svg{color:#9ef3d8}
+.observer-card p{margin:10px 0;color:#90b9b1}
+.observer-details{display:flex;flex-direction:column;gap:5px}
+.observer-details>strong{color:#dffff4;font-size:16px}

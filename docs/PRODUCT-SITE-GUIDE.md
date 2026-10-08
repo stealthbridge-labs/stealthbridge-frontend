@@ -65,3 +65,7 @@ Pagination is not proof a corridor is financially active. No synthetic countries
 ## Separating system availability from payment availability
 
 Technical Business/Send staging workspaces query the backend's `GET /ready` through a specifically allowlisted proxy endpoint. If the service returns 503 (for example, no configured database) the interface states **Degraded or unavailable** rather than pretending the payment product is ready. Even a green readiness result is labeled *dependency connectivity only* and never activates transfer controls.
+
+## Operator ledger checkpoint UI
+
+In staging mode, the technical Business/Send panel now separately displays the opt-in, persisted Testnet ledger checkpoint from `GET /v1/observer`, when it exists. A missing checkpoint, disabled observer, or database error is reported as unavailable—not replaced with sample values. The UI explicitly cautions that the stored value **may be stale** and never proves a transfer or fiat payout. This gives maintainers a route to debug the upcoming indexer while keeping public product messaging honest.
