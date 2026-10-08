@@ -61,6 +61,20 @@ export function Workspace({mode}:{mode:"business"|"send"}){
      <strong>{readiness.loading?"Checking…":readiness.error?"Degraded or unavailable":readiness.data?.status==="ready"?"Dependencies connected":"Degraded"}</strong>
     </div>
     <p className="state-muted">This measures RPC and database dependencies only—not private transfers, approved issuers, or fiat payouts.</p>
+    <div className="observer-panel" aria-live="polite">
+      <span className="live-label">Persisted public ledger checkpoint</span>
+      {observer.loading?<p role="status">Checking stored ledger observation…</p>:
+       observer.data?<div className="observer-reading">
+        <strong>Ledger {observer.data.ledger_sequence.toLocaleString()}</strong>
+        <span>Last saved: {formatLedgerTime(observer.data.ledger_closed_at_unix)}</span>
+        {network.data?<span>{observer.data.ledger_sequence>network.data.ledger_sequence?
+          "Stored checkpoint is ahead of the current RPC view. Compare network sources.":
+          "Gap to current RPC head: "+(network.data.ledger_sequence-observer.data.ledger_sequence).toLocaleString()+" ledgers"}</span>:null}
+        <span className="state-muted">Stored state may be stale. Not a payment or settlement receipt.</span>
+       </div>:
+       <p className="state-muted">{observer.error?"No verified checkpoint is available from the observer service.":"Observer not enabled or no persisted reading yet."}</p>}
+    </div>
+
     <div className="observer-card">
       <div className="observer-header"><Database size={18} aria-hidden/><strong>Stored Testnet ledger checkpoint</strong></div>
       {observer.loading?<p role="status">Checking persisted observer…</p>:

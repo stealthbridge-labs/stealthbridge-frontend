@@ -69,3 +69,7 @@ Technical Business/Send staging workspaces query the backend's `GET /ready` thro
 ## Operator ledger checkpoint UI
 
 In staging mode, the technical Business/Send panel now separately displays the opt-in, persisted Testnet ledger checkpoint from `GET /v1/observer`, when it exists. A missing checkpoint, disabled observer, or database error is reported as unavailable—not replaced with sample values. The UI explicitly cautions that the stored value **may be stale** and never proves a transfer or fiat payout. This gives maintainers a route to debug the upcoming indexer while keeping public product messaging honest.
+
+## Persisted Testnet observer in technical preview
+
+The guarded Business and Send workspaces now show the **last actually persisted ledger-head checkpoint** from `/v1/observer`, where an operator has explicitly enabled the read-only backend worker. The workspace compares its sequence with the current live RPC head without inventing timestamps, transfer confirmations or payouts. An unavailable or absent observer yields an unavailable message; it is not treated as a successful settlement. All observer information remains unavailable on the public marketing deployment.

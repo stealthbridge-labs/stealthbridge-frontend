@@ -265,3 +265,10 @@
 .observer-card p{margin:10px 0;color:#90b9b1}
 .observer-details{display:flex;flex-direction:column;gap:5px}
 .observer-details>strong{color:#dffff4;font-size:16px}
+
+/* Engineering preview only: transparent state of independently observed data. */
+.observer-panel{margin-top:18px;padding:20px;border:1px solid rgba(144,234,214,.18);background:rgba(11,42,49,.8);border-radius:14px}
+.observer-reading{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.observer-reading strong{font-size:20px;font-variant-numeric:tabular-nums;color:#eafff8}
+.observer-reading span{color:#b0cbc6;font-size:12px;line-height:1.6}
+.observer-panel .state-muted{font-size:12px;line-height:1.6}
