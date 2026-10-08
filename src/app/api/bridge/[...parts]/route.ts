@@ -13,7 +13,7 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
    return NextResponse.json({code:"INVALID_QUERY"},{status:400});
   const rawLimit=search.get("limit");
   const rawCursor=search.get("after");
-  if(rawLimit!==null&&(!/^\\d{1,3}$/.test(rawLimit)||Number(rawLimit)<1||Number(rawLimit)>100))
+  if(rawLimit!==null&&(!/^[0-9]{1,3}$/.test(rawLimit)||Number(rawLimit)<1||Number(rawLimit)>100))
    return NextResponse.json({code:"INVALID_LIMIT"},{status:400});
   if(rawCursor!==null&&!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(rawCursor))
    return NextResponse.json({code:"INVALID_CURSOR"},{status:400});
