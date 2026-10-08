@@ -5,7 +5,7 @@ import {cn} from "@/lib/utils";
 
 /** Accessible product buttons; asChild also styles Next.js links without nested buttons. */
 export const buttonVariants=cva(
- "relative isolate inline-flex select-none items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-full border text-sm font-semibold tracking-[-0.01em] outline-none transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-out focus-visible:ring-[3px] focus-visible:ring-[#8cfce6]/70 focus-visible:ring-offset-[3px] focus-visible:ring-offset-[#031419] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 active:scale-[0.985] motion-reduce:transform-none motion-reduce:transition-none",
+ "relative isolate inline-flex select-none items-center justify-center gap-3 overflow-hidden whitespace-normal text-center rounded-full border text-sm font-bold tracking-[-0.01em] outline-none transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-out focus-visible:ring-[3px] focus-visible:ring-[#8cfce6]/70 focus-visible:ring-offset-[3px] focus-visible:ring-offset-[#031419] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 active:scale-[0.985] motion-reduce:transform-none motion-reduce:transition-none",
  {
   variants:{
    variant:{
@@ -19,7 +19,7 @@ export const buttonVariants=cva(
    size:{
     sm:"min-h-9 gap-1.5 px-4 py-2 text-xs",
     default:"min-h-11 px-5 py-2.5",
-    lg:"min-h-12 px-7 py-3 text-[13px] sm:min-h-13 sm:px-8",
+    lg:"min-h-13 px-7 py-3.5 text-[14px] sm:min-h-14 sm:px-8 sm:text-[15px]",
     icon:"h-11 w-11 p-0"
    }
   },
@@ -30,6 +30,6 @@ export function Button({
  asChild=false,variant,size,className,type,...props
 }:React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & {asChild?:boolean}){
  const Comp=asChild?Slot:"button";
- return <Comp data-slot="button" type={asChild?undefined:(type??"button")}
+ return <Comp data-slot="button" data-variant={variant??"primary"} type={asChild?undefined:(type??"button")}
   className={cn(buttonVariants({variant,size}),className)} {...props}/>;
 }

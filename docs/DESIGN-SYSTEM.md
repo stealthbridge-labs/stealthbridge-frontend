@@ -38,3 +38,9 @@ Keyboard-visible focus, aria-expanded mobile navigation, semantic anchors for pr
 Use `Button` (`src/components/ui/button.tsx`) for consistently styled action links and button controls. The primary mint button identifies one meaningful CTA per section; outline/secondary styles show alternatives; glass is reserved for surfaces over artwork; danger should be reserved for truly destructive, future authorized actions. Buttons have visible focus rings, accessible 44–48px targets on mobile, deterministic disabled states and reduced-motion fallbacks. `asChild` must wrap one real link, not a nested button.
 
 `SiteEnhancements` adds a passive scroll-progress indicator and a visible, keyboard-operable Back to Top button after meaningful scroll depth. These are navigation aids only, not financial-state indicators.
+
+## Primary CTA color regression (2026-10)
+
+The mint CTA must use a **dark ink label and icon**, never inherited white text. Root cause: an unlayered global `a { color: inherit }` style out-ranked Tailwind's layered `text-*` utilities on anchor-as-button controls. The global anchor reset now lives inside `@layer base`, and explicit `data-variant` selectors reinforce every Button variant.
+
+The automated browser test `tests/browser/button-contrast.spec.ts` reads computed CSS colors and checks at least 4.5:1 for primary mint buttons across the homepage and three product pages. Keep icon strokes bound to `currentColor`, avoid hover contrast regressions, and test tablet/mobile sizes. Marketing link buttons should have readable 14–15px labels and approximately 52–56px touch heights.
