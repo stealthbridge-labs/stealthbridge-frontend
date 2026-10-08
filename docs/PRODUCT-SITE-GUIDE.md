@@ -51,3 +51,7 @@ Business, Send and Platform pages now contain product-specific native `details/s
 ## Technical corridor discovery pagination
 
 The same-origin Next.js backend proxy allows the bounded `/v1/corridors/page` route in **preview mode only**. It forwards only `limit` (1–100) and `after` (well-formed UUID), rejecting unknown query keys and duplicates. No user-controlled URL or arbitrary RPC method is forwarded. The public marketing site continues returning 404 for this route in landing mode.
+
+## Public-ledger checkpoint visibility in staging
+
+`/api/bridge/v1/observer` is now allowlisted **only in explicit preview mode**. It returns the last real backend-observed Testnet ledger head when an operator has enabled the durable observer; absent state and storage failure remain explicit errors. This is a read-only operational health signal, not proof that any settlement or user transfer occurred.

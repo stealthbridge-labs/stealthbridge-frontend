@@ -13,9 +13,14 @@ async function read<T>(path:string,signal?:AbortSignal):Promise<T>{
  if(!res.ok)throw new ApiUnavailable(res.status,path);
  return res.json() as Promise<T>;
 }
-export function readBridge<T>(endpoint:"network"|"corridors"|"capabilities",signal?:AbortSignal){return read<T>("v1/"+endpoint,signal);}
+export function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer",signal?:AbortSignal){return read<T>("v1/"+endpoint,signal);}
 export const validTransactionHash=(s:string)=>/^[a-f0-9]{64}$/i.test(s);
 export function readTransaction(hash:string,signal?:AbortSignal):Promise<TransactionObservation>{
  if(!validTransactionHash(hash))throw new TypeError("Transaction hash must be 64 hexadecimal characters.");
  return read<TransactionObservation>("v1/transactions/"+hash.toLowerCase(),signal);
+}
+
+/** The last persisted Testnet observer cursor, not necessarily the live ledger head. */
+export interface ObservedLedgerCheckpoint {
+ ledger_sequence:number;ledger_hash:string;ledger_closed_at_unix:string;source:"stellar-rpc";
 }
