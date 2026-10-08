@@ -14,6 +14,7 @@
     "smoke": "node scripts/smoke.mjs",
     "test:landing": "node scripts/verify-landing.mjs",
     "test:browser": "playwright test",
+    "test:browser:preview": "STEALTHBRIDGE_SITE_MODE=preview npm run build && STEALTHBRIDGE_TEST_PREVIEW=1 npm run test:browser",
     "test:seo": "node scripts/verify-seo.mjs"
   },
   "dependencies": {

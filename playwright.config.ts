@@ -22,12 +22,12 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/],
+   testMatch:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/safety-gates\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {
    name:"chromium-mobile",
-   testMatch:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/],
+   testMatch:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/,/safety-gates\.spec\.ts/],
    use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}
   },
   {
@@ -44,7 +44,7 @@ export default defineConfig({
   stdout:"pipe",
   stderr:"pipe",
   env:{
-   STEALTHBRIDGE_SITE_MODE:"landing",
+   STEALTHBRIDGE_SITE_MODE:process.env.STEALTHBRIDGE_TEST_PREVIEW==="1"?"preview":"landing",
    STEALTHBRIDGE_API_URL:""
   }
  }

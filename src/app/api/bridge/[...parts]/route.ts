@@ -56,7 +56,11 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
   let offset=0;
   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
   const body=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
-  const headers={"cache-control":"no-store","content-type":res.headers.get("content-type")?.includes("json")?"application/json":"text/plain"};
+  const headers:Record<string,string>={"cache-control":"no-store","content-type":res.headers.get("content-type")?.includes("json")?"application/json":"text/plain"};
+  const requestId=res.headers.get("x-request-id");
+  if(requestId&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestId))headers["x-request-id"]=requestId;
+  const errorCode=res.headers.get("x-error-code");
+  if(errorCode&&/^[A-Z][A-Z0-9_]{0,63}$/.test(errorCode))headers["x-error-code"]=errorCode;
   return new NextResponse(body,{status:res.status,headers});
  }catch{
   return NextResponse.json({code:"BACKEND_UNREACHABLE",message:"Unable to reach StealthBridge API."},{status:502,headers:{"cache-control":"no-store"}});
