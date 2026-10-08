@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/smoke.mjs",
     "test:landing": "node scripts/verify-landing.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:seo": "node scripts/verify-seo.mjs"
   },
   "dependencies": {
     "next": "^16.4.0",

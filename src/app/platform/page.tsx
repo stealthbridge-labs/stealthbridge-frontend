@@ -1,7 +1,9 @@
 import type {Metadata} from "next";
 import {ProductStory} from "@/components/product-story";
 export const metadata:Metadata={
- title:"The StealthBridge Platform | Privacy-conscious payment infrastructure",
- description:"Explore the thinking and architecture behind StealthBridge Business, Send and our shared Stellar foundation."
+ title:"StealthBridge Platform — Stellar infrastructure research",
+ description:"Learn about StealthBridge platform architecture, Stellar Testnet research, and the boundaries of its current capabilities.",
+ alternates:{canonical:"/platform"},
+ openGraph:{title:"StealthBridge Platform — Stellar infrastructure research",description:"Learn about StealthBridge platform architecture, Stellar Testnet research, and the boundaries of its current capabilities.",url:"/platform",type:"website"},
 };
 export default function Page(){return <ProductStory product="platform"/>;}
