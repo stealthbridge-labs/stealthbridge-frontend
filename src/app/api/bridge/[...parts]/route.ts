@@ -30,7 +30,32 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
   const destination=new URL(url.toString().replace(/\/$/,"")+"/"+path);
   if(path==="v1/corridors/page") destination.search=search.toString();
   const res=await fetch(destination,{method:"GET",headers:{accept:"application/json"},signal:AbortSignal.timeout(10000),cache:"no-store"});
-  const body=await res.text();
+  // A compromised backend must not cause unbounded buffering on the Next server.
+  const maxBytes=256*1024;
+  const declared=res.headers.get("content-length");
+  if(declared!==null&&Number(declared)>maxBytes)
+   return NextResponse.json({code:"UPSTREAM_RESPONSE_TOO_LARGE"},{status:502});
+  const reader=res.body?.getReader();
+  const chunks:Uint8Array[]=[];
+  let size=0;
+  if(reader){
+   try{
+    while(true){
+     const {done,value}=await reader.read();
+     if(done)break;
+     size+=value.byteLength;
+     if(size>maxBytes){
+      await reader.cancel().catch(()=>{});
+      return NextResponse.json({code:"UPSTREAM_RESPONSE_TOO_LARGE"},{status:502});
+     }
+     chunks.push(value);
+    }
+   }finally{reader.releaseLock();}
+  }
+  const bytes=new Uint8Array(size);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  const body=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
   const headers={"cache-control":"no-store","content-type":res.headers.get("content-type")?.includes("json")?"application/json":"text/plain"};
   return new NextResponse(body,{status:res.status,headers});
  }catch{
