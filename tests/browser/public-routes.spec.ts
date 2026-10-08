@@ -4,7 +4,7 @@ const publicRoutes=[
  {path:"/",title:/StealthBridge \| Confidential payments/,heading:"Move value. Not exposure."},
  {path:"/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
  {path:"/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."},
- {path:"/platform",title:/The StealthBridge Platform/,heading:"More than a payment rail."}
+ {path:"/platform",title:/StealthBridge Platform/,heading:"More than a payment rail."}
 ] as const;
 
 for(const route of publicRoutes){
