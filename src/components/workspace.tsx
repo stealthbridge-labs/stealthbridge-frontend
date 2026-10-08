@@ -11,7 +11,7 @@ import type {PrivacyRail} from "@/lib/bridge-api";
 export function Workspace({mode}:{mode:"business"|"send"}){
  const business=mode==="business";
  const rail:PrivacyRail=business?"confidential-token":"private-payments";
- const {network,corridors,capabilities,readiness,observer,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
+ const {network,corridors,capabilities,readiness,observer,contracts,refresh,nextCursor,loadingMore,pageError,loadMore}=useBridge();
  const [selected,setSelected]=useState("");
  const [filter,setFilter]=useState("");
  const available=useMemo(()=>corridors.data?.filter(c=>c.privacy_rail===rail && [c.origin_country,c.destination_country,c.asset_code,c.asset_issuer??""].some(v=>v.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())))??[],[corridors.data,rail,filter]);
@@ -44,7 +44,7 @@ export function Workspace({mode}:{mode:"business"|"send"}){
     </div>}
     {pageError&&<p className="state-error" role="alert"><AlertTriangle size={16} aria-hidden/> {pageError} Existing records remain available.</p>}
     {corridor?<div className="corridor-details"><strong>Selected corridor</strong><p>{corridor.origin_country} → {corridor.destination_country} · {corridor.asset_code}</p><p>Privacy rail: {corridor.privacy_rail}</p>{corridor.asset_issuer?<p>Issuer: <code>{corridor.asset_issuer}</code></p>:null}</div>:null}
-    <WalletConnect/>
+    <WalletConnect expectedNetworkPassphrase={network.data?.passphrase}/>
     <div className="capability-row"><span>Payment initiation</span><strong>{capabilities.loading?"Checking…":capabilities.error?"Unavailable":capabilities.data?.payments_enabled?"Supported":"Not enabled"}</strong></div>
     <Button className="w-full" disabled aria-disabled={true}>Transfer unavailable until protocol verification <ArrowRight size={15} aria-hidden/></Button>
     <p className="demo-disclaimer">No simulated exchange rates, seeded assets, mock settlements, or fictional success statuses are displayed. This screen cannot move funds.</p>
@@ -61,6 +61,18 @@ export function Workspace({mode}:{mode:"business"|"send"}){
      <strong>{readiness.loading?"Checking…":readiness.error?"Degraded or unavailable":readiness.data?.status==="ready"?"Dependencies connected":"Degraded"}</strong>
     </div>
     <p className="state-muted">This measures RPC and database dependencies only—not private transfers, approved issuers, or fiat payouts.</p>
+
+    <div className="contract-discovery-panel" role="status" aria-live="polite">
+      <span className="live-label">Soroban contracts · canonical deployment status</span>
+      {contracts.loading?<p>Checking source manifest…</p>:
+       contracts.error?<p>Contract information unavailable. No contract interaction can be verified.</p>:
+       contracts.data?.manifest.status==="not-deployed"?<div className="contract-discovery-state">
+        <strong>Contracts not deployed</strong>
+        <p>The verified Testnet deployment manifest has no contract IDs. Wallet signing and confidential transfers are disabled.</p>
+        <span>Source: stealthbridge-contracts · On-chain verification: pending</span>
+       </div>:<p>Unverified deployment metadata. Contract actions remain unavailable.</p>}
+    </div>
+
     <div className="observer-panel" aria-live="polite">
       <span className="live-label">Persisted public ledger checkpoint</span>
       {observer.loading?<p role="status">Checking stored ledger observation…</p>:

@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {readBridge,readCorridorPage,type Capabilities,type Corridor,type NetworkStatus,type ServiceReadiness,type ObservedLedgerCheckpoint} from "@/lib/bridge-api";
+import {readBridge,readCorridorPage,type Capabilities,type Corridor,type NetworkStatus,type ServiceReadiness,type ObservedLedgerCheckpoint,type ContractDiscovery} from "@/lib/bridge-api";
 
 type Remote<T> = { data: T | null; error: string | null; loading: boolean };
 const initial = <T,>():Remote<T>=>({data:null,error:null,loading:true});
@@ -11,6 +11,7 @@ export function useBridge() {
   const [capabilities,setCapabilities]=useState<Remote<Capabilities>>(initial());
   const [readiness,setReadiness]=useState<Remote<ServiceReadiness>>(initial());
   const [observer,setObserver]=useState<Remote<ObservedLedgerCheckpoint>>(initial());
+  const [contracts,setContracts]=useState<Remote<ContractDiscovery>>(initial());
   const [revision,setRevision]=useState(0);
   const [nextCursor,setNextCursor]=useState<string|null>(null);
   const [loadingMore,setLoadingMore]=useState(false);
@@ -19,7 +20,7 @@ export function useBridge() {
   const refresh=useCallback(()=>{pageController.current?.abort();setRevision(n=>n+1);},[]);
   useEffect(()=>{
     const controller=new AbortController();
-    const load=<T,>(key:"network"|"corridors"|"capabilities"|"ready"|"observer",update:(r:Remote<T>)=>void)=>{
+    const load=<T,>(key:"network"|"corridors"|"capabilities"|"ready"|"observer"|"contracts",update:(r:Remote<T>)=>void)=>{
       update({data:null,error:null,loading:true});
       readBridge<T>(key,controller.signal)
         .then(data=>{if(!controller.signal.aborted)update({data,error:null,loading:false});})
@@ -36,6 +37,7 @@ export function useBridge() {
     load("capabilities",setCapabilities);
     load("ready",setReadiness);
     load("observer",setObserver);
+    load("contracts",setContracts);
     return ()=>{controller.abort();pageController.current?.abort();};
   },[revision]);
 
@@ -55,5 +57,5 @@ export function useBridge() {
       .catch(error=>{if(!controller.signal.aborted)setPageError(errorText(error));})
       .finally(()=>{if(!controller.signal.aborted)setLoadingMore(false);});
   },[nextCursor,loadingMore]);
-  return {network,corridors,capabilities,readiness,observer,refresh,nextCursor,loadingMore,pageError,loadMore};
+  return {network,corridors,capabilities,readiness,observer,contracts,refresh,nextCursor,loadingMore,pageError,loadMore};
 }

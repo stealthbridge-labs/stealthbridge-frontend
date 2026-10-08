@@ -13,7 +13,7 @@ async function read<T>(path:string,signal?:AbortSignal):Promise<T>{
  if(!res.ok)throw new ApiUnavailable(res.status,path);
  return res.json() as Promise<T>;
 }
-export function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"ready",signal?:AbortSignal){return read<T>((endpoint==="ready"?"":"v1/")+endpoint,signal);}
+export function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){return read<T>((endpoint==="ready"?"":"v1/")+endpoint,signal);}
 export const validTransactionHash=(s:string)=>/^[a-f0-9]{64}$/i.test(s);
 export function readTransaction(hash:string,signal?:AbortSignal):Promise<TransactionObservation>{
  if(!validTransactionHash(hash))throw new TypeError("Transaction hash must be 64 hexadecimal characters.");
@@ -54,4 +54,19 @@ export async function readCorridorPage(after?:string,signal?:AbortSignal):Promis
 /** Dependency readiness, not approval to move money. */
 export interface ServiceReadiness {
  status:"ready"|"degraded";stellar_rpc:"connected"|"unavailable";database:"connected"|"unavailable";payments:"disabled";
+}
+
+/** Canonical, currently undeployed Testnet contract manifest as seen by backend. */
+export interface ContractDiscovery {
+ network:"testnet";
+ source:"stealthbridge-contracts/deployments/testnet/manifest.json";
+ on_chain_verified:false;
+ payment_execution_enabled:false;
+ manifest:{
+  schemaVersion:1;network:"testnet";status:"not-deployed";verified:false;
+  contractAddresses:Record<string,never>;
+  assetIssuers:Record<string,never>;
+  txHashes:never[];
+  notes?:string;
+ };
 }

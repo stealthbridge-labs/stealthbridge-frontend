@@ -77,3 +77,7 @@ The guarded Business and Send workspaces now show the **last actually persisted 
 ## Cursor and corridor schema validation
 
 Technical preview now rejects empty cursor-bearing pages, repeated or out-of-order UUIDs, cursor tokens that do not match the page boundary, invalid asset/country formats, cross-country inconsistencies, and non-advancing page results. These checks prevent infinite pagination and misleading UI state if an upstream service malfunctions. Public product routes remain independent of the backend.
+
+## Shared contract discovery and Freighter checks
+
+The technical Business and Send workspaces now read `/api/bridge/v1/contracts` from the real Rust backend, which serves the pinned canonical Testnet manifest. They clearly report **not deployed** when no Soroban address exists; the status panel cannot activate a transfer. Freighter connection requires the exact Stellar Testnet passphrase. The UI also checks the active wallet address and network again on tab focus/visibility changes, clears stale wallet state when the account or network changes, and distinguishes local wallet connectivity from successfully verified backend RPC identity. No secrets or transaction payloads leave the wallet; no contract interaction is claimed until a real on-chain deployment can be verified.
