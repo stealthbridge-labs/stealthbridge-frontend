@@ -45,4 +45,34 @@ assert.equal(flags.status,200);
 const capabilities=await flags.json();
 assert.equal(typeof capabilities.payments_enabled,"boolean");
 console.log("PASS capabilities response");
+// Verify that the backend and contract manifest cannot advertise unverified payments.
+const contracts = await fetchPage("/api/bridge/v1/contracts");
+assert.equal(contracts.status,200,"Contract discovery must be reachable in engineering staging");
+const discovery = await contracts.json();
+assert.equal(discovery.network,"testnet");
+assert.equal(discovery.on_chain_verified,false,"Do not advertise undeployed contracts as verified");
+assert.equal(discovery.payment_execution_enabled,false,"Payment execution must remain disabled");
+assert.equal(discovery.manifest?.status,"not-deployed");
+assert.deepEqual(discovery.manifest?.contractAddresses,{},"Unexpected deployed contract addresses");
+console.log("PASS canonical Testnet contract discovery (undeployed, payment execution disabled)");
+
+const readiness = await fetchPage("/api/bridge/ready");
+assert.ok([200,503].includes(readiness.status),"Readiness must return 200 or degraded 503");
+const dependencies = await readiness.json();
+assert.equal(dependencies.payments,"disabled");
+assert.ok(["ready","degraded"].includes(dependencies.status));
+console.log("PASS backend dependency readiness (payment execution disabled)");
+
+assert.equal(capabilities.payments_enabled,false,"Backend must not enable fund movement");
+assert.equal(capabilities.confidential_token_verified,false,"Confidential token rail is not verified");
+assert.equal(capabilities.private_payments_verified,false,"Private payments rail is not verified");
+assert.equal(capabilities.fiat_payouts_enabled,false,"Fiat payouts must remain disabled");
+
+// The same-origin read-only proxy must reject mutation methods.
+const writeAttempt=await fetch(new URL("/api/bridge/v1/settlements",base),{
+ method:"POST",headers:{"content-type":"application/json"},body:"{}",cache:"no-store",signal:AbortSignal.timeout(15000)
+});
+assert.equal(writeAttempt.status,405,"Frontend proxy must not forward settlement writes");
+console.log("PASS frontend rejects settlement submission (HTTP 405)");
+
 console.log("Smoke check covers site/network discovery only; does NOT verify confidential transfers, real FX, or fiat payouts.");
