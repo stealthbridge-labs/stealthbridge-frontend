@@ -43,3 +43,7 @@ Playwright suites and the deployment smoke command cover browser navigation and 
 ## Next milestones
 
 Review desktop/mobile screenshots of the deployed site, accessibility audits, component primitives, route-level SEO assets, live operator-verified corridor eligibility (technical staging only), tenant identity, and independently proven financial integrations. See [ROADMAP](../ROADMAP.md) for the full plan.
+
+## Accessible product education and FAQ
+
+Business, Send and Platform pages now contain product-specific native `details/summary` sections with truthful answers about supported privacy boundaries, settlement status, financial availability and deployment responsibilities. The FAQ is keyboard-operable without JavaScript, mobile responsive and reduced-motion friendly. Mobile navigation closes with Escape as well as the toggle. Browser tests cover these interactions. Do not replace this content with fictitious provider details, balances or launch dates.

@@ -231,3 +231,24 @@
  .hero-buttons [data-slot="button"]{width:100%;white-space:normal;min-height:54px;padding-inline:20px}
  .story-hero-actions .story-primary,.story-ending .story-primary{white-space:normal}
 }
+
+/* Product FAQ: native accessible disclosures, no simulated payment flow. */
+.story-faq{padding-top:80px;padding-bottom:100px}
+.story-faq .story-section-head{max-width:780px;margin-bottom:38px}
+.story-faq-list{border-top:1px solid var(--line)}
+.story-faq-item{border-bottom:1px solid var(--line);transition:background .2s ease}
+.story-faq-item[open]{background:rgba(97,233,204,.035)}
+.story-faq-item summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:55px minmax(0,1fr) 26px;align-items:center;gap:22px;padding:30px 18px;color:#e8fff7;font-weight:650;letter-spacing:-.025em;font-size:clamp(16px,1.65vw,22px)}
+.story-faq-item summary::-webkit-details-marker{display:none}
+.story-faq-item summary svg{color:#8cf6d9;transition:transform .25s ease}
+.story-faq-item[open] summary svg{transform:rotate(180deg)}
+.story-faq-index{color:#80dcca;font-size:12px;letter-spacing:.08em}
+.story-faq-item summary:hover{color:#9dfbdc}
+.story-faq-item summary:focus-visible{outline:2px solid #8cf6d9;outline-offset:-2px;border-radius:10px}
+.story-faq-item p{max-width:790px;color:#abcac5;font-size:15px;line-height:1.8;margin:0 70px 29px 95px}
+@media(max-width:600px){
+ .story-faq{padding-block:55px 70px}
+ .story-faq-item summary{grid-template-columns:28px minmax(0,1fr) 22px;gap:12px;padding:22px 8px}
+ .story-faq-item p{margin:0 20px 24px 49px;font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.story-faq-item,.story-faq-item summary svg{transition:none!important}}

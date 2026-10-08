@@ -10,6 +10,12 @@ import { Button } from "./ui/button";
 export function Home(){
  const root=useRef<HTMLDivElement>(null);
  const [mobileMenu,setMobileMenu]=useState(false);
+ useEffect(()=>{
+  if(!mobileMenu)return;
+  const handleKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobileMenu(false);};
+  window.addEventListener("keydown",handleKey);
+  return ()=>window.removeEventListener("keydown",handleKey);
+ },[mobileMenu]);
  const [rail,setRail]=useState<"business"|"send">("business");
  useEffect(()=>{
   if(!root.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
