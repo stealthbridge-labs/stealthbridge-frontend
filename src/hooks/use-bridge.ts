@@ -11,7 +11,6 @@ export function useBridge() {
   const [capabilities,setCapabilities]=useState<Remote<Capabilities>>(initial());
   const [readiness,setReadiness]=useState<Remote<ServiceReadiness>>(initial());
   const [observer,setObserver]=useState<Remote<ObservedLedgerCheckpoint>>(initial());
-  const [observer,setObserver]=useState<Remote<ObservedLedgerCheckpoint>>(initial());
   const [revision,setRevision]=useState(0);
   const [nextCursor,setNextCursor]=useState<string|null>(null);
   const [loadingMore,setLoadingMore]=useState(false);
@@ -36,7 +35,6 @@ export function useBridge() {
       .catch(e=>{if(!controller.signal.aborted)setCorridors({data:null,error:errorText(e),loading:false});});
     load("capabilities",setCapabilities);
     load("ready",setReadiness);
-    load("observer",setObserver);
     load("observer",setObserver);
     return ()=>{controller.abort();pageController.current?.abort();};
   },[revision]);
