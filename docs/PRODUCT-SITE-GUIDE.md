@@ -73,3 +73,7 @@ In staging mode, the technical Business/Send panel now separately displays the o
 ## Persisted Testnet observer in technical preview
 
 The guarded Business and Send workspaces now show the **last actually persisted ledger-head checkpoint** from `/v1/observer`, where an operator has explicitly enabled the read-only backend worker. The workspace compares its sequence with the current live RPC head without inventing timestamps, transfer confirmations or payouts. An unavailable or absent observer yields an unavailable message; it is not treated as a successful settlement. All observer information remains unavailable on the public marketing deployment.
+
+## Cursor and corridor schema validation
+
+Technical preview now rejects empty cursor-bearing pages, repeated or out-of-order UUIDs, cursor tokens that do not match the page boundary, invalid asset/country formats, cross-country inconsistencies, and non-advancing page results. These checks prevent infinite pagination and misleading UI state if an upstream service malfunctions. Public product routes remain independent of the backend.

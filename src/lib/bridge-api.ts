@@ -34,11 +34,20 @@ export async function readCorridorPage(after?:string,signal?:AbortSignal):Promis
  if(after)params.set("after",after.toLowerCase());
  const page=await read<CorridorPage>("v1/corridors/page?"+params,signal);
  if(!page||!Array.isArray(page.items)||page.items.length>25||
-    page.items.some(c=>!c||typeof c.id!=="string"||!UUID.test(c.id)||
-      typeof c.origin_country!=="string"||typeof c.destination_country!=="string"||
-      !["private-payments","confidential-token"].includes(c.privacy_rail))||
-    !(page.next_cursor===null||(typeof page.next_cursor==="string"&&UUID.test(page.next_cursor))))
-  throw new Error("Configured corridor API returned an invalid page.");
+    page.items.some((c,index)=>!c||typeof c.id!=="string"||!UUID.test(c.id)||
+      typeof c.origin_country!=="string"||!/^[A-Z]{2}$/.test(c.origin_country)||
+      typeof c.destination_country!=="string"||!/^[A-Z]{2}$/.test(c.destination_country)||
+      c.origin_country===c.destination_country||
+      typeof c.asset_code!=="string"||!/^[a-zA-Z0-9_:-]{1,64}$/.test(c.asset_code)||
+      (c.asset_issuer!==null&&(typeof c.asset_issuer!=="string"||
+         c.asset_issuer.length===0||c.asset_issuer.length>128))||
+      !["private-payments","confidential-token"].includes(c.privacy_rail)||
+      (index>0&&page.items[index-1].id.toLowerCase()>=c.id.toLowerCase())||
+      (after!==undefined&&c.id.toLowerCase()<=after.toLowerCase()))||
+    !(page.next_cursor===null||(typeof page.next_cursor==="string"&&UUID.test(page.next_cursor)))||
+    (page.next_cursor!==null&&(page.items.length===0||
+      page.next_cursor.toLowerCase()!==page.items[page.items.length-1].id.toLowerCase())))
+  throw new Error("Configured corridor API returned an invalid or out-of-order page.");
  return page;
 }
 
