@@ -95,6 +95,8 @@ export function Workspace({mode}:{mode:"business"|"send"}){
         <p>The verified Testnet deployment manifest has no contract IDs. Wallet signing and confidential transfers are disabled.</p>
         <span>Source: stealthbridge-contracts · On-chain verification: pending</span>
         <span>Registry read methods specified in source: {Object.values(contracts.data.public_interface.contracts).reduce((count,entry)=>count+Object.keys(entry.reads).length,0)} · Live invocations: unavailable</span>
+        <span>Declared source modules: {Object.keys(contracts.data.public_interface.contracts).sort().join(" · ")}</span>
+        <span>Governance gate: combined corridor/policy read defined in Rust · Not yet deployed or independently attested</span>
        </div>:<p>Unverified deployment metadata. Contract actions remain unavailable.</p>}
     </div>
 
