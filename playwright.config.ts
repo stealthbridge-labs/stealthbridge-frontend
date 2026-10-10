@@ -1,6 +1,7 @@
 import {defineConfig} from "@playwright/test";
 
 const port=3199;
+const previewTests=process.env.STEALTHBRIDGE_TEST_PREVIEW==="1";
 const baseURL=`http://127.0.0.1:${port}`;
 
 export default defineConfig({
@@ -22,17 +23,17 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/safety-gates\.spec\.ts/],
+   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {
    name:"chromium-mobile",
-   testMatch:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/,/safety-gates\.spec\.ts/],
+   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/],
    use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}
   },
   {
    name:"chromium-reduced-motion",
-   testMatch:/reduced-motion\.spec\.ts/,
+   testMatch:previewTests?/__never_in_preview__/:/reduced-motion\.spec\.ts/,
    use:{viewport:{width:1280,height:800},reducedMotion:"reduce"}
   }
  ],
