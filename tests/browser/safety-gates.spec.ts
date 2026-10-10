@@ -140,6 +140,8 @@ test("watch-only account stays local and never becomes a connected wallet",async
  await page.getByRole("button",{name:"Watch address locally"}).click();
  await expect(page.getByText("Watch-only address · not connected")).toBeVisible();
  await expect(page.getByText(VALID_WATCH_ONLY_ACCOUNT)).toBeVisible();
+ await expect(page.getByRole("link",{name:"Open public Testnet explorer (shares address with explorer)"}))
+  .toHaveAttribute("href","https://stellar.expert/explorer/testnet/account/"+VALID_WATCH_ONLY_ACCOUNT);
  await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
  await expect(page.getByRole("button",{name:"Connect Freighter"})).toBeEnabled();
  await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
