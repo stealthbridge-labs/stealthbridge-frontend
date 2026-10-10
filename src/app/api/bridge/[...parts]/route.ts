@@ -29,7 +29,9 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
   }
   const destination=new URL(url.toString().replace(/\/$/,"")+"/"+path);
   if(path==="v1/corridors/page") destination.search=search.toString();
-  const res=await fetch(destination,{method:"GET",headers:{accept:"application/json"},signal:AbortSignal.timeout(10000),cache:"no-store"});
+  // Never follow upstream redirects: a compromised backend could redirect
+    // this server-side proxy to an internal or unrelated destination.
+    const res=await fetch(destination,{method:"GET",headers:{accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(10000),cache:"no-store"});
   // A compromised backend must not cause unbounded buffering on the Next server.
   const maxBytes=256*1024;
   const declared=res.headers.get("content-length");
