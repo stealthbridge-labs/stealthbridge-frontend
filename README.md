@@ -2,6 +2,32 @@
 
 **Engineering roadmap:** [View the repository-specific plan](ROADMAP.md).
 
+## System architecture and where this product is heading
+
+**Full engineering guide:** [Frontend architecture, trust boundaries, product flows and delivery milestones](docs/ARCHITECTURE-AND-DELIVERY.md). This guide maps the public site, gated technical preview, same-origin API proxy, wallet modes, backend/Soroban dependencies, and future Business/Send screens.
+
+```text
+Public landing and Business / Send stories
+  └─ Independent Next.js marketing routes; no payments
+Opt-in engineering preview
+  ├─ GET-only server proxy → Rust API → Stellar Testnet RPC
+  ├─ Rust API → Neon/PostgreSQL (real enabled corridor records only)
+  ├─ Read-only contract discovery → source-only 3-contract ABI
+  └─ Freighter public-key permission or local watch-only G-address
+Future, only after separate reviews
+  ├─ Signed wallet identity + authenticated Business organizations
+  ├─ Verified on-chain registry reads + user-reviewed signing
+  └─ Actual privacy proof / settlement / payout / reconciliation
+```
+
+**Today's boundary:** the browser can display observed Testnet metadata and actual operator-configured data, but the application **cannot** authorize, sign, or send value. Wallet connection is not payment permission, and a watched public address is not proof of ownership. The ABI is validated against the reviewed Soroban source interface, not an attestation of deployed contracts.
+
+**Near-term implementation roadmap:** improve live cross-service acceptance, replace duplicated handwritten HTTP models with a pinned SDK consumer, make disabled/unavailable states clear across devices, add authenticated organization/session UX only when the backend verifies nonce-bound signatures, and display independently attested on-chain governance data after a real deployment.
+
+**Long-term product target:** a production-quality Business console with approvals, real quotes, role-aware audit and reconciliation, plus a consumer Send journey with explicit privacy disclosures, user-confirmed wallet actions and recoverable payment state. None of these can claim success before cryptographic, financial, compliance and operator evidence exists.
+
+**Release quality:** CI must include mobile/desktop browser flows, accessibility and focus, wrong network, stale ledger, invalid address, forged ABI, proxy abuse, missing corridors, and permanently disabled value actions until authorized release. Product acceptance also requires runtime checks on the actual deployed frontend/backend environment; a Vercel READY badge alone is insufficient.
+
 <div align="center"><img src="public/brand/stealthbridge-logo.svg" alt="StealthBridge — Confidential payments. Without borders." width="760" /></div>
 
 **Confidential payments. Without borders.** Next.js 16 / TypeScript 7 / Tailwind CSS 4 / Freighter / GSAP.
