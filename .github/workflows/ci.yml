@@ -18,6 +18,14 @@ jobs:
       - run: npm run test:landing
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - name: Build isolated Testnet preview for safety browser tests
+        run: npm run build
+        env:
+          STEALTHBRIDGE_SITE_MODE: preview
+      - name: Assert transfer controls stay disabled in preview
+        run: npm run test:browser
+        env:
+          STEALTHBRIDGE_TEST_PREVIEW: "1"
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
