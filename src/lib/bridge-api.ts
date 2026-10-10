@@ -1,3 +1,4 @@
+import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 export interface NetworkStatus {network:"testnet";passphrase:string;protocol_version:number;ledger_sequence:number;ledger_closed_at_unix:string;ledger_hash:string;source:"stellar-rpc";}
 export interface Capabilities {payments_enabled:boolean;confidential_token_verified:boolean;private_payments_verified:boolean;fiat_payouts_enabled:boolean;}
 export type PrivacyRail="confidential-token"|"private-payments";
@@ -31,6 +32,19 @@ function capabilitiesResponse(value:unknown):value is Capabilities{
  * Source inventory is read-only metadata, not deployed-contract evidence.
  * Reject any contrary claim even if an upstream service becomes compromised.
  */
+/** Compare JSON structures without treating object key order as a signature. */
+function sameCanonicalJson(a:unknown,b:unknown):boolean {
+ if(a===b)return true;
+ if(a===null||b===null||typeof a!=="object"||typeof b!=="object")return false;
+ if(Array.isArray(a)||Array.isArray(b)){
+  return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&
+   a.every((value,index)=>sameCanonicalJson(value,b[index]));
+ }
+ const left=a as Record<string,unknown>,right=b as Record<string,unknown>;
+ const keys=Object.keys(left);
+ return keys.length===Object.keys(right).length &&
+  keys.every(key=>Object.hasOwn(right,key)&&sameCanonicalJson(left[key],right[key]));
+}
 function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
  const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
  if(!obj(value)||value.network!=="testnet"||
@@ -42,25 +56,9 @@ function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
     !obj(m.contractAddresses)||Object.keys(m.contractAddresses).length!==0||
     !obj(m.assetIssuers)||Object.keys(m.assetIssuers).length!==0||
     !Array.isArray(m.txHashes)||m.txHashes.length!==0)return false;
- if(!obj(i)||i.schemaVersion!==1||i.network!=="testnet"||
-    i.status!=="source-interface-only"||!obj(i.contracts))return false;
- const expected={
-  "corridor-registry":"contracts/corridor-registry/src/lib.rs",
-  "policy-registry":"contracts/policy-registry/src/lib.rs",
-  "governance-gate":"contracts/governance-gate/src/lib.rs"
- };
- if(Object.keys(i.contracts).sort().join(",")!==Object.keys(expected).sort().join(","))return false;
- for(const [name,source] of Object.entries(expected)){
-  const entry=i.contracts[name];
-  if(!obj(entry)||entry.source!==source||!obj(entry.reads)||!Array.isArray(entry.writes)||
-      !entry.writes.every((item:unknown)=>typeof item==="string"))return false;
- }
- const gate=i.contracts["governance-gate"] as Record<string,unknown>;
- const reads=gate.reads as Record<string,unknown>;
- const combined=reads.public_flags_allow;
- if(!obj(combined)||!Array.isArray(combined.args)||
-    combined.args.length!==2||combined.args.some(v=>v!=="String")||
-    combined.returns!=="bool"||(gate.writes as unknown[]).length!==0)return false;
+ // Compare every declared function, argument, return type and write method
+ // against an audited source snapshot. No invented or partial ABI accepted.
+ if(!sameCanonicalJson(i,canonicalSorobanInterface))return false;
  return true;
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
