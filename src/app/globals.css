@@ -285,3 +285,5 @@
 .wallet-section .wallet-error svg{flex-shrink:0}
 .wallet-security-note{font-size:11px;line-height:1.6;color:#9bbeb5;margin:16px 0 0}
 @media(max-width:460px){.wallet-section{padding:16px}.wallet-address-actions{flex-direction:column;align-items:stretch}.wallet-address-actions button{width:100%}}
+
+.wallet-explorer-link{display:block;margin-top:9px;color:#8bf0d7;font-size:11px;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere}.wallet-explorer-link:focus-visible{outline:2px solid #8bf0d7;outline-offset:4px;border-radius:2px}
