@@ -102,7 +102,7 @@ export function WalletConnect({expectedNetworkPassphrase}:{expectedNetworkPassph
     {watchedAddress?<Button type="button" variant="outline" onClick={()=>{setWatchedAddress(null);setWatchInput("");setWatchError(null);}}>Clear watched address</Button>:null}
    </div>
    {watchError?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{watchError}</p>:null}
-   {watchedAddress?<div className="wallet-connected" role="status"><Eye size={18} aria-hidden/><div><strong>Watch-only address · not connected</strong><code>{watchedAddress}</code></div></div>:null}
+   {watchedAddress?<div className="wallet-connected" role="status"><Eye size={18} aria-hidden/><div><strong>Watch-only address · not connected</strong><code>{watchedAddress}</code><a className="wallet-explorer-link" href={"https://stellar.expert/explorer/testnet/account/"+watchedAddress} target="_blank" rel="noopener noreferrer">Open public Testnet explorer (shares address with explorer)</a></div></div>:null}
   </div>
   <p className="wallet-security-note">Connecting Freighter requests public-account access only. There is no transaction signing, payment submission, address upload, or wallet history indexing.</p>
  </section>;
