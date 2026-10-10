@@ -67,7 +67,7 @@ export function Workspace({mode}:{mode:"business"|"send"}){
     </div>}
     {pageError&&<p className="state-error" role="alert"><AlertTriangle size={16} aria-hidden/> {pageError} Existing records remain available.</p>}
     {corridor?<div className="corridor-details"><strong>Selected corridor</strong><p>{corridor.origin_country} → {corridor.destination_country} · {corridor.asset_code}</p><p>Privacy rail: {corridor.privacy_rail}</p>{corridor.asset_issuer?<p>Issuer: <code>{corridor.asset_issuer}</code></p>:null}</div>:null}
-    <WalletConnect expectedNetworkPassphrase={network.data?.passphrase}/>
+    <WalletConnect expectedNetworkPassphrase={network.data?.passphrase} backendNetworkVerified={!!network.data&&!network.error&&!network.loading&&!isStale(network.data.ledger_closed_at_unix)&&readiness.data?.stellar_rpc==="connected"&&!readiness.loading&&!readiness.error}/>
     <div className="capability-row"><span>Payment initiation</span><strong>{capabilities.loading&&!capabilities.data?"Checking…":capabilities.error?"Unavailable":"Not enabled"}</strong></div>
     <Button className="w-full" disabled aria-disabled={true}>Transfer unavailable until protocol verification <ArrowRight size={15} aria-hidden/></Button>
     <p className="demo-disclaimer">No simulated exchange rates, seeded assets, mock settlements, or fictional success statuses are displayed. This screen cannot move funds.</p>
