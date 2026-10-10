@@ -25,7 +25,7 @@ function capabilitiesResponse(value:unknown):value is Capabilities{
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
  const flags=value as Record<string,unknown>;
  return ["payments_enabled","confidential_token_verified","private_payments_verified","fiat_payouts_enabled"]
-  .every(key=>typeof flags[key]==="boolean");
+  .every(key=>flags[key]===false);
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
