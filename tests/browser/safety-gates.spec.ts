@@ -126,3 +126,39 @@ for(const combination of combinations){
   expect(requests.some(request=>/settlement|transaction/i.test(request))).toBe(false);
  });
 }
+
+
+const VALID_WATCH_ONLY_ACCOUNT="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX"; // synthetic, checksum-valid only
+
+test("watch-only account stays local and never becomes a connected wallet",async({page})=>{
+ const requests:string[]=[];
+ page.on("request",r=>requests.push(r.method()+" "+new URL(r.url()).pathname));
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/send");
+ const input=page.getByRole("textbox",{name:"Watch-only Stellar public address"});
+ await input.fill(VALID_WATCH_ONLY_ACCOUNT);
+ await page.getByRole("button",{name:"Watch address locally"}).click();
+ await expect(page.getByText("Watch-only address · not connected")).toBeVisible();
+ await expect(page.getByText(VALID_WATCH_ONLY_ACCOUNT)).toBeVisible();
+ await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
+ await expect(page.getByRole("button",{name:"Connect Freighter"})).toBeEnabled();
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+ await page.getByRole("button",{name:"Clear watched address"}).click();
+ await expect(page.getByText(VALID_WATCH_ONLY_ACCOUNT)).toHaveCount(0);
+ await expect(input).toHaveValue("");
+ expect(requests.every(r=>r.startsWith("GET "))).toBe(true);
+ expect(requests.some(r=>/v1\/transactions|v1\/settlements/.test(r))).toBe(false);
+});
+
+test("watch-only account rejects checksum errors and unsupported account types",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/business");
+ const input=page.getByRole("textbox",{name:"Watch-only Stellar public address"});
+ for(const invalid of [VALID_WATCH_ONLY_ACCOUNT.slice(0,-1)+"A",
+  "C"+VALID_WATCH_ONLY_ACCOUNT.slice(1),"G"+"A".repeat(55)]){
+  await input.fill(invalid);
+  await page.getByRole("button",{name:"Watch address locally"}).click();
+  await expect(page.getByRole("alert").filter({hasText:"correct checksum"})).toBeVisible();
+  await expect(page.getByText("Watch-only address · not connected")).toHaveCount(0);
+ }
+});
