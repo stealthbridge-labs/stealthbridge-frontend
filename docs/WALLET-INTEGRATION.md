@@ -36,9 +36,10 @@ would require separate type-aware data handling. These must not be silently
 accepted as classic wallet accounts.
 
 The initial watch-only function deliberately **does not fetch balances or
-historical transactions** because doing so would transmit the entered
-address to a remote service. A future opt-in public-chain lookup may be
-offered after the user consents to the privacy implications.
+historical transactions** automatically. The user may explicitly click an
+external Stellar Testnet explorer link after validation; that navigation
+shares the public address with the explorer, not our backend. The link
+is never automatically fetched or prefetched.
 
 ## Soroban transaction signing: future release gate
 
