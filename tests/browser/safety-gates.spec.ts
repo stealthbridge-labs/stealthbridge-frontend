@@ -1,3 +1,4 @@
+import {readFileSync} from "node:fs";
 import {expect,test,type Page} from "@playwright/test";
 
 const testnetPassphrase="Test SDF Network ; September 2015";
@@ -172,14 +173,8 @@ const sourceOnlyContracts={
  on_chain_verified:false,payment_execution_enabled:false,
  manifest:{schemaVersion:1,network:"testnet",status:"not-deployed",verified:false,
   contractAddresses:{},assetIssuers:{},txHashes:[]},
- public_interface:{schemaVersion:1,network:"testnet",status:"source-interface-only",
-  contracts:{
-   "corridor-registry":{source:"contracts/corridor-registry/src/lib.rs",reads:{is_enabled:{args:["String"],returns:"bool"}},writes:[]},
-   "policy-registry":{source:"contracts/policy-registry/src/lib.rs",reads:{is_effective:{args:["String"],returns:"bool"}},writes:[]},
-   "governance-gate":{source:"contracts/governance-gate/src/lib.rs",reads:{public_flags_allow:{args:["String","String"],returns:"bool"}},writes:[]},
-  }},
+ public_interface:JSON.parse(readFileSync("src/lib/public-soroban-interface.v1.json","utf8")),
 };
-
 test("three Soroban source interfaces render without claiming on-chain deployment",async({page})=>{
  await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,contractsPayload:sourceOnlyContracts});
  await page.goto("/preview/business");
