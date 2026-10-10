@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 // Audited source revision from the passing three-contract reproducible build.
-const CONTRACTS_REF="429f53f7a804271acc7c21d5ce8aba1b88d274bc";
+const CONTRACTS_REF="4c01631028bde15385a0e73e39c5c635dca17b35";
 const upstream="https://raw.githubusercontent.com/stealthbridge-labs/stealthbridge-contracts/"+CONTRACTS_REF+"/integrations/public-soroban-interface.v1.json";
 const local=JSON.parse(readFileSync("src/lib/public-soroban-interface.v1.json","utf8"));
 const response=await fetch(upstream,{signal:AbortSignal.timeout(12_000),redirect:"error",headers:{accept:"application/json"}});
