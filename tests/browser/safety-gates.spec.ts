@@ -196,3 +196,12 @@ test("falsely verified Soroban source metadata is rejected before the UI uses it
  await expect(page.getByText("Contract information unavailable. No contract interaction can be verified.")).toBeVisible();
  await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
 });
+
+test("preview proxy has no writable wallet, corridor or settlement endpoints",async({request})=>{
+ for(const path of ["/api/bridge/v1/corridors","/api/bridge/v1/settlements","/api/bridge/v1/contracts"]){
+  const response=await request.post(path,{data:{address:"G"+"A".repeat(55)}});
+  expect([404,405]).toContain(response.status());
+ }
+ const unknown=await request.get("/api/bridge/v1/wallets/G"+"A".repeat(55));
+ expect(unknown.status()).toBe(404);
+});
