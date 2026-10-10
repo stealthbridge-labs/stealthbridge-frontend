@@ -29,6 +29,10 @@ assert.equal(data.network,"testnet","Backend must not connect to Mainnet");
 assert.equal(data.passphrase,"Test SDF Network ; September 2015");
 assert.ok(Number.isSafeInteger(data.ledger_sequence) && data.ledger_sequence > 0, "Missing observed ledger sequence");
 assert.match(data.ledger_hash,/^[0-9a-f]{64}$/i,"Missing real ledger hash");
+const closed = data.ledger_closed_at_unix;
+assert.match(closed,/^[0-9]{1,20}$/,"Missing Stellar ledger close time");
+const ledgerAge = Math.floor(Date.now()/1000)-Number(closed);
+assert.ok(ledgerAge >= -30 && ledgerAge <= 180,`Stellar ledger is stale or future-dated (${ledgerAge}s)`);
 console.log(`PASS Stellar RPC: ledger ${data.ledger_sequence}, protocol ${data.protocol_version}`);
 const corridors = await fetchPage("/api/bridge/v1/corridors");
 if (corridors.status === 200) {
@@ -36,6 +40,7 @@ if (corridors.status === 200) {
   assert.ok(Array.isArray(rows), "Corridor catalog must be a JSON array");
   console.log(`PASS corridor catalog: ${rows.length} operator-configured records`);
 } else if (corridors.status === 503) {
+  if(process.env.STEALTHBRIDGE_REQUIRE_DATABASE==="1") throw new Error("PostgreSQL must be reachable for the live integration gate");
   console.log("NOTICE corridor catalog unavailable — configure the backend PostgreSQL database and apply migrations");
 } else {
   throw new Error(`Unexpected corridor response HTTP ${corridors.status}`);
@@ -58,9 +63,16 @@ console.log("PASS canonical Testnet contract discovery (undeployed, payment exec
 
 const readiness = await fetchPage("/api/bridge/ready");
 assert.ok([200,503].includes(readiness.status),"Readiness must return 200 or degraded 503");
-const dependencies = await readiness.json();
+const envelope = await readiness.json();
+const dependencies = readiness.status===200?envelope:envelope.details;
+assert.ok(dependencies&&typeof dependencies==="object","Missing readiness status payload");
 assert.equal(dependencies.payments,"disabled");
-assert.ok(["ready","degraded"].includes(dependencies.status));
+assert.equal(dependencies.status,readiness.status===200?"ready":"degraded");
+if(process.env.STEALTHBRIDGE_REQUIRE_DATABASE==="1"){
+ assert.equal(readiness.status,200,"Live database gate requires fully connected backend dependencies");
+ assert.equal(dependencies.database,"connected");
+ assert.equal(dependencies.stellar_rpc,"connected");
+}
 console.log("PASS backend dependency readiness (payment execution disabled)");
 
 assert.equal(capabilities.payments_enabled,false,"Backend must not enable fund movement");
