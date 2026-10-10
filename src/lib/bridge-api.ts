@@ -27,8 +27,46 @@ function capabilitiesResponse(value:unknown):value is Capabilities{
  return ["payments_enabled","confidential_token_verified","private_payments_verified","fiat_payouts_enabled"]
   .every(key=>flags[key]===false);
 }
+/**
+ * Source inventory is read-only metadata, not deployed-contract evidence.
+ * Reject any contrary claim even if an upstream service becomes compromised.
+ */
+function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
+ const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==="object"&&!Array.isArray(v);
+ if(!obj(value)||value.network!=="testnet"||
+    value.source!=="stealthbridge-contracts/deployments/testnet/manifest.json"||
+    value.on_chain_verified!==false||value.payment_execution_enabled!==false)return false;
+ const m=value.manifest,i=value.public_interface;
+ if(!obj(m)||m.schemaVersion!==1||m.network!=="testnet"||
+    m.status!=="not-deployed"||m.verified!==false||
+    !obj(m.contractAddresses)||Object.keys(m.contractAddresses).length!==0||
+    !obj(m.assetIssuers)||Object.keys(m.assetIssuers).length!==0||
+    !Array.isArray(m.txHashes)||m.txHashes.length!==0)return false;
+ if(!obj(i)||i.schemaVersion!==1||i.network!=="testnet"||
+    i.status!=="source-interface-only"||!obj(i.contracts))return false;
+ const expected={
+  "corridor-registry":"contracts/corridor-registry/src/lib.rs",
+  "policy-registry":"contracts/policy-registry/src/lib.rs",
+  "governance-gate":"contracts/governance-gate/src/lib.rs"
+ };
+ if(Object.keys(i.contracts).sort().join(",")!==Object.keys(expected).sort().join(","))return false;
+ for(const [name,source] of Object.entries(expected)){
+  const entry=i.contracts[name];
+  if(!obj(entry)||entry.source!==source||!obj(entry.reads)||!Array.isArray(entry.writes)||
+      !entry.writes.every((item:unknown)=>typeof item==="string"))return false;
+ }
+ const gate=i.contracts["governance-gate"] as Record<string,unknown>;
+ const reads=gate.reads as Record<string,unknown>;
+ const combined=reads.public_flags_allow;
+ if(!obj(combined)||!Array.isArray(combined.args)||
+    combined.args.length!==2||combined.args.some(v=>v!=="String")||
+    combined.returns!=="bool"||(gate.writes as unknown[]).length!==0)return false;
+ return true;
+}
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
+ if(endpoint==="contracts"&&!contractDiscoveryResponse(value))
+  throw new Error("Contract discovery is unverified or incompatible. On-chain actions remain disabled.");
  if(endpoint==="capabilities"&&!capabilitiesResponse(value))
   throw new Error("Capabilities response was invalid. Payment controls remain disabled.");
  return value as T;
