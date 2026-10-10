@@ -200,3 +200,11 @@ test("preview proxy has no writable wallet, corridor or settlement endpoints",as
  const unknown=await request.get("/api/bridge/v1/wallets/G"+"A".repeat(55));
  expect(unknown.status()).toBe(404);
 });
+test("invented or changed Soroban method signatures cannot reach the frontend",async({page})=>{
+ const forged=structuredClone(sourceOnlyContracts);
+ forged.public_interface.contracts["governance-gate"].reads.public_flags_allow.args=["String"];
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,contractsPayload:forged});
+ await page.goto("/preview/business");
+ await expect(page.getByText("Contract information unavailable. No contract interaction can be verified.")).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+});
