@@ -16,6 +16,8 @@ jobs:
         env:
           STEALTHBRIDGE_SITE_MODE: landing
       - run: npm run test:landing
+      - name: Verify staging smoke checks against isolated HTTP fixtures
+        run: node --test tests/smoke.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
       - name: Build isolated Testnet preview for safety browser tests
