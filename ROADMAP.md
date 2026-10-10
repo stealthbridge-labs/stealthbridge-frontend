@@ -4,6 +4,24 @@
 
 **Cross-repository contract:** [Frontend](https://github.com/stealthbridge-labs/stealthbridge-frontend/blob/main/ROADMAP.md) · [Backend](https://github.com/stealthbridge-labs/stealthbridge-backend/blob/main/ROADMAP.md) · [Contracts](https://github.com/stealthbridge-labs/stealthbridge-contracts/blob/main/ROADMAP.md) · [SDK](https://github.com/stealthbridge-labs/stealthbridge-sdk/blob/main/ROADMAP.md)
 
+## October 2026 implementation checkpoint and next delivery slices
+
+The living [architecture and delivery guide](docs/ARCHITECTURE-AND-DELIVERY.md) separates what the frontend currently renders from what requires independently verified backends, contracts, signatures and financial partners.
+
+**Verified code/CI baseline:** public marketing pages, opt-in Testnet technical workspace, same-origin GET-only proxy, real configured corridor paging, stale/degraded ledger presentation, source-only three-contract ABI parity, read-only public transaction observation, Freighter public-account connection, checksum-valid local watch-only mode, and browser/security tests. A Vercel `READY` build is not proof of real-money service.
+
+**Priority sequence (not calendar promises):**
+
+| Order | Implementation slice | Acceptance criteria |
+| --- | --- | --- |
+| F1 | Real staging read integration and consistent SDK models | Backend Testnet passphrase, fresh ledger, Neon `/ready`, actual corridor empty/data state; CI and deployed smoke |
+| F2 | Business and Send information architecture | Real states for eligibility, review, unavailable routes, mobile/keyboard and honest privacy disclosures |
+| F3 | Signed session and organization approvals | Backend nonce/expiry/origin/network binding, role-aware client, forged-session and cancellation tests |
+| F4 | Contract inspection from verified Testnet deployment | True source/WASM/ABI/admin attestation; read-only UI and safe failure before any signing |
+| F5 | Separate user-review and transfer experience | Privacy-rail audit, no implicit connect→sign, explicit fees/footprint, failure/recovery and operator release approval |
+
+**Blocked until explicit external evidence:** partner quotes, fiat payouts, verified stablecoin issuance, audited privacy proofs, recipient recovery and any UI that submits payment transactions. Use disabled controls with clear next steps instead of creating a simulated transfer.
+
 ## Purpose and products
 
 Build two polished, responsive Next.js applications on a shared design system, each with its own information architecture, privacy disclosures, accessibility requirements, permissions and recovery experience. **Business** serves treasury operators, financial institutions, finance approvers and PSP teams; **Send** serves individual senders and recipients. This repository owns the user experience, wallet integration, and browser-side proof state—not bank settlement, issuer operations or custody.
