@@ -40,6 +40,35 @@ STEALTHBRIDGE_API_URL=https://your-real-backend.example
 
 The API proxy is guarded by the same mode. Preview mode does not activate confidential payments, real fiat payouts or production money movement.
 
+
+### Managed PostgreSQL staging acceptance
+
+The Rust backend is responsible for Neon/PostgreSQL connections; the frontend
+must **never** have `DATABASE_URL`, the Stellar RPC provider token, or any
+wallet secret. Before enabling a technical preview, provision Neon on the
+**backend Vercel project**, apply its operator-gated migrations and check
+`GET /ready` for `stellar_rpc=connected` and `database=connected`. Follow
+[the backend managed Postgres guide](https://github.com/stealthbridge-labs/stealthbridge-backend/blob/main/docs/MANAGED-POSTGRES.md).
+
+From a reachable staging environment, run the existing read-only cross-service
+smoke probe:
+
+```sh
+npm run smoke -- https://YOUR_STAGING_FRONTEND_HOST
+# Require real connected Postgres rather than accepting a classified 503:
+STEALTHBRIDGE_REQUIRE_DATABASE=1 npm run smoke -- https://YOUR_STAGING_FRONTEND_HOST
+```
+
+The strict command requires an actual, recent Stellar Testnet ledger, database
+readiness and the real (possibly empty) enabled-corridor catalog. The proxy must
+reject POST settlement requests with HTTP 405 and all payment capability flags
+remain false. It does not send funds, sign transactions or seed partner records.
+
+The smoke runner distinguishes correctly classified degraded 503 readiness
+from an invalid API response; it fails strict staging acceptance when the
+database is not connected. GitHub Actions tests these paths using isolated local
+HTTP fixtures without contacting a private RPC or live database.
+
 ## Design & animation
 
 GSAP / ScrollTrigger / MotionPathPlugin provide intro choreography, curved travelling signals and scroll reveals. CSS adds a subtle headline tint, orbital movement, glow and interactive hover treatments. All motion is decorative: it does not imply actual transaction completion. A `prefers-reduced-motion` check disables nonessential motion and keeps all content visible. See `docs/DESIGN-SYSTEM.md`.
