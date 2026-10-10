@@ -16,6 +16,7 @@ async function mockReadApi(page:Page,options:{
  passphrase?:string;
  malformedCapabilities?:boolean;
  paymentClaim?:boolean;
+ contractsPayload?:unknown;
 }){
  await page.route("**/api/bridge/**",async route=>{
   const request=route.request();
@@ -41,7 +42,7 @@ async function mockReadApi(page:Page,options:{
    return route.fulfill({json:checkpoint(stale?600:10)});
   }
   if(path.endsWith("/v1/corridors/page"))return route.fulfill({json:{items:[],next_cursor:null}});
-  if(path.endsWith("/v1/contracts"))return route.fulfill({status:503,json:{code:"MANIFEST_UNAVAILABLE"}});
+  if(path.endsWith("/v1/contracts"))return options.contractsPayload ? route.fulfill({json:options.contractsPayload}) : route.fulfill({status:503,json:{code:"MANIFEST_UNAVAILABLE"}});
   return route.fulfill({status:404,json:{code:"NOT_FOUND"}});
  });
 }
