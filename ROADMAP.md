@@ -32,7 +32,7 @@ Build two polished, responsive Next.js applications on a shared design system, e
 - Business and Send workspaces connect to the backend's live Stellar RPC metadata and unseeded corridor catalog with truthful error and empty states.
 - Freighter public-address permission with network check; signing and value transfers deliberately disabled.
 - A live read-only transaction explorer with strict hash validation and limited RPC output.
-- GitHub Actions builds; remote browser/device testing and accessibility audits remain outstanding.
+- GitHub Actions validates landing and guarded Testnet preview with browser-based Chromium tests; independent real-device validation and comprehensive accessibility audits remain outstanding.
 
 ## Experience architecture and navigation
 
