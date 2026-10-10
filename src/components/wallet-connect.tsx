@@ -12,7 +12,7 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
  * and Freighter access only reveals a public address on a deliberate click.
  * Neither path signs, submits, or saves account identifiers on our servers.
  */
-export function WalletConnect({expectedNetworkPassphrase}:{expectedNetworkPassphrase?:string}){
+export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean}){
  const [address,setAddress]=useState<string|null>(null);
  const [network,setNetwork]=useState<string|null>(null);
  const [pending,setPending]=useState(false);
@@ -21,7 +21,7 @@ export function WalletConnect({expectedNetworkPassphrase}:{expectedNetworkPassph
  const [watchedAddress,setWatchedAddress]=useState<string|null>(null);
  const [watchError,setWatchError]=useState<string|null>(null);
  const correct=network===TESTNET_PASSPHRASE;
- const backendMatches=expectedNetworkPassphrase===TESTNET_PASSPHRASE;
+ const backendMatches=backendNetworkVerified&&expectedNetworkPassphrase===TESTNET_PASSPHRASE;
 
  useEffect(()=>{
   if(!address)return;
@@ -62,7 +62,7 @@ export function WalletConnect({expectedNetworkPassphrase}:{expectedNetworkPassph
    }
    setNetwork(info.networkPassphrase);
    setAddress(verified);
-   if(!backendMatches)setError("Wallet connected locally, but the backend Testnet network is not verified.");
+   if(!backendMatches)setError("Wallet connected locally, but a fresh backend Testnet observation is not verified.");
   }catch(e){
    setError(e instanceof Error?e.message:"Unable to connect wallet.");
    setAddress(null);setNetwork(null);
@@ -83,7 +83,7 @@ export function WalletConnect({expectedNetworkPassphrase}:{expectedNetworkPassph
  return <section className="wallet-section" aria-label="Wallet connection or watch-only address">
   <div className="wallet-top"><div><h3>Wallet connection</h3><p>Choose Freighter to connect, or watch a public Stellar address without connecting. No private keys or seeds are requested.</p></div><Wallet size={23} aria-hidden/></div>
   {address&&correct&&backendMatches?<div className="wallet-connected"><CheckCircle2 aria-hidden size={18}/><div><strong>Freighter connected on Testnet</strong><code title={address}>{address}</code></div></div>:null}
-  {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC is not verified. No signing is available.</p>:null}
+  {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC readiness or ledger freshness cannot be verified. No signing is available.</p>:null}
   <div className="wallet-address-actions">
    <Button variant="outline" disabled={pending} onClick={connect} type="button">{pending?"Connecting…":address?"Recheck wallet":"Connect Freighter"}</Button>
    {address?<Button type="button" variant="outline" onClick={()=>{setAddress(null);setNetwork(null);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
