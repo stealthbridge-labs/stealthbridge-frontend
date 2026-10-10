@@ -165,3 +165,34 @@ test("watch-only account rejects checksum errors and unsupported account types",
   await expect(page.getByText("Watch-only address · not connected")).toHaveCount(0);
  }
 });
+
+
+const sourceOnlyContracts={
+ network:"testnet",source:"stealthbridge-contracts/deployments/testnet/manifest.json",
+ on_chain_verified:false,payment_execution_enabled:false,
+ manifest:{schemaVersion:1,network:"testnet",status:"not-deployed",verified:false,
+  contractAddresses:{},assetIssuers:{},txHashes:[]},
+ public_interface:{schemaVersion:1,network:"testnet",status:"source-interface-only",
+  contracts:{
+   "corridor-registry":{source:"contracts/corridor-registry/src/lib.rs",reads:{is_enabled:{args:["String"],returns:"bool"}},writes:[]},
+   "policy-registry":{source:"contracts/policy-registry/src/lib.rs",reads:{is_effective:{args:["String"],returns:"bool"}},writes:[]},
+   "governance-gate":{source:"contracts/governance-gate/src/lib.rs",reads:{public_flags_allow:{args:["String","String"],returns:"bool"}},writes:[]},
+  }},
+};
+
+test("three Soroban source interfaces render without claiming on-chain deployment",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,contractsPayload:sourceOnlyContracts});
+ await page.goto("/preview/business");
+ await expect(page.getByText("Contracts not deployed")).toBeVisible();
+ await expect(page.getByText("Governance gate: combined corridor/policy read defined in Rust", {exact:false})).toBeVisible();
+ await expect(page.getByText(/Declared source modules:/)).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+});
+
+test("falsely verified Soroban source metadata is rejected before the UI uses it",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,
+  contractsPayload:{...sourceOnlyContracts,on_chain_verified:true}});
+ await page.goto("/preview/send");
+ await expect(page.getByText("Contract information unavailable. No contract interaction can be verified.")).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+});
