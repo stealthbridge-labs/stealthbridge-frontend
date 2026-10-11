@@ -208,3 +208,21 @@ test("invented or changed Soroban method signatures cannot reach the frontend",a
  await expect(page.getByText("Contract information unavailable. No contract interaction can be verified.")).toBeVisible();
  await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
 });
+test("read-only corridor proxy rejects malformed/duplicated filters before upstream fetch",async({request})=>{
+ for(const invalid of [
+  "origin_country=ng","destination_country=USA",
+  "origin_country=N%20G","privacy_rail=live-payout",
+  "privacy_rail=CONFIDENTIAL-TOKEN",
+  "origin_country=NG&origin_country=GH",
+  "destination_country=KE&destination_country=GH",
+  "privacy_rail=private-payments&privacy_rail=confidential-token",
+  "sort=created_at","limit=200"
+ ]){
+  const response=await request.get("/api/bridge/v1/corridors/page?"+invalid);
+  expect(response.status(),invalid).toBe(400);
+ }
+ const valid=await request.get(
+  "/api/bridge/v1/corridors/page?origin_country=NG&destination_country=GH&privacy_rail=confidential-token&limit=2"
+ );
+ expect(valid.status()).not.toBe(400);
+});
