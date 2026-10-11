@@ -353,3 +353,38 @@
 @media(max-width:1120px){.registry-grid{grid-template-columns:minmax(210px,.75fr) minmax(340px,1.35fr)}.registry-evidence{grid-column:1/-1}.registry-evidence dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:20px}}
 @media(max-width:720px){.registry-shell .workspace-header{height:auto;min-height:82px;flex-wrap:wrap;padding:18px 5vw;gap:12px}.registry-shell .workspace-header>.brand{width:100%;margin:0 0 4px}.registry-shell .workspace-main{padding:50px 20px 75px}.registry-status-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.registry-status-strip>div{padding:17px}.registry-status-strip strong{font-size:16px}.registry-grid{grid-template-columns:minmax(0,1fr)}.registry-evidence{grid-column:auto}.registry-evidence dl{display:block}.registry-panel{padding:20px}.registry-toolbar{align-items:stretch;flex-direction:column}.registry-toolbar button{align-self:flex-start}}
 @media(max-width:410px){.registry-shell .workspace-header>.back-link{font-size:11px}.registry-status-strip strong{font-size:14px}.registry-panel-heading h2{font-size:19px}}
+
+
+/* Operator-backed read-only corridor search. Never visually imply a quote or payout. */
+.corridor-shell .workspace-main{max-width:1240px}
+.corridor-shell .workspace-header{justify-content:flex-start;gap:26px}
+.corridor-shell .workspace-header>.brand{margin-right:auto}
+.corridor-directory{display:grid;grid-template-columns:minmax(270px,.7fr) minmax(0,1.65fr);align-items:start;gap:20px;margin-top:38px}
+.corridor-query form{display:flex;flex-direction:column;gap:10px;padding-top:22px}
+.corridor-query form label{font-weight:650;font-size:12px;color:#d1f3e7;margin-top:11px}
+.corridor-query input,.corridor-query select{width:100%;background:#0c3239;border:1px solid rgba(143,234,218,.32);border-radius:10px;color:#f3fffb;min-height:46px;padding:10px 13px;outline-offset:3px}
+.corridor-query input::placeholder{color:#91ada7}
+.corridor-query-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:19px}
+.corridor-query-actions button{min-height:45px}
+.corridor-results-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:24px 0 13px}
+.corridor-results-top span{font-size:12px;color:#a9d0c2}
+.corridor-applied{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0 21px}
+.corridor-applied span{border-radius:100px;border:1px solid rgba(135,237,207,.38);color:#b7ffe5;background:#103b39;padding:6px 10px;font-size:11px}
+.corridor-result-list{display:flex;flex-direction:column;gap:12px;margin-top:15px}
+.corridor-result{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:#0c3036;border:1px solid rgba(149,244,214,.2);border-radius:14px;padding:20px}
+.corridor-result h3{margin:9px 0 12px;font-size:25px;letter-spacing:-.06em;color:#edfff8}
+.corridor-result h3 span{color:#8dfce4}
+.corridor-result p{color:#a7c8c1;font-size:12px;line-height:1.6;margin:7px 0;overflow-wrap:anywhere}
+.corridor-result p strong{color:#e6fff7}
+.corridor-result code{font-family:ui-monospace,monospace;overflow-wrap:anywhere;color:#a3fee6}
+.corridor-record-id{display:block;font-size:10px;color:#7fa6a0;overflow-wrap:anywhere;max-width:195px;text-align:right}
+.corridor-empty{margin-top:24px;border:1px dashed rgba(156,239,218,.27);border-radius:15px;background:rgba(6,39,45,.56);padding:42px 24px;text-align:center}
+.corridor-empty svg{color:#8eedda;margin:auto}
+.corridor-empty h3{font-size:19px;margin:17px 0 0}
+.corridor-empty p{max-width:440px;color:#a2c5bd;font-size:12px;line-height:1.75;margin:10px auto 0}
+.corridor-more{width:100%;margin-top:20px}
+.corridor-result-error{display:flex;gap:9px;align-items:flex-start;line-height:1.7}
+.corridor-result-error svg{flex-shrink:0}
+@media(max-width:950px){.corridor-directory{grid-template-columns:minmax(0,1fr)}.corridor-query form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}.corridor-query form label{grid-column:auto;margin-top:0}.corridor-query form input,.corridor-query form select{grid-row:auto}.corridor-query-actions{grid-column:1/-1}}
+@media(max-width:720px){.corridor-shell .workspace-header{height:auto;min-height:82px;flex-wrap:wrap;padding:18px 5vw;gap:12px}.corridor-shell .workspace-header>.brand{width:100%;margin:0 0 4px}.corridor-shell .workspace-main{padding:50px 20px 75px}.corridor-query form{display:flex}.corridor-result{flex-direction:column}.corridor-record-id{text-align:left;max-width:100%}.corridor-results-top button{max-width:100%}}
+@media(max-width:460px){.corridor-query-actions button{width:100%}}
