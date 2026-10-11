@@ -34,7 +34,7 @@ export function Workspace({mode}:{mode:"business"|"send"}){
  const observationDegraded=!!network.error||networkMismatch||!!readiness.error||readiness.data?.status==="degraded";
  const refreshing=network.loading||corridors.loading||capabilities.loading||readiness.loading||observer.loading||contracts.loading;
  return <div className="workspace-page">
- <header className="workspace-header"><Brand/><span className="network-chip"><i/> Stellar Testnet</span><Link href="/preview/corridors" className="back-link">Corridor directory <ArrowRight size={15} aria-hidden/></Link><Link href="/preview/contracts" className="back-link">Soroban registry <ArrowRight size={15} aria-hidden/></Link><Link href="/explorer" className="back-link">Network explorer <ArrowRight size={15}/></Link><Link href="/" className="back-link"><ArrowLeft size={16} aria-hidden/> Home</Link></header>
+ <header className="workspace-header"><Brand/><span className="network-chip"><i/> Stellar Testnet</span><Link href="/preview" className="back-link">Workspace hub <ArrowRight size={15} aria-hidden/></Link><Link href="/preview/corridors" className="back-link">Corridor directory <ArrowRight size={15} aria-hidden/></Link><Link href="/preview/contracts" className="back-link">Soroban registry <ArrowRight size={15} aria-hidden/></Link><Link href="/explorer" className="back-link">Network explorer <ArrowRight size={15}/></Link><Link href="/" className="back-link"><ArrowLeft size={16} aria-hidden/> Home</Link></header>
  <main id="main-content" className="workspace-main">
   <div className="workspace-intro">
    <span className="section-index">{business?"StealthBridge / Business":"StealthBridge / Send"}</span>
