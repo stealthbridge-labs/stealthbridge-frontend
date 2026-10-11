@@ -81,7 +81,7 @@ export function ContractExplorer(){
   <header className="workspace-header">
    <Brand/>
    <span className="network-chip"><i/> Stellar Testnet</span>
-   <Link className="back-link" href="/preview/business">Business preview <ArrowRight size={15} aria-hidden/></Link>
+   <Link className="back-link" href="/preview/corridors">Corridor directory <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/business">Business preview <ArrowRight size={15} aria-hidden/></Link>
    <Link className="back-link" href="/explorer">Transaction explorer <ArrowRight size={15} aria-hidden/></Link>
    <Link className="back-link" href="/"><ArrowLeft size={16} aria-hidden/> Home</Link>
   </header>
