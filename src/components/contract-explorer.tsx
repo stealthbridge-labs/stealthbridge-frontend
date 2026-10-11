@@ -77,7 +77,7 @@ export function ContractExplorer(){
  const verified=freshLedger(state.network)&&state.readiness?.status==="ready"
   &&state.readiness.stellar_rpc==="connected";
  const undiscovered=state.contracts?.manifest.status==="not-deployed";
- return <div className="workspace-page">
+ return <div className="workspace-page registry-shell">
   <header className="workspace-header">
    <Brand/>
    <span className="network-chip"><i/> Stellar Testnet</span>
