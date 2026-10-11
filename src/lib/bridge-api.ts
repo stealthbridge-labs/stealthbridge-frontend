@@ -83,9 +83,21 @@ export interface ObservedLedgerCheckpoint {
 /** Actual operator-enabled corridor keyset page; never a quote or payout list. */
 export interface CorridorPage {items:Corridor[];next_cursor:string|null;}
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
-export async function readCorridorPage(after?:string,signal?:AbortSignal):Promise<CorridorPage>{
+/** Exact metadata filters only; a matching corridor is not payment eligibility. */
+export interface CorridorFilters {originCountry?:string;destinationCountry?:string;privacyRail?:PrivacyRail;}
+export function readCorridorPage(after?:string,signal?:AbortSignal):Promise<CorridorPage>{
+ return readFilteredCorridorPage({},after,signal);
+}
+export async function readFilteredCorridorPage(filters:CorridorFilters,after?:string,signal?:AbortSignal):Promise<CorridorPage>{
  if(after!==undefined&&!UUID.test(after))throw new TypeError("Invalid corridor cursor");
+ if([filters.originCountry,filters.destinationCountry].some(v=>v!==undefined&&!/^[A-Z]{2}$/.test(v)))
+  throw new TypeError("Countries must be exactly two uppercase letters.");
+ if(filters.privacyRail!==undefined&&!["confidential-token","private-payments"].includes(filters.privacyRail))
+  throw new TypeError("Unsupported privacy rail.");
  const params=new URLSearchParams({limit:"25"});
+ if(filters.originCountry)params.set("origin_country",filters.originCountry);
+ if(filters.destinationCountry)params.set("destination_country",filters.destinationCountry);
+ if(filters.privacyRail)params.set("privacy_rail",filters.privacyRail);
  if(after)params.set("after",after.toLowerCase());
  const page=await read<CorridorPage>("v1/corridors/page?"+params,signal);
  if(!page||!Array.isArray(page.items)||page.items.length>25||
@@ -97,6 +109,9 @@ export async function readCorridorPage(after?:string,signal?:AbortSignal):Promis
       (c.asset_issuer!==null&&(typeof c.asset_issuer!=="string"||
          c.asset_issuer.length===0||c.asset_issuer.length>128))||
       !["private-payments","confidential-token"].includes(c.privacy_rail)||
+      (filters.originCountry!==undefined&&c.origin_country!==filters.originCountry)||
+      (filters.destinationCountry!==undefined&&c.destination_country!==filters.destinationCountry)||
+      (filters.privacyRail!==undefined&&c.privacy_rail!==filters.privacyRail)||
       (index>0&&page.items[index-1].id.toLowerCase()>=c.id.toLowerCase())||
       (after!==undefined&&c.id.toLowerCase()<=after.toLowerCase()))||
     !(page.next_cursor===null||(typeof page.next_cursor==="string"&&UUID.test(page.next_cursor)))||
