@@ -287,3 +287,69 @@
 @media(max-width:460px){.wallet-section{padding:16px}.wallet-address-actions{flex-direction:column;align-items:stretch}.wallet-address-actions button{width:100%}}
 
 .wallet-explorer-link{display:block;margin-top:9px;color:#8bf0d7;font-size:11px;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere}.wallet-explorer-link:focus-visible{outline:2px solid #8bf0d7;outline-offset:4px;border-radius:2px}
+
+
+/* Read-only Soroban contract explorer: interactive source metadata, never transfers. */
+.registry-shell .workspace-main{max-width:1340px}
+.registry-shell .workspace-header{justify-content:flex-start;gap:28px}
+.registry-shell .workspace-header>.brand{margin-right:auto}
+.registry-status-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:38px 0 18px}
+.registry-status-strip>div{border:1px solid rgba(131,238,215,.2);background:linear-gradient(125deg,rgba(18,63,65,.84),rgba(6,29,39,.95));padding:21px 22px;border-radius:16px;min-width:0}
+.registry-status-strip span,.registry-status-strip strong{display:block}
+.registry-status-strip span{color:#9cc1bd;font-size:12px;margin-bottom:10px}
+.registry-status-strip strong{color:#e0fff6;font-size:19px;letter-spacing:-.03em;overflow-wrap:anywhere}
+.registry-toolbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:20px 0 26px}
+.registry-toolbar p{font-size:13px;line-height:1.65;color:#a8c6c0;max-width:750px;margin:0}
+.registry-toolbar button{flex-shrink:0}
+.registry-grid{display:grid;grid-template-columns:minmax(210px,.78fr) minmax(330px,1.55fr) minmax(245px,.92fr);gap:18px;align-items:stretch}
+.registry-panel{min-width:0;background:linear-gradient(155deg,#0a2a33,#071e28);border:1px solid rgba(158,246,221,.16);border-radius:20px;padding:25px}
+.registry-panel-heading{display:flex;gap:12px;align-items:flex-start;padding-bottom:23px;border-bottom:1px solid var(--line)}
+.registry-panel-heading>svg{color:#83f7d9;flex-shrink:0;margin-top:3px}
+.registry-panel-heading h2{font-size:21px;letter-spacing:-.04em;line-height:1.2;margin:0 0 8px}
+.registry-panel-heading p{font-size:12px;line-height:1.65;margin:0;color:#a0c5bd}
+.registry-module-list{display:flex;flex-direction:column;gap:9px;margin:22px 0}
+.registry-module{width:100%;display:flex;align-items:center;text-align:left;gap:12px;background:#09252e;color:#d8f0ea;border:1px solid rgba(179,243,229,.15);border-radius:12px;padding:15px 12px;min-width:0}
+.registry-module>svg:first-child{flex-shrink:0;color:#92e8d2}
+.registry-module>svg:last-child{margin-left:auto;flex-shrink:0}
+.registry-module span{display:flex;flex-direction:column;gap:7px;min-width:0}
+.registry-module strong{font-size:13px;line-height:1.25}
+.registry-module small{color:#9abbb6;font-size:11px;line-height:1.5}
+.registry-module:hover,.registry-module.is-selected{border-color:#83f6d4;background:#13423f}
+.registry-module[aria-pressed="true"]>svg:last-child{color:#a3ffe9}
+.registry-security-note,.registry-next,.registry-boundary{display:flex;gap:13px;align-items:flex-start}
+.registry-security-note{border-top:1px solid var(--line);padding-top:21px;margin-top:25px;color:#b8d9d0}
+.registry-security-note svg,.registry-next svg,.registry-boundary svg{flex-shrink:0;color:#8cfce6}
+.registry-security-note p{font-size:12px;line-height:1.65;margin:0}
+.registry-code-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12px;margin:19px 0 30px}
+.registry-code-meta span{color:#b0ccc3}
+.registry-code-meta strong{color:#d3fff2}
+.registry-code-meta a{display:inline-flex;align-items:center;gap:6px;color:#8dfce1;text-decoration:underline;text-underline-offset:4px}
+.registry-subheading{font-size:14px;letter-spacing:.02em;color:#ddfff5;margin:23px 0 14px}
+.registry-method-list{display:flex;flex-wrap:wrap;gap:8px}
+.registry-method-list button{border:1px solid rgba(143,244,213,.23);background:#0b3236;color:#b8e0d8;font-family:ui-monospace,monospace;font-size:11px;padding:10px 12px;border-radius:10px;overflow-wrap:anywhere}
+.registry-method-list button:hover,.registry-method-list button.is-selected{background:#144e49;border-color:#83f8db;color:#f2fffc}
+.registry-signature{padding:19px;background:#04161d;border:1px solid rgba(136,245,214,.3);border-radius:13px;margin-top:17px;min-width:0}
+.registry-signature span{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:#99c7b9;margin-bottom:13px}
+.registry-signature code{display:block;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#a4ffe3;overflow-wrap:anywhere;line-height:1.7;font-size:12px}
+.registry-signature p,.registry-muted{color:#99bdb6;font-size:11px;line-height:1.7;margin:15px 0 0}
+.registry-admin-list{display:flex;flex-wrap:wrap;gap:7px}
+.registry-admin-list>span{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-family:ui-monospace,monospace;color:#aabeb9;padding:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px}
+.registry-evidence dl{margin:21px 0}
+.registry-evidence dl>div{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);font-size:12px}
+.registry-evidence dt{color:#91b6af}
+.registry-evidence dd{margin:0;color:#d9f6ea;text-align:right;overflow-wrap:anywhere}
+.registry-next{padding:17px;background:#103936;border:1px solid rgba(132,247,218,.2);border-radius:12px}
+.registry-next strong{font-size:12px;color:#e0fff5}
+.registry-next p{margin:8px 0 0;color:#a7c9bf;font-size:11px;line-height:1.7}
+.registry-link{display:inline-flex;align-items:center;gap:9px;color:#99ffe3;font-size:12px;margin-top:22px}
+.registry-link:hover,.registry-code-meta a:hover{text-decoration:underline}
+.registry-error,.registry-loading{display:flex;align-items:flex-start;gap:14px;padding:26px;border:1px solid #e2a68066;background:#412d2a;border-radius:15px;margin:24px 0;color:#fff0e7}
+.registry-error svg{flex-shrink:0}
+.registry-error strong{font-size:15px}
+.registry-error p{margin:7px 0 0;font-size:12px;line-height:1.7;color:#ffdcce}
+.registry-loading{border-color:var(--line);background:#092832}
+.registry-boundary{border-top:1px solid rgba(187,241,226,.17);margin-top:32px;padding-top:22px;color:#b2cac3}
+.registry-boundary p{font-size:12px;line-height:1.7;margin:0;max-width:950px}
+@media(max-width:1120px){.registry-grid{grid-template-columns:minmax(210px,.75fr) minmax(340px,1.35fr)}.registry-evidence{grid-column:1/-1}.registry-evidence dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:20px}}
+@media(max-width:720px){.registry-shell .workspace-header{height:auto;min-height:82px;flex-wrap:wrap;padding:18px 5vw;gap:12px}.registry-shell .workspace-header>.brand{width:100%;margin:0 0 4px}.registry-shell .workspace-main{padding:50px 20px 75px}.registry-status-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.registry-status-strip>div{padding:17px}.registry-status-strip strong{font-size:16px}.registry-grid{grid-template-columns:minmax(0,1fr)}.registry-evidence{grid-column:auto}.registry-evidence dl{display:block}.registry-panel{padding:20px}.registry-toolbar{align-items:stretch;flex-direction:column}.registry-toolbar button{align-self:flex-start}}
+@media(max-width:410px){.registry-shell .workspace-header>.back-link{font-size:11px}.registry-status-strip strong{font-size:14px}.registry-panel-heading h2{font-size:19px}}
