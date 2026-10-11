@@ -338,3 +338,25 @@ test("corridor directory refuses an API row that does not match submitted filter
  await page.getByRole("button",{name:"Apply filters"}).click();
  await expect(page.getByRole("alert").filter({hasText:"two-letter country codes"})).toBeVisible();
 });
+test("Testnet workspace home renders real backend health and navigates to interaction pages",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,contractsPayload:sourceOnlyContracts});
+ await page.goto("/preview");
+ await expect(page.getByRole("heading",{name:"Build on verified ground."})).toBeVisible();
+ await expect(page.getByText("Connected",{exact:true})).toBeVisible();
+ await expect(page.getByText("Source only",{exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:/Soroban registry/})).toHaveAttribute("href","/preview/contracts");
+ await expect(page.getByRole("link",{name:/Corridor directory/})).toHaveAttribute("href","/preview/corridors");
+ await page.getByRole("link",{name:/Soroban registry/}).click();
+ await expect(page.getByRole("heading",{name:"Soroban Registry Explorer"})).toBeVisible();
+});
+
+test("Testnet workspace home shows unverified dependencies without fictional availability",async({page})=>{
+ await mockReadApi(page,{state:"degraded",passphrase:testnetPassphrase});
+ await page.goto("/preview");
+ await expect(page.getByText("Unverified",{exact:true}).first()).toBeVisible();
+ await expect(page.getByText("Not confirmed",{exact:true})).toBeVisible();
+ await expect(page.getByText("Disabled",{exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:/Business workspace/})).toBeVisible();
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+});
