@@ -8,8 +8,8 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
  // Only the corridor-page route may forward validated discovery parameters.
  const search=_request.nextUrl.searchParams;
  if(path==="v1/corridors/page"){
-  if([...search.keys()].some(k=>k!=="limit"&&k!=="after") ||
-      search.getAll("limit").length>1 || search.getAll("after").length>1)
+  const allowedParams=new Set(["limit","after","origin_country","destination_country","privacy_rail"]);
+ if([...search.keys()].some(k=>!allowedParams.has(k)||search.getAll(k).length>1))
    return NextResponse.json({code:"INVALID_QUERY"},{status:400});
   const rawLimit=search.get("limit");
   const rawCursor=search.get("after");
@@ -17,6 +17,14 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
    return NextResponse.json({code:"INVALID_LIMIT"},{status:400});
   if(rawCursor!==null&&!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(rawCursor))
    return NextResponse.json({code:"INVALID_CURSOR"},{status:400});
+  for(const country of ["origin_country","destination_country"]){
+   const code=search.get(country);
+   if(code!==null&&!/^[A-Z]{2}$/.test(code))
+    return NextResponse.json({code:"INVALID_COUNTRY"},{status:400});
+  }
+  const rail=search.get("privacy_rail");
+  if(rail!==null&&rail!=="confidential-token"&&rail!=="private-payments")
+   return NextResponse.json({code:"INVALID_PRIVACY_RAIL"},{status:400});
  }else if(search.size) return NextResponse.json({code:"UNSUPPORTED_QUERY"},{status:400});
 
  if(!allowed.has(path) && !/^v1\/transactions\/[a-f0-9]{64}$/i.test(path) && !/^v1\/corridors\/[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(path)) return NextResponse.json({code:"NOT_FOUND"},{status:404});
