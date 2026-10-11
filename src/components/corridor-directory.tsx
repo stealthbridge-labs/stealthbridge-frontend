@@ -70,7 +70,7 @@ export function CorridorDirectory(){
  const active=[filters.originCountry,filters.destinationCountry,filters.privacyRail].filter(Boolean);
  return <div className="workspace-page corridor-shell">
   <header className="workspace-header"><Brand/><span className="network-chip"><i/> Stellar Testnet</span>
-   <Link href="/preview/business" className="back-link">Business <ArrowRight size={15} aria-hidden/></Link>
+   <Link href="/preview" className="back-link">Workspace hub <ArrowRight size={15} aria-hidden/></Link><Link href="/preview/business" className="back-link">Business <ArrowRight size={15} aria-hidden/></Link>
    <Link href="/preview/contracts" className="back-link">Soroban registry <ArrowRight size={15} aria-hidden/></Link>
    <Link href="/" className="back-link"><ArrowLeft size={16} aria-hidden/> Home</Link>
   </header>
