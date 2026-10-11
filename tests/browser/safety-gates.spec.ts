@@ -226,3 +226,57 @@ test("read-only corridor proxy rejects malformed/duplicated filters before upstr
  );
  expect(valid.status()).not.toBe(400);
 });
+test("Soroban registry page renders canonical Rust modules and interactive method signatures",async({page})=>{
+ const requests:string[]=[];
+ page.on("request",request=>{if(request.url().includes("/api/bridge/"))requests.push(request.method()+" "+new URL(request.url()).pathname);});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,contractsPayload:sourceOnlyContracts});
+ await page.goto("/preview/contracts");
+ await expect(page.getByRole("heading",{name:"Soroban Registry Explorer"})).toBeVisible();
+ await expect(page.getByText("ABI matched")).toBeVisible();
+ await expect(page.getByText("Not deployed",{exact:true}).first()).toBeVisible();
+ await expect(page.getByRole("button",{name:/Corridor registry/})).toHaveAttribute("aria-pressed","true");
+ await page.getByRole("button",{name:/Policy registry/}).click();
+ await expect(page.getByRole("heading",{name:"Policy registry"})).toBeVisible();
+ await page.getByRole("button",{name:"get_rule",exact:true}).click();
+ await expect(page.getByText("get_rule(String) → Option<PolicyRecord>")).toBeVisible();
+ await page.getByRole("button",{name:/Governance gate/}).click();
+ await page.getByRole("button",{name:"public_flags_allow",exact:true}).click();
+ await expect(page.getByText("public_flags_allow(String, String) → bool")).toBeVisible();
+ await expect(page.getByText("No write functions declared for this contract.")).toBeVisible();
+ await expect(page.getByText(/Signing and transfers remain disabled/)).toBeVisible();
+ expect(requests.length).toBeGreaterThan(0);
+ expect(requests.every(value=>value.startsWith("GET "))).toBe(true);
+ expect(requests.every(value=>!value.includes("/settlements"))).toBe(true);
+});
+
+test("Soroban registry explorer rejects falsely deployed source metadata",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,
+  contractsPayload:{...sourceOnlyContracts,on_chain_verified:true}});
+ await page.goto("/preview/contracts");
+ await expect(page.getByRole("alert").filter({hasText:"Unable to verify contract discovery."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Policy registry"})).toHaveCount(0);
+ await expect(page.getByText("ABI matched")).toHaveCount(0);
+ await expect(page.getByText("Disabled",{exact:true})).toBeVisible();
+});
+
+test("Soroban registry page is responsive and retries failed metadata reads",async({page})=>{
+ let restored=false;
+ await page.route("**/api/bridge/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith("/v1/contracts"))return restored?
+    route.fulfill({json:sourceOnlyContracts}):
+    route.fulfill({status:503,json:{code:"API_UNAVAILABLE"}});
+  if(path.endsWith("/v1/network"))return route.fulfill({json:network(testnetPassphrase,10)});
+  if(path.endsWith("/ready"))return route.fulfill({json:{status:"ready",stellar_rpc:"connected",database:"connected",payments:"disabled"}});
+  if(path.endsWith("/v1/capabilities"))return route.fulfill({json:{payments_enabled:false,confidential_token_verified:false,private_payments_verified:false,fiat_payouts_enabled:false}});
+  return route.fulfill({status:404,json:{code:"NOT_FOUND"}});
+ });
+ await page.goto("/preview/contracts");
+ await expect(page.getByRole("alert").filter({hasText:"Unable to verify contract discovery."})).toBeVisible();
+ restored=true;
+ await page.getByRole("button",{name:"Refresh verification"}).click();
+ await expect(page.getByRole("button",{name:/Governance gate/})).toBeVisible();
+ await expect(page.getByText("ABI matched")).toBeVisible();
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+});
