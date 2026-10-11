@@ -280,3 +280,61 @@ test("Soroban registry page is responsive and retries failed metadata reads",asy
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
  expect(overflow).toBeLessThanOrEqual(2);
 });
+test("corridor directory filters real backend rows and paginates without payment requests",async({page})=>{
+ const firstId="a1b2c3d4-1111-4111-8111-111111111111";
+ const secondId="b1b2c3d4-1111-4111-8111-111111111111";
+ const calls:string[]=[];
+ await page.route("**/api/bridge/**",async route=>{
+  const request=route.request();
+  calls.push(request.method()+" "+request.url());
+  const url=new URL(request.url());
+  if(url.pathname.endsWith("/v1/corridors/page")){
+   const filtered=url.searchParams.get("origin_country")==="NG" &&
+    url.searchParams.get("destination_country")==="GH" &&
+    url.searchParams.get("privacy_rail")==="confidential-token";
+   if(!filtered)return route.fulfill({json:{items:[],next_cursor:null}});
+   const after=url.searchParams.get("after");
+   const id=after?secondId:firstId;
+   return route.fulfill({json:{items:[{id,origin_country:"NG",destination_country:"GH",
+    asset_code:"TEST_ONLY",asset_issuer:null,privacy_rail:"confidential-token"}],
+    next_cursor:after?null:firstId}});
+  }
+  return route.fulfill({status:404,json:{code:"NOT_FOUND"}});
+ });
+ await page.goto("/preview/corridors");
+ await expect(page.getByRole("heading",{name:"Corridor Directory"})).toBeVisible();
+ await expect(page.getByText("No enabled corridors match")).toBeVisible();
+ await page.getByLabel("Origin country (optional)").fill("ng");
+ await page.getByLabel("Destination country (optional)").fill("gh");
+ await page.getByLabel("Privacy research rail").selectOption("confidential-token");
+ await page.getByRole("button",{name:"Apply filters"}).click();
+ await expect(page.getByRole("heading",{name:"NG → GH"})).toBeVisible();
+ await expect(page.getByText("1 real records loaded")).toBeVisible();
+ await page.getByRole("button",{name:"Load next page"}).click();
+ await expect(page.getByText("2 real records loaded")).toBeVisible();
+ await expect(page.getByRole("button",{name:"Load next page"})).toHaveCount(0);
+ expect(calls.every(value=>value.startsWith("GET "))).toBe(true);
+ expect(calls.every(value=>!value.includes("/settlements"))).toBe(true);
+ expect(calls.filter(value=>value.includes("origin_country=NG")).length).toBe(2);
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+});
+
+test("corridor directory refuses an API row that does not match submitted filters",async({page})=>{
+ await page.route("**/api/bridge/v1/corridors/page**",route=>{
+  const url=new URL(route.request().url());
+  const origin=url.searchParams.get("origin_country");
+  if(!origin)return route.fulfill({json:{items:[],next_cursor:null}});
+  return route.fulfill({json:{items:[{id:"a1b2c3d4-1111-4111-8111-111111111111",
+   origin_country:"US",destination_country:"GH",asset_code:"TEST_ONLY",asset_issuer:null,
+   privacy_rail:"confidential-token"}],next_cursor:null}});
+ });
+ await page.goto("/preview/corridors");
+ await page.getByLabel("Origin country (optional)").fill("NG");
+ await page.getByRole("button",{name:"Apply filters"}).click();
+ await expect(page.getByRole("alert").filter({hasText:"invalid or out-of-order page"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"US → GH"})).toHaveCount(0);
+ await page.getByLabel("Origin country (optional)").fill("N1");
+ await page.getByRole("button",{name:"Apply filters"}).click();
+ await expect(page.getByRole("alert").filter({hasText:"two-letter country codes"})).toBeVisible();
+});
