@@ -28,7 +28,7 @@ export function TransactionExplorer(){
   }finally{if(!next.signal.aborted)setLoading(false);}
  }
  return <div className="workspace-page">
-  <header className="workspace-header"><Brand/><span className="network-chip"><i/> Stellar Testnet</span><Link href="/preview" className="back-link">Workspace hub <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/contracts">Soroban registry <ArrowUpRight size={15} aria-hidden/></Link><Link className="back-link" href="/"><ArrowLeft size={16}/> Home</Link></header>
+  <header className="workspace-header"><Brand/><span className="network-chip"><i/> Stellar Testnet</span><Link href="/preview" className="back-link">Workspace hub <ArrowUpRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/contracts">Soroban registry <ArrowUpRight size={15} aria-hidden/></Link><Link className="back-link" href="/"><ArrowLeft size={16}/> Home</Link></header>
   <main id="main-content" className="workspace-main">
    <div className="workspace-intro"><span className="section-index">StealthBridge / Network intelligence</span><h1>Verify. Don't assume.</h1><p>Look up a real transaction hash on Stellar Testnet. Only blockchain inclusion status is shown—never an invented payment, bank payout or confidential transfer.</p></div>
    <div className="workspace-grid">
