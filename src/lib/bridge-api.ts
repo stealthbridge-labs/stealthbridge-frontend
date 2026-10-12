@@ -32,7 +32,7 @@ function networkResponse(value:unknown):value is NetworkStatus {
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
  const n=value as Record<string,unknown>;
  return n.network==="testnet"&&n.source==="stellar-rpc"&&
-  typeof n.passphrase==="string"&&n.passphrase==="Test SDF Network ; September 2015"&&
+  typeof n.passphrase==="string"&&n.passphrase.length>0&&
   Number.isSafeInteger(n.protocol_version)&&Number(n.protocol_version)>0&&
   Number.isSafeInteger(n.ledger_sequence)&&Number(n.ledger_sequence)>0&&
   typeof n.ledger_closed_at_unix==="string"&&/^\d+$/.test(n.ledger_closed_at_unix)&&
