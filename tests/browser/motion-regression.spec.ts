@@ -32,7 +32,7 @@ for(const entry of routes){
    const triggers=await page.evaluate(()=>document.documentElement.dataset.stealthbridgeGsapTriggers);
    expect(triggers).toBeUndefined();
   }else{
-   await expect.poll(async()=>page.evaluate(()=>document.documentElement.dataset.stealthbridgeGsapTriggers)).toMatch(/^\\d+$/);
+   await expect.poll(async()=>page.evaluate(()=>document.documentElement.dataset.stealthbridgeGsapTriggers)).toMatch(/^\d+$/);
   }
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(2);
