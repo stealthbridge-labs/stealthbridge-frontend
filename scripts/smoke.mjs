@@ -12,8 +12,15 @@ if (base.protocol !== "https:" && !(base.protocol === "http:" && ["localhost","1
   console.error("Deployed URL must use HTTPS (HTTP allowed only on localhost).");
   process.exit(2);
 }
+if (base.username || base.password || base.search || base.hash || !["","/"].includes(base.pathname)) {
+  console.error("Supply a staging origin without credentials, paths, query parameters, or bypass tokens.");
+  process.exit(2);
+}
+// Supply protected-preview bypass material via CI secret environment only.
+const safeHeaders=process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN
+  ? {"x-vercel-protection-bypass":process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN} : {};
 const fetchPage = async (path) => {
-  const response = await fetch(new URL(path, base), {cache:"no-store", signal:AbortSignal.timeout(15000)});
+  const response = await fetch(new URL(path, base), {headers:safeHeaders,redirect:"manual",cache:"no-store", signal:AbortSignal.timeout(15000)});
   return response;
 };
 for (const path of ["/","/business","/send","/platform"]) {
@@ -108,7 +115,7 @@ assert.equal(capabilities.fiat_payouts_enabled,false,"Fiat payouts must remain d
 
 // The same-origin read-only proxy must reject mutation methods.
 const writeAttempt=await fetch(new URL("/api/bridge/v1/settlements",base),{
- method:"POST",headers:{"content-type":"application/json"},body:"{}",cache:"no-store",signal:AbortSignal.timeout(15000)
+ method:"POST",headers:{...safeHeaders,"content-type":"application/json"},body:"{}",cache:"no-store",signal:AbortSignal.timeout(15000)
 });
 assert.equal(writeAttempt.status,405,"Frontend proxy must not forward settlement writes");
 console.log("PASS frontend rejects settlement submission (HTTP 405)");
