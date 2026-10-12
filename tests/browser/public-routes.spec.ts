@@ -42,3 +42,14 @@ test("unknown routes use the branded recovery page",async({page})=>{
  await expect(page.getByRole("link",{name:"StealthBridge Send"})).toHaveAttribute("href","/send");
  await expect(page.getByRole("link",{name:"Back to home"})).toHaveAttribute("href","/");
 });
+
+test("production marketing hides every technical preview and its read-only proxy",async({request})=>{
+ for(const route of ["/preview","/preview/business","/preview/send","/preview/contracts"]){
+  const result=await request.get(route);
+  expect(result.status(),route+" must be unavailable on marketing").toBe(404);
+ }
+ const read=await request.get("/api/bridge/v1/network");
+ expect(read.status()).toBe(404);
+ const write=await request.post("/api/bridge/v1/settlements",{data:{}});
+ expect(write.status()).toBe(405);
+});
