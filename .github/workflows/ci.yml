@@ -30,6 +30,16 @@ jobs:
         run: npm run test:browser
         env:
           STEALTHBRIDGE_TEST_PREVIEW: "1"
+      - name: Upload marketing motion evidence (public pages only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketing-motion-evidence
+          path: |
+            test-results/**/motion-evidence/*.png
+            test-results/**/*.webm
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
