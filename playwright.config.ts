@@ -23,17 +23,17 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/],
+   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {
    name:"chromium-mobile",
-   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/],
+   testMatch:previewTests?/safety-gates\.spec\.ts/:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}
   },
   {
    name:"chromium-reduced-motion",
-   testMatch:previewTests?/__never_in_preview__/:/reduced-motion\.spec\.ts/,
+   testMatch:previewTests?/__never_in_preview__/:[/reduced-motion\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:1280,height:800},reducedMotion:"reduce"}
   }
  ],
