@@ -35,7 +35,7 @@ function networkResponse(value:unknown):value is NetworkStatus {
   typeof n.passphrase==="string"&&n.passphrase==="Test SDF Network ; September 2015"&&
   Number.isSafeInteger(n.protocol_version)&&Number(n.protocol_version)>0&&
   Number.isSafeInteger(n.ledger_sequence)&&Number(n.ledger_sequence)>0&&
-  typeof n.ledger_closed_at_unix==="string"&&/^\\d+$/.test(n.ledger_closed_at_unix)&&
+  typeof n.ledger_closed_at_unix==="string"&&/^\d+$/.test(n.ledger_closed_at_unix)&&
   typeof n.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(n.ledger_hash);
 }
 function readinessResponse(value:unknown):value is ServiceReadiness {
