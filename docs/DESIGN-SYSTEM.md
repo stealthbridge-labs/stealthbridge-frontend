@@ -50,3 +50,19 @@ The automated browser test `tests/browser/button-contrast.spec.ts` reads compute
 The Playwright `motion-regression.spec.ts` exercises **all four public routes** in normal-motion desktop/mobile and reduced-motion Chromium. It captures full-page screenshots and route recordings under the CI artifact `marketing-motion-evidence`, without accessing private workspaces, wallets or accounts. The browser additionally asserts reduced-motion text remains fully visible, no JS runtime errors appear and repeated client-side product navigation does not accumulate ScrollTrigger instances. The inert DOM attribute `data-stealthbridge-gsap-triggers` reports only a count of GSAP triggers for leak detection; it contains no user or payment data and is cleared when each context reverts.
 
 Each GSAP context is created inside a React effect and reverted on unmount. The CSS `prefers-reduced-motion: reduce` cascade suppresses ambient/transient motion and the React effects never start looping GSAP animations in reduced mode. Review desktop/mobile screenshots and videos for actual visual quality; a passing automated test does not replace a screen-reader or device audit. All routing illustrations describe **conceptual** movement, never settled transfers.
+
+## Shared editorial marketing primitives
+
+The five typed presentation primitives live in `src/components/marketing/primitives.tsx` and are consumed through `ProductStory` on **Business**, **Send** and **Platform**:
+
+| Primitive | Public API | Semantic and visual contract |
+| --- | --- | --- |
+| `ProductNavigation` | `current`, `menuOpen`, `onNavigate` | Real Next.js links, descriptive nav label, aria-current, mobile menu delegation |
+| `EditorialSectionHeading` | `eyebrow`, `title`, `description`, optional `id` | Semantic h2, editorial section label, readable summary |
+| `StoryActionGroup` | No props (deliberate safe anchor target) | Real anchor to the editorial overview, never a payment command |
+| `AvailabilityDisclosure` | No props | Explicit “In development” with decorative indicator hidden from assistive tech |
+| `NarrativeFeatureBlock` | `index`, `title`, `body` | Semantic article/h3, data provided by the reviewed product story only |
+
+The primitives preserve the existing `story-*` classes and existing color/spacing tokens. `data-slot` attributes are stable non-interactive test hooks; do not style them as substitute product claims. Every reusable component works across all three public product stories without requiring database fixtures, provider identities or payment data.
+
+**Demo/test strategy:** `tests/browser/marketing-primitives.spec.ts` is the in-repo component harness. It checks three semantic section headings, three features, accessible navigation/current-page state, keyboard activation of the narrative CTA, explicit non-operational availability and mobile/desktop overflow. The CI artifact `shared-marketing-evidence` retains representative full-page screenshots; reviewers should compare them against the preceding production/main branch screenshots before merge. No external Storybook deployment is required.
