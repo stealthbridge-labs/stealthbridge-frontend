@@ -360,3 +360,11 @@ test("Testnet workspace home shows unverified dependencies without fictional ava
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
  expect(overflow).toBeLessThanOrEqual(2);
 });
+test("technical preview is read-only and declares missing backend instead of faking readiness",async({request})=>{
+ const network=await request.get("/api/bridge/v1/network");
+ expect(network.status()).toBe(503);
+ const body=await network.json();
+ expect(body.code).toBe("API_UNCONFIGURED");
+ const write=await request.post("/api/bridge/v1/settlements",{data:{}});
+ expect(write.status()).toBe(405);
+});

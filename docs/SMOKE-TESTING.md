@@ -1,20 +1,23 @@
-# Public site and staging verification
+# Production and staging release smoke matrix
 
-## Marketing release
+## Public marketing release
 
-```bash
-npm install
-npm run typecheck
-npm run build
-npm run test:landing
-```
+Run `npm install`, `npm run typecheck`, `npm run build`, `npm run test:landing` and `npm run test:browser`. CI runs Chromium desktop/mobile, reduced-motion coverage, and both landing and isolated preview builds. Marketing routes `/preview`, `/preview/business`, `/preview/send`, `/preview/contracts` and preview API GETs must be 404; POST to the proxy must be 405.
 
-The script checks `/`, `/business`, `/send`, and `/platform` (all return 200); ensures no public page HTML contains direct GitHub/source roadmap links; checks the logo; and confirms technical routes and API proxy return 404 by default.
+## Staging read-only integration
 
-Manually view **https://stealthbridge.vercel.app/** on real desktop and mobile browsers to confirm the scroll-triggered animation, product switch, modal-free navigation and reduced-motion mode. CI does not execute a visual browser test, so a screenshot/device review is still needed.
+Configure **a dedicated preview Vercel deployment** with `STEALTHBRIDGE_SITE_MODE=preview` and HTTPS `STEALTHBRIDGE_API_URL` pointing to the Rust API. The public marketing deployment must not inherit those variables.
 
-## Engineering staging
+Run `STEALTHBRIDGE_REQUIRE_DATABASE=1 npm run smoke -- https://your-staging-host.example`. The optional `STEALTHBRIDGE_VERCEL_BYPASS_TOKEN` is read **from environment only**, never put in the URL, CLI arguments, docs or CI logs. The smoke tool does not echo the token or send payment writes beyond the explicit rejected POST test.
 
-To run real backend smoke checks without exposing internal workspaces on the marketing site, deploy a staging environment with `STEALTHBRIDGE_SITE_MODE=preview` and a real, HTTPS `STEALTHBRIDGE_API_URL`. The existing `npm run smoke -- https://staging-url` checks RPC/network connectivity; product marketing pages remain independent.
+| Signal | Classification | Required action |
+| --- | --- | --- |
+| API GET returns 404 | PREVIEW_PROXY_BLOCKED | Check that this is the preview deployment and routing flags are correct |
+| Network GET returns 502/503 | STELLAR_RPC_UNAVAILABLE | Inspect the Rust backend and Stellar Testnet RPC configuration |
+| Corridor catalog/pagination returns 503 | DATABASE_UNAVAILABLE in strict mode | Check Neon connection, migrations and API readiness |
+| Manifest is not-deployed, verified=false, empty addresses | Correct undeployed contract discovery | Never advertise activated Soroban contracts |
+| Manifest claims deployed/verified or nonempty addresses | Fail the build smoke | Require independent on-chain verification first |
+| Corridor page invalid, too large or cursor wrong | CORRIDOR_PAGE_INVALID | Diagnose API/consumer wire drift |
+| POST settlement returns 405 | Correct GET-only browser proxy | Any other result blocks release |
 
-No public site test performs wallet signing, fund movements, proof generation or fiat payouts.
+The suite runs the full negative-path matrix against **HTTP fixtures** in CI. A CI fixture is not a live Vercel or RPC attestation. An operator must additionally record a passing smoke result from a reachable staging URL before approving a deployment. No private keys, transfer witnesses, real funds or payment authorizations are required.

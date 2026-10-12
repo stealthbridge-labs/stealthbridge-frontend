@@ -12,17 +12,19 @@ const flags = {
   fiat_payouts_enabled: false,
 };
 
-async function simulate({ healthy, requireDatabase, stale = false }) {
+async function simulate({ healthy, requireDatabase, stale = false, blocked = false, rpcDown = false, invalidPage = false, falselyDeployed = false }) {
   const server = createServer((request, response) => {
     const path = new URL(request.url, "http://localhost").pathname;
     const send = (status, json) => {
       response.writeHead(status, { "content-type": "application/json" });
       response.end(JSON.stringify(json));
     };
-    if (["/", "/business", "/send"].includes(path)) {
+    if (["/", "/business", "/send", "/platform"].includes(path)) {
       response.writeHead(200, { "content-type": "text/html" });
       response.end("<main>StealthBridge</main>");
     } else if (path === "/api/bridge/v1/network") {
+      if(blocked) return send(404, {code:"PREVIEW_DISABLED"});
+      if(rpcDown) return send(502, {code:"BACKEND_UNREACHABLE"});
       send(200, {
         network: "testnet",
         passphrase: "Test SDF Network ; September 2015",
@@ -33,12 +35,16 @@ async function simulate({ healthy, requireDatabase, stale = false }) {
       });
     } else if (path === "/api/bridge/v1/corridors") {
       send(healthy ? 200 : 503, healthy ? [] : { error: { code: "DATABASE_UNAVAILABLE" } });
+    } else if (path === "/api/bridge/v1/corridors/page") {
+      send(healthy ? 200 : 503, healthy
+        ? invalidPage ? {items:[{},{}],next_cursor:"invented"} : {items:[],next_cursor:null}
+        : {error:{code:"DATABASE_UNAVAILABLE"}});
     } else if (path === "/api/bridge/v1/capabilities") {
       send(200, flags);
     } else if (path === "/api/bridge/v1/contracts") {
       send(200, { network: "testnet", on_chain_verified: false,
         payment_execution_enabled: false,
-        manifest: { status: "not-deployed", contractAddresses: {} } });
+        manifest: { status: falselyDeployed ? "deployed" : "not-deployed",verified:false,contractAddresses: {} } });
     } else if (path === "/api/bridge/ready") {
       const details = { status: healthy ? "ready" : "degraded",
         payments: "disabled", stellar_rpc: "connected",
@@ -93,4 +99,30 @@ test("stale ledgers never pass either smoke mode", async () => {
   const result = await simulate({ healthy: true, requireDatabase: true, stale: true });
   assert.notEqual(result.code, 0);
   assert.match(result.output, /stale or future-dated/);
+});
+
+test("marketing preview policy blocks staging smoke with an explicit classification", async () => {
+  const result=await simulate({healthy:true,requireDatabase:true,blocked:true});
+  assert.notEqual(result.code,0);
+  assert.match(result.output,/PREVIEW_PROXY_BLOCKED/);
+});
+test("unavailable Stellar RPC is not reported as a successful network observation", async () => {
+  const result=await simulate({healthy:true,requireDatabase:true,rpcDown:true});
+  assert.notEqual(result.code,0);
+  assert.match(result.output,/STELLAR_RPC_UNAVAILABLE/);
+});
+test("backend DB outage remains classified even for paginated corridor reads", async () => {
+  const result=await simulate({healthy:false,requireDatabase:false});
+  assert.equal(result.code,0,result.output);
+  assert.match(result.output,/DEGRADED corridor pagination/);
+});
+test("invalid corridor paging cursors fail the staging integration gate", async () => {
+  const result=await simulate({healthy:true,requireDatabase:true,invalidPage:true});
+  assert.notEqual(result.code,0);
+  assert.match(result.output,/CORRIDOR_PAGE_INVALID/);
+});
+test("falsely deployed contracts cannot pass the smoke matrix", async () => {
+  const result=await simulate({healthy:true,requireDatabase:true,falselyDeployed:true});
+  assert.notEqual(result.code,0);
+  assert.match(result.output,/not-deployed/);
 });

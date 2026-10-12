@@ -12,17 +12,27 @@ if (base.protocol !== "https:" && !(base.protocol === "http:" && ["localhost","1
   console.error("Deployed URL must use HTTPS (HTTP allowed only on localhost).");
   process.exit(2);
 }
+if (base.username || base.password || base.search || base.hash || !["","/"].includes(base.pathname)) {
+  console.error("Supply a staging origin without credentials, paths, query parameters, or bypass tokens.");
+  process.exit(2);
+}
+// Supply protected-preview bypass material via CI secret environment only.
+const safeHeaders=process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN
+  ? {"x-vercel-protection-bypass":process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN} : {};
 const fetchPage = async (path) => {
-  const response = await fetch(new URL(path, base), {cache:"no-store", signal:AbortSignal.timeout(15000)});
+  const response = await fetch(new URL(path, base), {headers:safeHeaders,redirect:"manual",cache:"no-store", signal:AbortSignal.timeout(15000)});
   return response;
 };
-for (const path of ["/","/business","/send"]) {
+for (const path of ["/","/business","/send","/platform"]) {
   const res = await fetchPage(path);
   assert.equal(res.status, 200, `${path} returned HTTP ${res.status}`);
   assert.match(await res.text(), /StealthBridge/i, `${path} did not include StealthBridge identity`);
   console.log(`PASS ${path} — reachable frontend page`);
 }
 const network = await fetchPage("/api/bridge/v1/network");
+if(network.status===404) throw new Error("PREVIEW_PROXY_BLOCKED: marketing mode or proxy policy denied staging reads");
+if(network.status===502||network.status===503)
+ throw new Error("STELLAR_RPC_UNAVAILABLE: proxy or upstream Stellar Testnet RPC failed (HTTP "+network.status+")");
 assert.equal(network.status, 200, `Live RPC proxy returned HTTP ${network.status}. Check frontend STEALTHBRIDGE_API_URL and backend STELLAR_RPC_URL.`);
 const data = await network.json();
 assert.equal(data.network,"testnet","Backend must not connect to Mainnet");
@@ -45,6 +55,28 @@ if (corridors.status === 200) {
 } else {
   throw new Error(`Unexpected corridor response HTTP ${corridors.status}`);
 }
+// Exercise bounded keyset pagination independently of the unpaged catalog.
+// A 503 can indicate a missing configured database, never an empty successful page.
+const pageResponse=await fetchPage("/api/bridge/v1/corridors/page?limit=25");
+if(pageResponse.status===200){
+ const page=await pageResponse.json();
+ assert.ok(page&&Array.isArray(page.items)&&page.items.length<=25,
+  "CORRIDOR_PAGE_INVALID: missing or unbounded operator records");
+ assert.ok(page.next_cursor===null||(typeof page.next_cursor==="string"&&
+  /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(page.next_cursor)),
+  "CORRIDOR_PAGE_INVALID: malformed keyset cursor");
+ if(page.next_cursor!==null)
+  assert.equal(page.next_cursor.toLowerCase(),page.items.at(-1)?.id?.toLowerCase(),
+   "CORRIDOR_PAGE_INVALID: cursor does not match final row");
+ console.log("PASS corridor pagination: "+page.items.length+" configured records");
+}else if(pageResponse.status===503){
+ if(process.env.STEALTHBRIDGE_REQUIRE_DATABASE==="1")
+  throw new Error("DATABASE_UNAVAILABLE: required staging corridor pagination endpoint returned 503");
+ console.log("DEGRADED corridor pagination: PostgreSQL unavailable; no empty catalog fabricated");
+}else if(pageResponse.status===404){
+ throw new Error("PREVIEW_PROXY_BLOCKED: corridor paging route denied");
+}else throw new Error("CORRIDOR_PAGE_UNAVAILABLE: HTTP "+pageResponse.status);
+
 const flags = await fetchPage("/api/bridge/v1/capabilities");
 assert.equal(flags.status,200);
 const capabilities=await flags.json();
@@ -58,6 +90,7 @@ assert.equal(discovery.network,"testnet");
 assert.equal(discovery.on_chain_verified,false,"Do not advertise undeployed contracts as verified");
 assert.equal(discovery.payment_execution_enabled,false,"Payment execution must remain disabled");
 assert.equal(discovery.manifest?.status,"not-deployed");
+assert.equal(discovery.manifest?.verified,false,"Undeployed contract manifest must be unverified");
 assert.deepEqual(discovery.manifest?.contractAddresses,{},"Unexpected deployed contract addresses");
 console.log("PASS canonical Testnet contract discovery (undeployed, payment execution disabled)");
 
@@ -82,7 +115,7 @@ assert.equal(capabilities.fiat_payouts_enabled,false,"Fiat payouts must remain d
 
 // The same-origin read-only proxy must reject mutation methods.
 const writeAttempt=await fetch(new URL("/api/bridge/v1/settlements",base),{
- method:"POST",headers:{"content-type":"application/json"},body:"{}",cache:"no-store",signal:AbortSignal.timeout(15000)
+ method:"POST",headers:{...safeHeaders,"content-type":"application/json"},body:"{}",cache:"no-store",signal:AbortSignal.timeout(15000)
 });
 assert.equal(writeAttempt.status,405,"Frontend proxy must not forward settlement writes");
 console.log("PASS frontend rejects settlement submission (HTTP 405)");
