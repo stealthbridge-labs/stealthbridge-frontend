@@ -6,6 +6,7 @@ import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {ArrowRight,ArrowUpRight,Check,ChevronDown,EyeOff,Globe2,Layers3,LockKeyhole,Menu,ShieldCheck,X} from "lucide-react";
 import {Brand} from "@/components/brand";
+import {ProductNavigation,EditorialSectionHeading,StoryActionGroup,NarrativeFeatureBlock} from "@/components/marketing/primitives";
 
 type Product = "business" | "send" | "platform";
 type Story = {
@@ -131,11 +132,7 @@ export function ProductStory({product}:{product:Product}){
  return <div className={"story-page story-"+product} ref={page}>
  <div className="story-grain" aria-hidden="true"/>
  <header className="story-nav container-wide"><Brand/>
-  <nav aria-label="Product navigation" className={menuOpen?"story-links story-links-open":"story-links"}>
-   <Link onClick={()=>setMenuOpen(false)} href="/platform" aria-current={product==="platform"?"page":undefined}>Platform</Link>
-   <Link onClick={()=>setMenuOpen(false)} href="/business" aria-current={product==="business"?"page":undefined}>Business</Link>
-   <Link onClick={()=>setMenuOpen(false)} href="/send" aria-current={product==="send"?"page":undefined}>Send</Link>
-  </nav>
+  <ProductNavigation current={product} menuOpen={menuOpen} onNavigate={()=>setMenuOpen(false)}/>
   <Link href="/" className="story-back">Back to home <ArrowUpRight size={15} aria-hidden/></Link>
   <button className="mobile-toggle story-mobile-toggle" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?<X/>:<Menu/>}</button>
  </header>
@@ -145,10 +142,7 @@ export function ProductStory({product}:{product:Product}){
     <span className="section-index story-enter"><span className="signal-dot"/> {data.eyebrow}</span>
     <h1 className="story-enter">{data.word}<br/><em>{data.emph}</em></h1>
     <p className="story-enter">{data.description}</p>
-    <div className="story-enter story-hero-actions">
-      <a href="#story-perspective" className="story-primary">Explore the experience <ArrowRight size={18}/></a>
-      <span className="story-availability"><span/> In development</span>
-    </div>
+    <StoryActionGroup/>
    </div>
    <div className="story-art" role="img" aria-label={"Conceptual illustration for "+data.label+", not a live transaction"}>
     <div className="story-halo"/>
@@ -163,7 +157,7 @@ export function ProductStory({product}:{product:Product}){
   </section>
   <section id="story-perspective" className="story-overview">
    <div className="container-wide">
-    <div className="story-section-head story-reveal"><span className="section-index">WHAT WE'RE BUILDING</span><h2>{data.visualTitle}</h2><p>{data.visualSub}</p></div>
+    <EditorialSectionHeading eyebrow="WHAT WE'RE BUILDING" title={data.visualTitle} description={data.visualSub}/>
     <div className="story-flow story-reveal" aria-label="Illustrative product journey">
      {data.legs.map((name,index)=><div className="story-flow-item" key={name}>
        <span className="flow-index">0{index+1}</span>
@@ -182,12 +176,12 @@ export function ProductStory({product}:{product:Product}){
    </article>)}
   </section>
   <section className="story-values">
-   <div className="container-wide"><div className="story-section-head story-reveal"><span className="section-index">OUR PRODUCT PRINCIPLES</span><h2>Considered at every layer.</h2><p>Designed around the real responsibilities of moving value.</p></div>
-    <div className="story-value-grid">{data.features.map(x=><article key={x.index} className="story-reveal"><span>{x.index}</span><h3>{x.title}</h3><p>{x.body}</p></article>)}</div>
+   <div className="container-wide"><EditorialSectionHeading eyebrow="OUR PRODUCT PRINCIPLES" title="Considered at every layer." description="Designed around the real responsibilities of moving value."/>
+    <div className="story-value-grid">{data.features.map(x=><NarrativeFeatureBlock key={x.index} index={x.index} title={x.title} body={x.body}/>)}</div>
    </div>
   </section>
   <section className="story-faq container-wide" aria-labelledby="product-questions">
-   <div className="story-section-head story-reveal"><span className="section-index">QUESTIONS WORTH ASKING</span><h2 id="product-questions">Clarity at every step.</h2><p>Know what StealthBridge is building, what privacy can and cannot mean, and what is not yet available.</p></div>
+   <EditorialSectionHeading eyebrow="QUESTIONS WORTH ASKING" title="Clarity at every step." id="product-questions" description="Know what StealthBridge is building, what privacy can and cannot mean, and what is not yet available."/>
    <div className="story-faq-list">
     {data.faqs.map((item,index)=><details className="story-faq-item story-reveal" key={item.question}>
       <summary><span className="story-faq-index">0{index+1}</span><span>{item.question}</span><ChevronDown size={21} aria-hidden="true"/></summary>
