@@ -46,7 +46,13 @@ export function Home(){
         delay:index*.1,scrollTrigger:{trigger:".principle-grid",start:"top 85%",once:true}});
     });
   },root);
-  return ()=>ctx.revert();
+  // Browser-test observable count: never expose wallet or network state.
+  // Compare repeated client-side navigation to detect retained ScrollTriggers.
+  document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  return ()=>{
+   ctx.revert();
+   document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  };
  },[]);
  useEffect(()=>{
   if(!root.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
