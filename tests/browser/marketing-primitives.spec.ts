@@ -16,7 +16,7 @@ for(const product of productPages){
   expect(response?.status()).toBe(200);
   const navigation=page.getByRole("navigation",{name:"Product navigation"});
   await expect(navigation).toHaveCount(1);
-  await expect(navigation.locator('[data-slot="product-navigation"]')).toHaveCount(0);
+  await expect(navigation).toHaveAttribute("data-slot","product-navigation");
   await expect(navigation.getByRole("link",{name:product.name}))
    .toHaveAttribute("aria-current","page");
   await expect(page.locator('[data-slot="editorial-section-heading"]')).toHaveCount(3);
