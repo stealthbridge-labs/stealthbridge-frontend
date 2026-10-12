@@ -44,3 +44,19 @@ Use `Button` (`src/components/ui/button.tsx`) for consistently styled action lin
 The mint CTA must use a **dark ink label and icon**, never inherited white text. Root cause: an unlayered global `a { color: inherit }` style out-ranked Tailwind's layered `text-*` utilities on anchor-as-button controls. The global anchor reset now lives inside `@layer base`, and explicit `data-variant` selectors reinforce every Button variant.
 
 The automated browser test `tests/browser/button-contrast.spec.ts` reads computed CSS colors and checks at least 4.5:1 for primary mint buttons across the homepage and three product pages. Keep icon strokes bound to `currentColor`, avoid hover contrast regressions, and test tablet/mobile sizes. Marketing link buttons should have readable 14–15px labels and approximately 52–56px touch heights.
+
+## Shared editorial marketing primitives
+
+The five typed presentation primitives live in `src/components/marketing/primitives.tsx` and are consumed through `ProductStory` on **Business**, **Send** and **Platform**:
+
+| Primitive | Public API | Semantic and visual contract |
+| --- | --- | --- |
+| `ProductNavigation` | `current`, `menuOpen`, `onNavigate` | Real Next.js links, descriptive nav label, aria-current, mobile menu delegation |
+| `EditorialSectionHeading` | `eyebrow`, `title`, `description`, optional `id` | Semantic h2, editorial section label, readable summary |
+| `StoryActionGroup` | No props (deliberate safe anchor target) | Real anchor to the editorial overview, never a payment command |
+| `AvailabilityDisclosure` | No props | Explicit “In development” with decorative indicator hidden from assistive tech |
+| `NarrativeFeatureBlock` | `index`, `title`, `body` | Semantic article/h3, data provided by the reviewed product story only |
+
+The primitives preserve the existing `story-*` classes and existing color/spacing tokens. `data-slot` attributes are stable non-interactive test hooks; do not style them as substitute product claims. Every reusable component works across all three public product stories without requiring database fixtures, provider identities or payment data.
+
+**Demo/test strategy:** `tests/browser/marketing-primitives.spec.ts` is the in-repo component harness. It checks three semantic section headings, three features, accessible navigation/current-page state, keyboard activation of the narrative CTA, explicit non-operational availability and mobile/desktop overflow. The CI artifact `shared-marketing-evidence` retains representative full-page screenshots; reviewers should compare them against the preceding production/main branch screenshots before merge. No external Storybook deployment is required.
