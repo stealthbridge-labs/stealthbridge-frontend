@@ -32,6 +32,14 @@ jobs:
             test-results/**/*.webm
           if-no-files-found: ignore
           retention-days: 7
+      - name: Upload responsive marketing primitive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-marketing-evidence
+          path: test-results/**/marketing-primitives/*.png
+          if-no-files-found: error
+          retention-days: 7
       - name: Build isolated Testnet preview for safety browser tests
         run: npm run build
         env:
