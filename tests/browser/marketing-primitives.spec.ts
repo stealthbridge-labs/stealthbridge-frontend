@@ -14,6 +14,13 @@ for(const product of productPages){
   page.on("pageerror",error=>errors.push(error.message));
   const response=await page.goto(product.route);
   expect(response?.status()).toBe(200);
+  // Small viewports intentionally hide the navigation until the accessible toggle opens it.
+  if(testInfo.project.name==="chromium-mobile"){
+   const menu=page.getByRole("button",{name:"Open menu"});
+   await expect(menu).toBeVisible();
+   await menu.click();
+   await expect(page.getByRole("button",{name:"Close menu"})).toHaveAttribute("aria-expanded","true");
+  }
   const navigation=page.getByRole("navigation",{name:"Product navigation"});
   await expect(navigation).toHaveCount(1);
   await expect(navigation).toHaveAttribute("data-slot","product-navigation");
