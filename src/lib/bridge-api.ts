@@ -28,6 +28,25 @@ function capabilitiesResponse(value:unknown):value is Capabilities{
  return ["payments_enabled","confidential_token_verified","private_payments_verified","fiat_payouts_enabled"]
   .every(key=>flags[key]===false);
 }
+function networkResponse(value:unknown):value is NetworkStatus {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const n=value as Record<string,unknown>;
+ return n.network==="testnet"&&n.source==="stellar-rpc"&&
+  typeof n.passphrase==="string"&&n.passphrase.length>0&&
+  Number.isSafeInteger(n.protocol_version)&&Number(n.protocol_version)>0&&
+  Number.isSafeInteger(n.ledger_sequence)&&Number(n.ledger_sequence)>0&&
+  typeof n.ledger_closed_at_unix==="string"&&/^\d+$/.test(n.ledger_closed_at_unix)&&
+  typeof n.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(n.ledger_hash);
+}
+function readinessResponse(value:unknown):value is ServiceReadiness {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const r=value as Record<string,unknown>;
+ return (r.status==="ready"||r.status==="degraded")&&
+  (r.stellar_rpc==="connected"||r.stellar_rpc==="unavailable")&&
+  ["connected","unavailable","not-configured"].includes(String(r.database))&&
+  r.payments==="disabled"&&
+  (r.status!=="ready"||(r.stellar_rpc==="connected"&&r.database==="connected"));
+}
 /**
  * Source inventory is read-only metadata, not deployed-contract evidence.
  * Reject any contrary claim even if an upstream service becomes compromised.
@@ -63,6 +82,10 @@ function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
+ if(endpoint==="network"&&!networkResponse(value))
+  throw new Error("Network response was invalid or not Stellar Testnet.");
+ if(endpoint==="ready"&&!readinessResponse(value))
+  throw new Error("Readiness response was invalid or claimed unsupported readiness.");
  if(endpoint==="contracts"&&!contractDiscoveryResponse(value))
   throw new Error("Contract discovery is unverified or incompatible. On-chain actions remain disabled.");
  if(endpoint==="capabilities"&&!capabilitiesResponse(value))
