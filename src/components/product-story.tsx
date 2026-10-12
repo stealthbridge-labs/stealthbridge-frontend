@@ -120,7 +120,13 @@ export function ProductStory({product}:{product:Product}){
     gsap.fromTo(item,{opacity:0,y:48},{opacity:1,y:0,duration:1.1,ease:"power3.out",scrollTrigger:{trigger:item,start:"top 90%",once:true}});
    });
   },page);
-  return ()=>ctx.revert();
+  // Browser-test observable count: never expose wallet or network state.
+  // Compare repeated client-side navigation to detect retained ScrollTriggers.
+  document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  return ()=>{
+   ctx.revert();
+   document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  };
  },[product]);
  return <div className={"story-page story-"+product} ref={page}>
  <div className="story-grain" aria-hidden="true"/>
