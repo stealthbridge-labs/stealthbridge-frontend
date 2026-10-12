@@ -16,7 +16,7 @@ const fetchPage = async (path) => {
   const response = await fetch(new URL(path, base), {cache:"no-store", signal:AbortSignal.timeout(15000)});
   return response;
 };
-for (const path of ["/","/business","/send"]) {
+for (const path of ["/","/business","/send","/platform"]) {
   const res = await fetchPage(path);
   assert.equal(res.status, 200, `${path} returned HTTP ${res.status}`);
   assert.match(await res.text(), /StealthBridge/i, `${path} did not include StealthBridge identity`);
