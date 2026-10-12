@@ -48,8 +48,8 @@ export function CorridorDirectory(){
    setValidation("Invalid saved corridor filter. Use two-letter country codes and supported rails.");
   }else{
    setOrigin(from);setDestination(to);setRail(selectedRail);
-   setFilters({...from?{originCountry:from}:{},...to?{destinationCountry:to}:{},
-    ...selectedRail?{privacyRail:selectedRail as PrivacyRail}:{}});
+   setFilters({...(from?{originCountry:from}:{}),...(to?{destinationCountry:to}:{}),
+    ...(selectedRail?{privacyRail:selectedRail as PrivacyRail}:{})});
   }
   setUrlHydrated(true);
  },[]);
