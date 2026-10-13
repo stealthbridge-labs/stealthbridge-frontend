@@ -59,18 +59,24 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  useEffect(()=>{
   if(!address)return;
   let disposed=false;
+  let latestRecheck=0;
   const recheck=async()=>{
    if(document.visibilityState==="hidden")return;
+   // A slow extension response must never resurrect or invalidate a session
+   // after the user explicitly disconnects or starts a newer recheck.
+   const generation=walletRun.current;
+   const request=++latestRecheck;
+   const stale=()=>disposed||generation!==walletRun.current||request!==latestRecheck;
    try{
     const [installed,allowed]=await Promise.all([isConnected(),isAllowed()]);
-    if(disposed)return;
+    if(stale())return;
     if(installed.error||!installed.isConnected||allowed.error||!allowed.isAllowed){
      setAddress(null);setNetwork(null);
      setError("Freighter permission was revoked or the extension disconnected. Reconnect on Testnet.");
      return;
     }
     const [account,info]=await Promise.all([getAddress(),getNetwork()]);
-    if(disposed)return;
+    if(stale())return;
     if(account.error||
       canonicalStellarAccountAddress(account.address??"")!==address||
       info.error||info.networkPassphrase!==TESTNET_PASSPHRASE){
@@ -78,12 +84,12 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
        setError("Wallet account or network changed. Reconnect Freighter on Testnet.");
     }
    }catch{
-    if(!disposed){setAddress(null);setNetwork(null);setError("Cannot verify Freighter state. Reconnect.");}
+    if(!stale()){setAddress(null);setNetwork(null);setError("Cannot verify Freighter state. Reconnect.");}
    }
   };
   window.addEventListener("focus",recheck);
   document.addEventListener("visibilitychange",recheck);
-  return ()=>{disposed=true;window.removeEventListener("focus",recheck);document.removeEventListener("visibilitychange",recheck);};
+  return ()=>{disposed=true;latestRecheck++;window.removeEventListener("focus",recheck);document.removeEventListener("visibilitychange",recheck);};
  },[address]);
 
  const connect=async()=>{
@@ -97,12 +103,18 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    if(access.error||!access.address)throw new Error(access.error?.message||"Wallet access was not granted.");
    const verified=canonicalStellarAccountAddress(access.address);
    if(!verified)throw new Error("Freighter returned an invalid or unsupported Stellar public account.");
-   const info=await getNetwork();
+   // Snapshot verification is deliberately separate from requestAccess:
+   // the account or permission may change while the wallet prompt is open.
+   const [info,allowed,account]=await Promise.all([getNetwork(),isAllowed(),getAddress()]);
    if(generation!==walletRun.current)return;
    if(info.error)throw new Error(info.error.message);
    if(info.networkPassphrase!==TESTNET_PASSPHRASE){
     throw new Error("Switch Freighter to Stellar Testnet. StealthBridge cannot use another network.");
    }
+   if(allowed.error||!allowed.isAllowed)
+    throw new Error("Freighter permission changed during connection. Reconnect on Testnet.");
+   if(account.error||canonicalStellarAccountAddress(account.address??"")!==verified)
+    throw new Error("Freighter account changed during connection. Reconnect the current Testnet account.");
    setNetwork(info.networkPassphrase);
    setAddress(verified);
    if(!backendMatches)setError("Wallet connected locally, but a fresh backend Testnet observation is not verified.");
