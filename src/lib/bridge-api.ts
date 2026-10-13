@@ -1,9 +1,18 @@
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
-export interface NetworkStatus {network:"testnet";passphrase:string;protocol_version:number;ledger_sequence:number;ledger_closed_at_unix:string;ledger_hash:string;source:"stellar-rpc";}
-export interface Capabilities {payments_enabled:boolean;confidential_token_verified:boolean;private_payments_verified:boolean;fiat_payouts_enabled:boolean;}
-export type PrivacyRail="confidential-token"|"private-payments";
-export interface Corridor {id:string;origin_country:string;destination_country:string;asset_code:string;asset_issuer:string|null;privacy_rail:PrivacyRail;}
-export interface TransactionObservation {hash:string;status:"SUCCESS"|"FAILED";ledger:number;closed_at_unix:string;latest_ledger:number;source:"stellar-rpc";}
+import type {
+ ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
+ ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
+} from "./sdk-api-wire.v0.2";
+
+/** Source of truth: versioned SDK v0.2 generated backend OpenAPI snapshot.
+ * These names are compatibility aliases for existing frontend components.
+ * Every external response is still validated at runtime below.
+ */
+export interface NetworkStatus extends ApiNetworkStatus {}
+export interface Capabilities extends ApiCapabilities {}
+export type PrivacyRail=ApiCorridor["privacy_rail"];
+export interface Corridor extends ApiCorridor {asset_issuer:string|null;}
+export interface TransactionObservation extends ApiTransactionObservation {}
 export class ApiUnavailable extends Error {
  constructor(public readonly status:number,public readonly endpoint:string,
   public readonly code:string|null=null,public readonly traceId:string|null=null){
@@ -32,11 +41,41 @@ function networkResponse(value:unknown):value is NetworkStatus {
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
  const n=value as Record<string,unknown>;
  return n.network==="testnet"&&n.source==="stellar-rpc"&&
-  typeof n.passphrase==="string"&&n.passphrase.length>0&&
+  n.passphrase==="Test SDF Network ; September 2015"&&
   Number.isSafeInteger(n.protocol_version)&&Number(n.protocol_version)>0&&
   Number.isSafeInteger(n.ledger_sequence)&&Number(n.ledger_sequence)>0&&
   typeof n.ledger_closed_at_unix==="string"&&/^\d+$/.test(n.ledger_closed_at_unix)&&
   typeof n.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(n.ledger_hash);
+}
+/** Runtime boundaries remain fail-closed even when TypeScript types compile. */
+function checkpointResponse(value:unknown):value is ObservedLedgerCheckpoint {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const entry=value as Record<string,unknown>;
+ return Number.isSafeInteger(entry.ledger_sequence)&&Number(entry.ledger_sequence)>0&&
+  typeof entry.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(entry.ledger_hash)&&
+  typeof entry.ledger_closed_at_unix==="string"&&/^\d{1,20}$/.test(entry.ledger_closed_at_unix)&&
+  entry.source==="stellar-rpc";
+}
+function transactionResponse(value:unknown,expectedHash:string):value is TransactionObservation {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const item=value as Record<string,unknown>;
+ return typeof item.hash==="string"&&item.hash.toLowerCase()===expectedHash.toLowerCase()&&
+  ["SUCCESS","FAILED"].includes(String(item.status))&&
+  Number.isSafeInteger(item.ledger)&&Number(item.ledger)>0&&
+  Number.isSafeInteger(item.latest_ledger)&&Number(item.latest_ledger)>=Number(item.ledger)&&
+  typeof item.closed_at_unix==="string"&&/^\d{1,20}$/.test(item.closed_at_unix)&&
+  item.source==="stellar-rpc";
+}
+function corridorsResponse(value:unknown):value is Corridor[] {
+ return Array.isArray(value)&&value.length<=100&&value.every(row=>
+  !!row&&typeof row==="object"&&
+  typeof row.id==="string"&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(row.id)&&
+  typeof row.origin_country==="string"&&/^[A-Z]{2}$/.test(row.origin_country)&&
+  typeof row.destination_country==="string"&&/^[A-Z]{2}$/.test(row.destination_country)&&
+  typeof row.asset_code==="string"&&/^[a-zA-Z0-9_:-]{1,64}$/.test(row.asset_code)&&
+  (row.asset_issuer===null||(typeof row.asset_issuer==="string"&&
+   row.asset_issuer.length>0&&row.asset_issuer.length<=128))&&
+  ["confidential-token","private-payments"].includes(row.privacy_rail));
 }
 function readinessResponse(value:unknown):value is ServiceReadiness {
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
@@ -82,29 +121,39 @@ function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
- if(endpoint==="network"&&!networkResponse(value))
+ if(endpoint==="network"&&!networkResponse(value)){
+  if(value!==null&&typeof value==="object"&&
+     "passphrase" in value&&value.passphrase!=="Test SDF Network ; September 2015")
+   throw new Error("The backend reported a different Stellar network. Testnet access was denied.");
   throw new Error("Network response was invalid or not Stellar Testnet.");
+ }
  if(endpoint==="ready"&&!readinessResponse(value))
   throw new Error("Readiness response was invalid or claimed unsupported readiness.");
  if(endpoint==="contracts"&&!contractDiscoveryResponse(value))
   throw new Error("Contract discovery is unverified or incompatible. On-chain actions remain disabled.");
  if(endpoint==="capabilities"&&!capabilitiesResponse(value))
   throw new Error("Capabilities response was invalid. Payment controls remain disabled.");
+ if(endpoint==="observer"&&!checkpointResponse(value))
+  throw new Error("Observer checkpoint was invalid or did not originate from Stellar Testnet.");
+ if(endpoint==="corridors"&&!corridorsResponse(value))
+  throw new Error("Corridor API returned malformed or unsupported metadata.");
  return value as T;
 }
 export const validTransactionHash=(s:string)=>/^[a-f0-9]{64}$/i.test(s);
 export function readTransaction(hash:string,signal?:AbortSignal):Promise<TransactionObservation>{
  if(!validTransactionHash(hash))throw new TypeError("Transaction hash must be 64 hexadecimal characters.");
- return read<TransactionObservation>("v1/transactions/"+hash.toLowerCase(),signal);
+ return read<unknown>("v1/transactions/"+hash.toLowerCase(),signal).then(value=>{
+  if(!transactionResponse(value,hash))
+   throw new Error("Public Testnet transaction observation did not match the requested hash or schema.");
+  return value;
+ });
 }
 
 /** The last persisted Testnet observer cursor, not necessarily the live ledger head. */
-export interface ObservedLedgerCheckpoint {
- ledger_sequence:number;ledger_hash:string;ledger_closed_at_unix:string;source:"stellar-rpc";
-}
+export interface ObservedLedgerCheckpoint extends ApiLedgerCheckpoint {}
 
 /** Actual operator-enabled corridor keyset page; never a quote or payout list. */
-export interface CorridorPage {items:Corridor[];next_cursor:string|null;}
+export interface CorridorPage extends ApiCorridorPage {items:Corridor[];}
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 /** Exact metadata filters only; a matching corridor is not payment eligibility. */
 export interface CorridorFilters {originCountry?:string;destinationCountry?:string;privacyRail?:PrivacyRail;}
@@ -145,12 +194,10 @@ export async function readFilteredCorridorPage(filters:CorridorFilters,after?:st
 }
 
 /** Dependency readiness, not approval to move money. */
-export interface ServiceReadiness {
- status:"ready"|"degraded";stellar_rpc:"connected"|"unavailable";database:"connected"|"unavailable"|"not-configured";payments:"disabled";
-}
+export interface ServiceReadiness extends ApiReadiness {}
 
 /** Canonical, currently undeployed Testnet contract manifest as seen by backend. */
-export interface ContractDiscovery {
+export interface ContractDiscovery extends ApiContractDiscovery {
  network:"testnet";
  source:"stealthbridge-contracts/deployments/testnet/manifest.json";
  on_chain_verified:false;
