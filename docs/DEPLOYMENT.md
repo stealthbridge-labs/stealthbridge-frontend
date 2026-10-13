@@ -74,3 +74,11 @@ HTTP fixtures without contacting a private RPC or live database.
 GSAP / ScrollTrigger / MotionPathPlugin provide intro choreography, curved travelling signals and scroll reveals. CSS adds a subtle headline tint, orbital movement, glow and interactive hover treatments. All motion is decorative: it does not imply actual transaction completion. A `prefers-reduced-motion` check disables nonessential motion and keeps all content visible. See `docs/DESIGN-SYSTEM.md`.
 
 Vercel account access may be required to inspect build logs or protected deployments; a successful GitHub build alone does not prove an updated production URL is visually correct.
+
+## Versioned frontend ⇄ SDK wire-model contract
+
+The browser data boundary `src/lib/bridge-api.ts` inherits the v0.2 generated read-only API response models exported by the SDK. Because this frontend has no publishable npm SDK package dependency, the **type-only, immutable SDK-generated snapshot** is copied to `src/lib/sdk-api-wire.v0.2.ts` and checked byte-for-byte against Git commit `9e774cc6eb3b45da6940641f40fe64ced73fc50a` by `node scripts/verify-sdk-wire.mjs` in CI. This is a source-pinned vendored type contract, not a claim that npm installed or published an SDK release. New SDK revisions require explicit pin updates in both scripts and a reviewed generated-schema diff. The runtime continues to call **only the same-origin Next.js GET proxy**; it never calls a remote API from the browser.
+
+The type snapshot does not verify external JSON. Incoming network, capability, checkpoint, corridor page, transaction-hash, readiness and undeployed Soroban manifest responses are checked at runtime, rejecting malformed or falsely enabled payloads without falling back to fabricated transactions or currencies. API 429 quota responses are handled as failure states; no write, signing, Mainnet or payout function is introduced.
+
+When the SDK is shipped as a consumable, reproducibly packaged dependency, replace the pinned type-only mirror with the package export **and keep the runtime boundary checks**. Backend CI must update its reviewed frontend commit reference and assert inherited `Api*` types rather than permitting local unreviewed wire duplicates.
