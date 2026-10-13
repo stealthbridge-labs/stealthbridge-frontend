@@ -368,3 +368,45 @@ test("technical preview is read-only and declares missing backend instead of fak
  const write=await request.post("/api/bridge/v1/settlements",{data:{}});
  expect(write.status()).toBe(405);
 });
+
+test("corridor URL filters survive reload and long issuer identities remain readable",async({page})=>{
+ const origin="NG",destination="GH",rail="confidential-token";
+ const issuer="G"+"A".repeat(127);
+ const code="ASSET_"+"A".repeat(58);
+ const seen:string[]=[];
+ await page.route("**/api/bridge/v1/corridors/page**",async route=>{
+  const uri=new URL(route.request().url());
+  seen.push(uri.search);
+  return route.fulfill({json:{items:[{
+   id:"a1b2c3d4-1111-4111-8111-111111111111",
+   origin_country:origin,destination_country:destination,
+   asset_code:code,asset_issuer:issuer,privacy_rail:rail
+  }],next_cursor:null}});
+ });
+ await page.goto("/preview/corridors?origin_country=NG&destination_country=GH&privacy_rail=confidential-token");
+ await expect(page.getByLabel("Origin country (optional)")).toHaveValue(origin);
+ await expect(page.getByLabel("Destination country (optional)")).toHaveValue(destination);
+ await expect(page.getByLabel("Privacy research rail")).toHaveValue(rail);
+ await expect(page.getByRole("heading",{name:"NG → GH"})).toBeVisible();
+ await expect(page.locator(".corridor-result code")).toHaveText(issuer);
+ await expect(page.getByText(code,{exact:false})).toBeVisible();
+ await expect(page.getByText("Fiat payout provider: not configured or verified.",{exact:false})).toBeVisible();
+ await expect(page.getByText(/payout eligibility/).first()).toBeVisible();
+ await page.reload();
+ await expect(page.getByLabel("Origin country (optional)")).toHaveValue(origin);
+ await expect(page.getByRole("heading",{name:"NG → GH"})).toBeVisible();
+ expect(seen.some(x=>x.includes("origin_country=NG")&&x.includes("destination_country=GH")&&x.includes("privacy_rail=confidential-token"))).toBe(true);
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+ await page.getByRole("button",{name:"Clear"}).click();
+ await expect(page).toHaveURL(/\/preview\/corridors$/);
+});
+
+test("invalid or duplicate deep-link filters cannot make up a configured corridor",async({page})=>{
+ await page.route("**/api/bridge/v1/corridors/page**",route=>route.fulfill({json:{items:[],next_cursor:null}}));
+ await page.goto("/preview/corridors?origin_country=NG&origin_country=US");
+ await expect(page.getByRole("alert").filter({hasText:/repeated corridor filters/})).toBeVisible();
+ await expect(page.getByText("No enabled corridors match")).toBeVisible();
+ await page.getByRole("button",{name:"Clear"}).click();
+ await expect(page).toHaveURL(/\/preview\/corridors$/);
+});

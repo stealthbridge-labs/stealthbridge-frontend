@@ -416,3 +416,8 @@
 @media(max-width:970px){.preview-health{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-link-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.preview-home .workspace-main{padding:50px 20px 75px}.preview-health{gap:9px}.preview-health>div{padding:18px}.preview-health strong{font-size:15px}.preview-home-toolbar{align-items:flex-start;flex-direction:column}.preview-link-grid{grid-template-columns:1fr}.preview-link-card{min-height:240px}}
 @media(prefers-reduced-motion:reduce){.preview-link-card{transition:none}.preview-link-card:hover{transform:none}}
+
+/* Public Testnet metadata can contain valid 64-byte asset codes and 128-byte issuer IDs.
+   Wrap them without stretching mobile cards or truncating provenance. */
+.corridor-result strong,.corridor-result code,.corridor-record-id{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.corridor-result p{max-width:100%;min-width:0}

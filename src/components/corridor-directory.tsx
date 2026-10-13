@@ -20,9 +20,44 @@ export function CorridorDirectory(){
  const [revision,setRevision]=useState(0);
  const [state,setState]=useState<DirectoryState>(empty);
  const [validation,setValidation]=useState<string|null>(null);
+ const [urlHydrated,setUrlHydrated]=useState(false);
+ const updateFilterUrl=(next:CorridorFilters)=>{
+  const params=new URLSearchParams();
+  if(next.originCountry)params.set("origin_country",next.originCountry);
+  if(next.destinationCountry)params.set("destination_country",next.destinationCountry);
+  if(next.privacyRail)params.set("privacy_rail",next.privacyRail);
+  const query=params.toString();
+  window.history.replaceState(window.history.state,"",window.location.pathname+(query?"?"+query:""));
+ };
+ useEffect(()=>{
+  // Apply URL filters after hydration; never let server-rendered marketing
+  // markup differ based on untrusted location/search params.
+  const params=new URLSearchParams(window.location.search);
+  const permitted=["origin_country","destination_country","privacy_rail"];
+  if([...params.keys()].some(k=>!permitted.includes(k)||params.getAll(k).length!==1)){
+   setValidation("Unsupported or repeated corridor filters were ignored.");
+   setUrlHydrated(true);
+   return;
+  }
+  const from=params.get("origin_country")??"";
+  const to=params.get("destination_country")??"";
+  const selectedRail=params.get("privacy_rail")??"";
+  if((from&&!/^[A-Z]{2}$/.test(from))||
+     (to&&!/^[A-Z]{2}$/.test(to))||
+     (selectedRail!==""&&!["confidential-token","private-payments"].includes(selectedRail))){
+   setValidation("Invalid saved corridor filter. Use two-letter country codes and supported rails.");
+  }else{
+   setOrigin(from);setDestination(to);setRail(selectedRail);
+   setFilters({...(from?{originCountry:from}:{}),...(to?{destinationCountry:to}:{}),
+    ...(selectedRail?{privacyRail:selectedRail as PrivacyRail}:{})});
+  }
+  setUrlHydrated(true);
+ },[]);
+
  const moreController=useRef<AbortController|null>(null);
  const refresh=useCallback(()=>{moreController.current?.abort();setRevision(n=>n+1);},[]);
  useEffect(()=>{
+  if(!urlHydrated)return;
   const controller=new AbortController();
   moreController.current?.abort();
   setState({...empty});
@@ -34,7 +69,7 @@ export function CorridorDirectory(){
     if(!controller.signal.aborted)setState({rows:[],cursor:null,loading:false,moreLoading:false,error:formatError(error),pageError:null});
    });
   return ()=>{controller.abort();moreController.current?.abort();};
- },[filters,revision]);
+ },[filters,revision,urlHydrated]);
  function apply(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
   const a=origin.trim().toUpperCase(),b=destination.trim().toUpperCase();
@@ -46,11 +81,14 @@ export function CorridorDirectory(){
   }
   setValidation(null);
   setOrigin(a);setDestination(b);
-  setFilters({...(a?{originCountry:a}:{}),...(b?{destinationCountry:b}:{}),
-   ...(rail?{privacyRail:rail as PrivacyRail}:{})});
+  const next:CorridorFilters={...(a?{originCountry:a}:{}),...(b?{destinationCountry:b}:{}),
+   ...(rail?{privacyRail:rail as PrivacyRail}:{})};
+  updateFilterUrl(next);
+  setFilters(next);
  }
  function clear(){
   setOrigin("");setDestination("");setRail("");setValidation(null);setFilters({});
+  updateFilterUrl({});
   setRevision(n=>n+1);
  }
  async function loadMore(){
@@ -124,7 +162,8 @@ export function CorridorDirectory(){
         <div><span className="section-index">Public configuration only</span>
          <h3>{record.origin_country} <span>→</span> {record.destination_country}</h3>
          <p>Asset: <strong>{record.asset_code}</strong> · Declared rail: {record.privacy_rail}</p>
-         {record.asset_issuer?<p>Public issuer: <code>{record.asset_issuer}</code></p>:<p>Issuer not configured</p>}
+         {record.asset_issuer?<p>Operator-declared asset issuer: <code>{record.asset_issuer}</code></p>:<p>Asset issuer not configured or independently verified.</p>}
+         <p>Fiat payout provider: not configured or verified. This record does not establish payout eligibility.</p>
         </div>
         <span className="corridor-record-id">ID: {record.id}</span>
        </article>)}
