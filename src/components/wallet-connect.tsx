@@ -1,6 +1,6 @@
 "use client";
-import {useEffect,useState} from "react";
-import {getNetwork,getAddress,isConnected,requestAccess} from "@stellar/freighter-api";
+import {useEffect,useRef,useState} from "react";
+import {getNetwork,getAddress,isConnected,isAllowed,requestAccess} from "@stellar/freighter-api";
 import {Wallet,AlertTriangle,CheckCircle2,Eye,Unplug} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
@@ -19,9 +19,42 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  const [error,setError]=useState<string|null>(null);
  const [watchInput,setWatchInput]=useState("");
  const [watchedAddress,setWatchedAddress]=useState<string|null>(null);
+ const walletRun=useRef(0);
  const [watchError,setWatchError]=useState<string|null>(null);
  const correct=network===TESTNET_PASSPHRASE;
  const backendMatches=backendNetworkVerified&&expectedNetworkPassphrase===TESTNET_PASSPHRASE;
+
+ useEffect(()=>{
+  // Passive restoration never requests Freighter permissions: we check the
+  // official extension allow-list *before* accessing its public account.
+  let disposed=false;
+  const generation=walletRun.current;
+  void (async()=>{
+   try{
+    const installed=await isConnected();
+    if(disposed||generation!==walletRun.current||installed.error||!installed.isConnected)return;
+    const allowed=await isAllowed();
+    if(disposed||generation!==walletRun.current||allowed.error||!allowed.isAllowed)return;
+    const [account,info]=await Promise.all([getAddress(),getNetwork()]);
+    if(disposed||generation!==walletRun.current)return;
+    const verified=account.error?null:canonicalStellarAccountAddress(account.address??"");
+    if(!verified){
+     setError("Previously authorized Freighter account cannot be verified. Reconnect manually.");
+     return;
+    }
+    if(info.error||info.networkPassphrase!==TESTNET_PASSPHRASE){
+     setNetwork(null);setAddress(null);
+     setError("Freighter is authorized but on the wrong network. Switch to Stellar Testnet before reconnecting.");
+     return;
+    }
+    setAddress(verified);setNetwork(TESTNET_PASSPHRASE);
+   }catch{
+    if(!disposed&&generation===walletRun.current)
+     setError("Cannot inspect existing Freighter authorization. Connect manually to retry.");
+   }
+  })();
+  return ()=>{disposed=true;};
+ },[]);
 
  useEffect(()=>{
   if(!address)return;
@@ -29,9 +62,16 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   const recheck=async()=>{
    if(document.visibilityState==="hidden")return;
    try{
-    const [installed,account,info]=await Promise.all([isConnected(),getAddress(),getNetwork()]);
+    const [installed,allowed]=await Promise.all([isConnected(),isAllowed()]);
     if(disposed)return;
-    if(installed.error||!installed.isConnected||account.error||
+    if(installed.error||!installed.isConnected||allowed.error||!allowed.isAllowed){
+     setAddress(null);setNetwork(null);
+     setError("Freighter permission was revoked or the extension disconnected. Reconnect on Testnet.");
+     return;
+    }
+    const [account,info]=await Promise.all([getAddress(),getNetwork()]);
+    if(disposed)return;
+    if(account.error||
       canonicalStellarAccountAddress(account.address??"")!==address||
       info.error||info.networkPassphrase!==TESTNET_PASSPHRASE){
        setAddress(null);setNetwork(null);
@@ -47,15 +87,18 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  },[address]);
 
  const connect=async()=>{
+  const generation=++walletRun.current;
   setPending(true);setError(null);setAddress(null);setNetwork(null);
   try{
    const installed=await isConnected();
    if(installed.error||!installed.isConnected)throw new Error("Freighter is not available. Install the wallet extension before connecting.");
    const access=await requestAccess();
+   if(generation!==walletRun.current)return;
    if(access.error||!access.address)throw new Error(access.error?.message||"Wallet access was not granted.");
    const verified=canonicalStellarAccountAddress(access.address);
    if(!verified)throw new Error("Freighter returned an invalid or unsupported Stellar public account.");
    const info=await getNetwork();
+   if(generation!==walletRun.current)return;
    if(info.error)throw new Error(info.error.message);
    if(info.networkPassphrase!==TESTNET_PASSPHRASE){
     throw new Error("Switch Freighter to Stellar Testnet. StealthBridge cannot use another network.");
@@ -64,9 +107,10 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    setAddress(verified);
    if(!backendMatches)setError("Wallet connected locally, but a fresh backend Testnet observation is not verified.");
   }catch(e){
+   if(generation!==walletRun.current)return;
    setError(e instanceof Error?e.message:"Unable to connect wallet.");
    setAddress(null);setNetwork(null);
-  }finally{setPending(false);}
+  }finally{if(generation===walletRun.current)setPending(false);}
  };
 
  const watch=()=>{
@@ -86,7 +130,7 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC readiness or ledger freshness cannot be verified. No signing is available.</p>:null}
   <div className="wallet-address-actions">
    <Button variant="outline" disabled={pending} onClick={connect} type="button">{pending?"Connecting…":address?"Recheck wallet":"Connect Freighter"}</Button>
-   {address?<Button type="button" variant="outline" onClick={()=>{setAddress(null);setNetwork(null);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
+   {address?<Button type="button" variant="outline" onClick={()=>{walletRun.current++;setAddress(null);setNetwork(null);setPending(false);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
   </div>
   {error?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{error}</p>:null}
   <div className="wallet-watch">
