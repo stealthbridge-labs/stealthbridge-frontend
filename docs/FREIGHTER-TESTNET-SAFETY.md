@@ -6,11 +6,11 @@ The technical preview supports **public-account connection and watch-only viewin
 
 On first mount, call `isConnected()` to detect the installed extension, then `isAllowed()` to check prior Freighter authorization. Call `getAddress()` and `getNetwork()` **only if authorization already exists**. No `requestAccess()` call is allowed until a human presses **Connect Freighter**. Reject invalid public account StrKeys and any passphrase other than exact `Test SDF Network ; September 2015`. A connected wallet without an independently verified fresh backend Testnet observation is **never** a payment-ready wallet.
 
-When the tab regains focus or becomes visible, recheck installed status, allowlist, account and network; immediately discard a revoked or changed wallet identity. A generation counter prevents a late restore/connect promise from undoing a user's **Forget connection** command. A page restart does not store the address in browser localStorage or send it to the API.
+When the tab regains focus or becomes visible, recheck installed status, allowlist, account and network; immediately discard a revoked or changed wallet identity. Generation counters also invalidate delayed focus/visibility rechecks after **Forget connection** or newer manual checks. After `requestAccess()`, the component independently re-reads allowlist, public account and network before declaring a local session, rejecting account, permission or network changes during the prompt; no response is allowed to resurrect a connection after a tab-local disconnect. A page restart does not store the address in browser localStorage or send it to the API.
 
 ## Browser regression fixtures
 
-The Next.js preview Playwright suite injects a local **mock of the Freighter extension message protocol**; this is explicitly not a real wallet or chain transaction. It verifies no permission prompt on authorized restoration, revoked permission, wrong Testnet passphrase, user denial, no `SUBMIT_TRANSACTION` or `SUBMIT_AUTH_ENTRY` calls, and permanently disabled transfer controls. The mock contains only synthetic public addresses.
+The Next.js preview Playwright suite injects a local **mock of the Freighter extension message protocol**; this is explicitly not a real wallet or chain transaction. It verifies no permission prompt on authorized restoration, revoked permission, wrong Testnet passphrase, user denial, manual approval account/network/allowlist race conditions, no `SUBMIT_TRANSACTION` or `SUBMIT_AUTH_ENTRY` calls, and permanently disabled transfer controls. The mock contains only synthetic public addresses.
 
 ## Required manual acceptance before closing frontend issue #2
 
