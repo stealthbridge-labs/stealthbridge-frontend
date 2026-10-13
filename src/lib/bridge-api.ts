@@ -1,9 +1,18 @@
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
-export interface NetworkStatus {network:"testnet";passphrase:string;protocol_version:number;ledger_sequence:number;ledger_closed_at_unix:string;ledger_hash:string;source:"stellar-rpc";}
-export interface Capabilities {payments_enabled:boolean;confidential_token_verified:boolean;private_payments_verified:boolean;fiat_payouts_enabled:boolean;}
-export type PrivacyRail="confidential-token"|"private-payments";
-export interface Corridor {id:string;origin_country:string;destination_country:string;asset_code:string;asset_issuer:string|null;privacy_rail:PrivacyRail;}
-export interface TransactionObservation {hash:string;status:"SUCCESS"|"FAILED";ledger:number;closed_at_unix:string;latest_ledger:number;source:"stellar-rpc";}
+import type {
+ ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
+ ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
+} from "./sdk-api-wire.v0.2";
+
+/** Source of truth: versioned SDK v0.2 generated backend OpenAPI snapshot.
+ * These names are compatibility aliases for existing frontend components.
+ * Every external response is still validated at runtime below.
+ */
+export interface NetworkStatus extends ApiNetworkStatus {}
+export interface Capabilities extends ApiCapabilities {}
+export type PrivacyRail=ApiCorridor["privacy_rail"];
+export interface Corridor extends ApiCorridor {asset_issuer:string|null;}
+export interface TransactionObservation extends ApiTransactionObservation {}
 export class ApiUnavailable extends Error {
  constructor(public readonly status:number,public readonly endpoint:string,
   public readonly code:string|null=null,public readonly traceId:string|null=null){
@@ -99,12 +108,10 @@ export function readTransaction(hash:string,signal?:AbortSignal):Promise<Transac
 }
 
 /** The last persisted Testnet observer cursor, not necessarily the live ledger head. */
-export interface ObservedLedgerCheckpoint {
- ledger_sequence:number;ledger_hash:string;ledger_closed_at_unix:string;source:"stellar-rpc";
-}
+export interface ObservedLedgerCheckpoint extends ApiLedgerCheckpoint {}
 
 /** Actual operator-enabled corridor keyset page; never a quote or payout list. */
-export interface CorridorPage {items:Corridor[];next_cursor:string|null;}
+export interface CorridorPage extends ApiCorridorPage {items:Corridor[];}
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 /** Exact metadata filters only; a matching corridor is not payment eligibility. */
 export interface CorridorFilters {originCountry?:string;destinationCountry?:string;privacyRail?:PrivacyRail;}
@@ -145,12 +152,10 @@ export async function readFilteredCorridorPage(filters:CorridorFilters,after?:st
 }
 
 /** Dependency readiness, not approval to move money. */
-export interface ServiceReadiness {
- status:"ready"|"degraded";stellar_rpc:"connected"|"unavailable";database:"connected"|"unavailable"|"not-configured";payments:"disabled";
-}
+export interface ServiceReadiness extends ApiReadiness {}
 
 /** Canonical, currently undeployed Testnet contract manifest as seen by backend. */
-export interface ContractDiscovery {
+export interface ContractDiscovery extends ApiContractDiscovery {
  network:"testnet";
  source:"stealthbridge-contracts/deployments/testnet/manifest.json";
  on_chain_verified:false;
