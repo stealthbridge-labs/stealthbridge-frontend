@@ -535,5 +535,18 @@ test("read-only network states retain accessibility and visual evidence on deskt
  await expect(page.getByRole("alert").filter({hasText:/data service|HTTP 503|unavailable/i}).first()).toBeVisible();
  await expect(page.getByRole("button",{name:/Transfer unavailable until protocol verification/})).toBeDisabled();
  await page.screenshot({path:path.join(folder,"database-unavailable.png"),fullPage:true,animations:"disabled"});
+ // High-contrast and reduced-motion tablet review: public metadata remains
+ // understandable without ambient animation or a mouse and never exposes a
+ // transfer form. This exercise does not claim a physical-device audit.
+ await page.setViewportSize({width:820,height:1180});
+ await page.emulateMedia({colorScheme:"dark",reducedMotion:"reduce",forcedColors:"active"});
+ await page.reload();
+ await expect(page.getByRole("heading",{level:1})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable until protocol verification/})).toBeDisabled();
+ await expect(page.getByRole("searchbox",{name:"Filter enabled corridors"})).toBeVisible();
+ const tabletOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(tabletOverflow).toBeLessThanOrEqual(2);
+ await page.screenshot({path:path.join(folder,"tablet-high-contrast-reduced-motion.png"),
+  fullPage:true,animations:"disabled"});
  expect(runtimeErrors).toEqual([]);
 });
