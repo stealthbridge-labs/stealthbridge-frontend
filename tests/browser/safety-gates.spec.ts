@@ -412,7 +412,7 @@ test("invalid or duplicate deep-link filters cannot make up a configured corrido
 });
 
 async function installFakeFreighter(page:Page,options:{authorized:boolean;networkPassphrase?:string;denyRequest?:boolean;switchAddressOnAccess?:boolean;revokeAfterAccess?:boolean;switchNetworkOnAccess?:boolean}){
- await page.addInitScript(({authorized,networkPassphrase,denyRequest,account})=>{
+ await page.addInitScript(({authorized,networkPassphrase,denyRequest,account,switchAddressOnAccess,revokeAfterAccess,switchNetworkOnAccess})=>{
   const testnetPassphrase="Test SDF Network ; September 2015";
   const replacementAccount="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX";
   const bridge=window as typeof window&{
