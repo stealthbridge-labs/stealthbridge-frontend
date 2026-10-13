@@ -21,3 +21,16 @@ Run `STEALTHBRIDGE_REQUIRE_DATABASE=1 npm run smoke -- https://your-staging-host
 | POST settlement returns 405 | Correct GET-only browser proxy | Any other result blocks release |
 
 The suite runs the full negative-path matrix against **HTTP fixtures** in CI. A CI fixture is not a live Vercel or RPC attestation. An operator must additionally record a passing smoke result from a reachable staging URL before approving a deployment. No private keys, transfer witnesses, real funds or payment authorizations are required.
+
+## Protected two-target Vercel release acceptance
+
+Current project configuration inspection (13 October 2026) shows **Preview** defines `STEALTHBRIDGE_SITE_MODE=preview` and a reviewed backend API origin, while **Production** has no such site-mode override. This is target configuration, **not** a live routing/readiness attestation. The default landing build must continue hiding technical preview routes and API proxy reads regardless of missing Preview variables.
+
+The default-branch, operator-dispatched GitHub Actions workflow `.github/workflows/vercel-release-policy.yml` runs under protected **staging** environment approval. It **requires both jobs to pass** before marking issue #13 complete:
+
+1. `marketing`: set staging environment variable `STEALTHBRIDGE_MARKETING_WEB_URL` to the **exact live Production HTTPS origin**. Its script checks all four public marketing pages return 200; `/preview`, `/preview/business`, `/preview/send`, `/preview/contracts`, `/preview/corridors`, `/api/bridge/v1/network`, `/api/bridge/v1/capabilities` and `/api/bridge/ready` all return **404**; `POST /api/bridge/v1/settlements` returns **405**. Redirects always fail.
+2. `preview`: set `STEALTHBRIDGE_STAGING_WEB_URL` to the **isolated live Preview HTTPS deployment**. Its script requires four public pages, actual current Stellar Testnet passphrase/ledger close no older than 180 seconds, bounded corridor pages, connected PostgreSQL readiness, an undeployed canonical Soroban manifest, every payment-availability flag **false**, and settlement **POST 405**. Degraded/missing upstream RPC, disabled API proxy, stale ledger or schema mismatch fails.
+
+For protected Vercel deployments, only supply the distinct, protected environment secrets `STEALTHBRIDGE_MARKETING_BYPASS_TOKEN` and `STEALTHBRIDGE_PREVIEW_BYPASS_TOKEN` when access cannot be achieved through the existing approved Trusted Sources/OIDC path. Secrets never enter repository code, run output, URLs or CLI arguments. Bypass headers are refused for non-Vercel hosts unless the exact host is independently configured as `STEALTHBRIDGE_MARKETING_WEB_HOST` or `STEALTHBRIDGE_STAGING_WEB_HOST`. **Do not disable deployment protection**, broaden unrelated trusted-source rules or re-use any backend provider, bank or payment signing credential for release probes.
+
+CI runs local negative tests for preview exposure, accidentally reachable API GETs, redirected protection credentials and enabled POST. A green fixture suite or Vercel's `READY` build state **does not substitute** for an operator-approved, successful live dispatch. Attach the GitHub Actions run URL, full target deployment commit SHAs, observed fresh Testnet ledger and explicit disabled-payment checks to issue #13 before marking closed. Neither branch may claim that a real private transfer was completed.
