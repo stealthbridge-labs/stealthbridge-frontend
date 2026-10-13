@@ -488,3 +488,65 @@ test("Freighter manual permission denial leaves no session or transaction submis
  expect(req).not.toContain("SUBMIT_TRANSACTION");
  expect(req).not.toContain("SUBMIT_AUTH_ENTRY");
 });
+
+test("read-only network states retain accessibility and visual evidence on desktop/mobile",async({page},testInfo)=>{
+ const folder=testInfo.outputPath("preview-network-evidence");
+ const {mkdir}=await import("node:fs/promises");
+ const path=await import("node:path");
+ await mkdir(folder,{recursive:true});
+ const runtimeErrors:string[]=[];
+ page.on("pageerror",error=>runtimeErrors.push(error.message));
+ const states=[
+  {state:"recovered",passphrase:testnetPassphrase,route:"business",label:"healthy-empty"},
+  {state:"degraded",passphrase:testnetPassphrase,route:"send",label:"rpc-unavailable"},
+  {state:"recovered",passphrase:"Public Global Stellar Network ; September 2015",route:"business",label:"wrong-network"},
+ ] as const;
+ for(const item of states){
+  await page.unrouteAll({behavior:"wait"});
+  await mockReadApi(page,{state:item.state,passphrase:item.passphrase});
+  await page.goto("/preview/"+item.route);
+  await expect(page.getByRole("heading",{level:1})).toBeVisible();
+  await expect(page.getByRole("button",{name:/Transfer unavailable until protocol verification/})).toBeDisabled();
+  await expect(page.getByText("No configured corridors yet")).toBeVisible();
+  if(item.label==="healthy-empty"){
+   await expect(page.getByText("Ledger 1,234").first()).toBeVisible();
+   await expect(page.getByText("Dependencies connected")).toBeVisible();
+  }else if(item.label==="rpc-unavailable"){
+   await expect(page.getByRole("alert").filter({hasText:/network|timed out|fetch/i}).first()).toBeVisible();
+   await expect(page.getByRole("button",{name:"Retry observations"})).toBeEnabled();
+  }else{
+   await expect(page.getByRole("alert").filter({hasText:/different Stellar network/})).toBeVisible();
+  }
+  // A real keyboard focus target exists even when all transfer controls are disabled.
+  const search=page.getByRole("searchbox",{name:"Filter enabled corridors"});
+  await search.focus();
+  await expect(search).toBeFocused();
+  await page.screenshot({path:path.join(folder,item.label+".png"),fullPage:true,animations:"disabled"});
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+ }
+ // The DB outage must be distinguishable from a real empty DB response.
+ await page.unrouteAll({behavior:"wait"});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.route("**/api/bridge/v1/corridors/page**",route=>route.fulfill({
+  status:503,json:{error:{code:"DEPENDENCY_UNAVAILABLE",message:"Database unavailable"},trace_id:"a".repeat(36)}
+ }));
+ await page.goto("/preview/send");
+ await expect(page.getByRole("alert").filter({hasText:/data service|HTTP 503|unavailable/i}).first()).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable until protocol verification/})).toBeDisabled();
+ await page.screenshot({path:path.join(folder,"database-unavailable.png"),fullPage:true,animations:"disabled"});
+ // High-contrast and reduced-motion tablet review: public metadata remains
+ // understandable without ambient animation or a mouse and never exposes a
+ // transfer form. This exercise does not claim a physical-device audit.
+ await page.setViewportSize({width:820,height:1180});
+ await page.emulateMedia({colorScheme:"dark",reducedMotion:"reduce",forcedColors:"active"});
+ await page.reload();
+ await expect(page.getByRole("heading",{level:1})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable until protocol verification/})).toBeDisabled();
+ await expect(page.getByRole("searchbox",{name:"Filter enabled corridors"})).toBeVisible();
+ const tabletOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(tabletOverflow).toBeLessThanOrEqual(2);
+ await page.screenshot({path:path.join(folder,"tablet-high-contrast-reduced-motion.png"),
+  fullPage:true,animations:"disabled"});
+ expect(runtimeErrors).toEqual([]);
+});
