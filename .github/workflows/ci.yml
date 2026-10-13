@@ -20,6 +20,8 @@ jobs:
         env:
           STEALTHBRIDGE_SITE_MODE: landing
       - run: npm run test:landing
+      - name: Regression-test production marketing route policy and forbidden writes
+        run: node --test tests/marketing-policy-smoke.test.mjs
       - name: Verify staging smoke checks against isolated HTTP fixtures
         run: node --test tests/smoke.test.mjs
       - run: npx playwright install --with-deps chromium

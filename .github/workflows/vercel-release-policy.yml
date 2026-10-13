@@ -1,0 +1,53 @@
+name: Protected Vercel marketing and Testnet preview release gate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  marketing:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 8
+    env:
+      STEALTHBRIDGE_MARKETING_WEB_URL: ${{ vars.STEALTHBRIDGE_MARKETING_WEB_URL }}
+      STEALTHBRIDGE_ALLOWED_DEPLOYMENT_HOST: ${{ vars.STEALTHBRIDGE_MARKETING_WEB_HOST }}
+      STEALTHBRIDGE_VERCEL_BYPASS_TOKEN: ${{ secrets.STEALTHBRIDGE_MARKETING_BYPASS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Require explicit production marketing deployment URL
+        run: |
+          if [ -z "${STEALTHBRIDGE_MARKETING_WEB_URL:-}" ]; then
+            echo "Set staging environment variable STEALTHBRIDGE_MARKETING_WEB_URL" >&2
+            exit 1
+          fi
+      - name: Verify production hides technical previews, API reads and settlement writes
+        run: node scripts/smoke-marketing.mjs "$STEALTHBRIDGE_MARKETING_WEB_URL"
+  preview:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 8
+    env:
+      STEALTHBRIDGE_STAGING_WEB_URL: ${{ vars.STEALTHBRIDGE_STAGING_WEB_URL }}
+      STEALTHBRIDGE_ALLOWED_DEPLOYMENT_HOST: ${{ vars.STEALTHBRIDGE_STAGING_WEB_HOST }}
+      STEALTHBRIDGE_VERCEL_BYPASS_TOKEN: ${{ secrets.STEALTHBRIDGE_PREVIEW_BYPASS_TOKEN }}
+      STEALTHBRIDGE_REQUIRE_DATABASE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Require explicit isolated preview deployment URL
+        run: |
+          if [ -z "${STEALTHBRIDGE_STAGING_WEB_URL:-}" ]; then
+            echo "Set staging environment variable STEALTHBRIDGE_STAGING_WEB_URL" >&2
+            exit 1
+          fi
+      - name: Require fresh Stellar Testnet backend reads and rejected POST on real preview
+        run: node scripts/smoke.mjs "$STEALTHBRIDGE_STAGING_WEB_URL"

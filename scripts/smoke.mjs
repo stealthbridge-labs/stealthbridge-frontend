@@ -16,9 +16,18 @@ if (base.username || base.password || base.search || base.hash || !["","/"].incl
   console.error("Supply a staging origin without credentials, paths, query parameters, or bypass tokens.");
   process.exit(2);
 }
-// Supply protected-preview bypass material via CI secret environment only.
-const safeHeaders=process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN
-  ? {"x-vercel-protection-bypass":process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN} : {};
+// Only send optional Vercel protection credentials to a trusted deployment
+// hostname. The exact non-Vercel hostname must come from protected CI config.
+const bypass=process.env.STEALTHBRIDGE_VERCEL_BYPASS_TOKEN;
+if(bypass){
+ const approved=process.env.STEALTHBRIDGE_ALLOWED_DEPLOYMENT_HOST;
+ if(!(base.hostname.endsWith(".vercel.app")||
+   (approved&&base.hostname===approved)))
+  throw new Error("Protected credentials cannot be sent to an unapproved staging origin.");
+ if(bypass.length>512||!/^[A-Za-z0-9._~-]+$/.test(bypass))
+  throw new Error("Invalid Vercel protected-preview bypass format.");
+}
+const safeHeaders=bypass?{"x-vercel-protection-bypass":bypass}:{};
 const fetchPage = async (path) => {
   const response = await fetch(new URL(path, base), {headers:safeHeaders,redirect:"manual",cache:"no-store", signal:AbortSignal.timeout(15000)});
   return response;
