@@ -41,11 +41,41 @@ function networkResponse(value:unknown):value is NetworkStatus {
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
  const n=value as Record<string,unknown>;
  return n.network==="testnet"&&n.source==="stellar-rpc"&&
-  typeof n.passphrase==="string"&&n.passphrase.length>0&&
+  n.passphrase==="Test SDF Network ; September 2015"&&
   Number.isSafeInteger(n.protocol_version)&&Number(n.protocol_version)>0&&
   Number.isSafeInteger(n.ledger_sequence)&&Number(n.ledger_sequence)>0&&
   typeof n.ledger_closed_at_unix==="string"&&/^\d+$/.test(n.ledger_closed_at_unix)&&
   typeof n.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(n.ledger_hash);
+}
+/** Runtime boundaries remain fail-closed even when TypeScript types compile. */
+function checkpointResponse(value:unknown):value is ObservedLedgerCheckpoint {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const entry=value as Record<string,unknown>;
+ return Number.isSafeInteger(entry.ledger_sequence)&&Number(entry.ledger_sequence)>0&&
+  typeof entry.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(entry.ledger_hash)&&
+  typeof entry.ledger_closed_at_unix==="string"&&/^\\d{1,20}$/.test(entry.ledger_closed_at_unix)&&
+  entry.source==="stellar-rpc";
+}
+function transactionResponse(value:unknown,expectedHash:string):value is TransactionObservation {
+ if(value===null||typeof value!=="object"||Array.isArray(value))return false;
+ const item=value as Record<string,unknown>;
+ return typeof item.hash==="string"&&item.hash.toLowerCase()===expectedHash.toLowerCase()&&
+  ["SUCCESS","FAILED"].includes(String(item.status))&&
+  Number.isSafeInteger(item.ledger)&&Number(item.ledger)>0&&
+  Number.isSafeInteger(item.latest_ledger)&&Number(item.latest_ledger)>=Number(item.ledger)&&
+  typeof item.closed_at_unix==="string"&&/^\\d{1,20}$/.test(item.closed_at_unix)&&
+  item.source==="stellar-rpc";
+}
+function corridorsResponse(value:unknown):value is Corridor[] {
+ return Array.isArray(value)&&value.length<=100&&value.every(row=>
+  !!row&&typeof row==="object"&&
+  typeof row.id==="string"&&/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(row.id)&&
+  typeof row.origin_country==="string"&&/^[A-Z]{2}$/.test(row.origin_country)&&
+  typeof row.destination_country==="string"&&/^[A-Z]{2}$/.test(row.destination_country)&&
+  typeof row.asset_code==="string"&&/^[a-zA-Z0-9_:-]{1,64}$/.test(row.asset_code)&&
+  (row.asset_issuer===null||(typeof row.asset_issuer==="string"&&
+   row.asset_issuer.length>0&&row.asset_issuer.length<=128))&&
+  ["confidential-token","private-payments"].includes(row.privacy_rail));
 }
 function readinessResponse(value:unknown):value is ServiceReadiness {
  if(value===null||typeof value!=="object"||Array.isArray(value))return false;
@@ -99,12 +129,20 @@ export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities
   throw new Error("Contract discovery is unverified or incompatible. On-chain actions remain disabled.");
  if(endpoint==="capabilities"&&!capabilitiesResponse(value))
   throw new Error("Capabilities response was invalid. Payment controls remain disabled.");
+ if(endpoint==="observer"&&!checkpointResponse(value))
+  throw new Error("Observer checkpoint was invalid or did not originate from Stellar Testnet.");
+ if(endpoint==="corridors"&&!corridorsResponse(value))
+  throw new Error("Corridor API returned malformed or unsupported metadata.");
  return value as T;
 }
 export const validTransactionHash=(s:string)=>/^[a-f0-9]{64}$/i.test(s);
 export function readTransaction(hash:string,signal?:AbortSignal):Promise<TransactionObservation>{
  if(!validTransactionHash(hash))throw new TypeError("Transaction hash must be 64 hexadecimal characters.");
- return read<TransactionObservation>("v1/transactions/"+hash.toLowerCase(),signal);
+ return read<unknown>("v1/transactions/"+hash.toLowerCase(),signal).then(value=>{
+  if(!transactionResponse(value,hash))
+   throw new Error("Public Testnet transaction observation did not match the requested hash or schema.");
+  return value;
+ });
 }
 
 /** The last persisted Testnet observer cursor, not necessarily the live ledger head. */
