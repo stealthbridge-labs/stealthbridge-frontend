@@ -413,6 +413,7 @@ test("invalid or duplicate deep-link filters cannot make up a configured corrido
 
 async function installFakeFreighter(page:Page,options:{authorized:boolean;networkPassphrase?:string;denyRequest?:boolean}){
  await page.addInitScript(({authorized,networkPassphrase,denyRequest,account})=>{
+  const testnetPassphrase="Test SDF Network ; September 2015";
   const bridge=window as typeof window&{
    mockAllowed:boolean;mockNetwork:string;mockAddress:string;mockDenied:boolean;
    freighterRequests:string[];
