@@ -53,7 +53,7 @@ function checkpointResponse(value:unknown):value is ObservedLedgerCheckpoint {
  const entry=value as Record<string,unknown>;
  return Number.isSafeInteger(entry.ledger_sequence)&&Number(entry.ledger_sequence)>0&&
   typeof entry.ledger_hash==="string"&&/^[a-f0-9]{64}$/i.test(entry.ledger_hash)&&
-  typeof entry.ledger_closed_at_unix==="string"&&/^\\d{1,20}$/.test(entry.ledger_closed_at_unix)&&
+  typeof entry.ledger_closed_at_unix==="string"&&/^\d{1,20}$/.test(entry.ledger_closed_at_unix)&&
   entry.source==="stellar-rpc";
 }
 function transactionResponse(value:unknown,expectedHash:string):value is TransactionObservation {
@@ -63,7 +63,7 @@ function transactionResponse(value:unknown,expectedHash:string):value is Transac
   ["SUCCESS","FAILED"].includes(String(item.status))&&
   Number.isSafeInteger(item.ledger)&&Number(item.ledger)>0&&
   Number.isSafeInteger(item.latest_ledger)&&Number(item.latest_ledger)>=Number(item.ledger)&&
-  typeof item.closed_at_unix==="string"&&/^\\d{1,20}$/.test(item.closed_at_unix)&&
+  typeof item.closed_at_unix==="string"&&/^\d{1,20}$/.test(item.closed_at_unix)&&
   item.source==="stellar-rpc";
 }
 function corridorsResponse(value:unknown):value is Corridor[] {
@@ -121,8 +121,12 @@ function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
- if(endpoint==="network"&&!networkResponse(value))
+ if(endpoint==="network"&&!networkResponse(value)){
+  if(value!==null&&typeof value==="object"&&
+     "passphrase" in value&&value.passphrase!=="Test SDF Network ; September 2015")
+   throw new Error("The backend reported a different Stellar network. Testnet access was denied.");
   throw new Error("Network response was invalid or not Stellar Testnet.");
+ }
  if(endpoint==="ready"&&!readinessResponse(value))
   throw new Error("Readiness response was invalid or claimed unsupported readiness.");
  if(endpoint==="contracts"&&!contractDiscoveryResponse(value))
