@@ -410,3 +410,80 @@ test("invalid or duplicate deep-link filters cannot make up a configured corrido
  await page.getByRole("button",{name:"Clear"}).click();
  await expect(page).toHaveURL(/\/preview\/corridors$/);
 });
+
+async function installFakeFreighter(page:Page,options:{authorized:boolean;networkPassphrase?:string;denyRequest?:boolean}){
+ await page.addInitScript(({authorized,networkPassphrase,denyRequest,account})=>{
+  const bridge=window as typeof window&{
+   mockAllowed:boolean;mockNetwork:string;mockAddress:string;mockDenied:boolean;
+   freighterRequests:string[];
+  };
+  Object.defineProperty(bridge,"freighter",{value:true,configurable:true});
+  bridge.mockAllowed=authorized;
+  bridge.mockNetwork=networkPassphrase;
+  bridge.mockAddress=account;
+  bridge.mockDenied=denyRequest;
+  bridge.freighterRequests=[];
+  window.addEventListener("message",event=>{
+   const packet=event.data as {source?:string;messageId?:number;type?:string};
+   if(event.source!==window||packet.source!=="FREIGHTER_EXTERNAL_MSG_REQUEST")return;
+   bridge.freighterRequests.push(packet.type??"");
+   let body:Record<string,unknown>={};
+   switch(packet.type){
+    case "REQUEST_ALLOWED_STATUS":body={isAllowed:bridge.mockAllowed};break;
+    case "REQUEST_PUBLIC_KEY":body={publicKey:bridge.mockAllowed?bridge.mockAddress:""};break;
+    case "REQUEST_NETWORK_DETAILS":body={networkDetails:{network:bridge.mockNetwork===testnetPassphrase?"TESTNET":"PUBLIC",
+      networkPassphrase:bridge.mockNetwork}};break;
+    case "REQUEST_ACCESS":
+      body=bridge.mockDenied?{publicKey:"",apiError:{code:-4,message:"Access denied by wallet."}}:
+       {publicKey:bridge.mockAddress};
+      if(!bridge.mockDenied)bridge.mockAllowed=true;
+      break;
+    default:body={apiError:{code:-1,message:"Unsupported wallet test request"}};
+   }
+   window.postMessage({source:"FREIGHTER_EXTERNAL_MSG_RESPONSE",messagedId:packet.messageId,...body},window.location.origin);
+  });
+ },{authorized:options.authorized,networkPassphrase:options.networkPassphrase??testnetPassphrase,denyRequest:options.denyRequest??false,account:VALID_WATCH_ONLY_ACCOUNT});
+}
+test("previous Freighter permission restores Testnet public address without a new approval request",async({page})=>{
+ await installFakeFreighter(page,{authorized:true});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/business");
+ await expect(page.getByText("Freighter connected on Testnet")).toBeVisible();
+ await expect(page.getByText(VALID_WATCH_ONLY_ACCOUNT).first()).toBeVisible();
+ const initial=await page.evaluate(()=>(window as typeof window&{freighterRequests:string[]}).freighterRequests);
+ expect(initial).toContain("REQUEST_ALLOWED_STATUS");
+ expect(initial).toContain("REQUEST_PUBLIC_KEY");
+ expect(initial).not.toContain("REQUEST_ACCESS");
+ const button=page.getByRole("button",{name:/Transfer unavailable/});
+ await expect(button).toBeDisabled();
+ await page.evaluate(()=>{
+  const state=window as typeof window&{mockAllowed:boolean};
+  state.mockAllowed=false;
+  window.dispatchEvent(new Event("focus"));
+ });
+ await expect(page.getByRole("alert").filter({hasText:"permission was revoked"})).toBeVisible();
+ await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
+});
+test("previously approved wrong-network Freighter is rejected before public-account display",async({page})=>{
+ await installFakeFreighter(page,{authorized:true,networkPassphrase:"Public Global Stellar Network ; September 2015"});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/send");
+ await expect(page.getByRole("alert").filter({hasText:"wrong network"})).toBeVisible();
+ await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+ expect(await page.evaluate(()=>(window as typeof window&{freighterRequests:string[]}).freighterRequests))
+  .not.toContain("REQUEST_ACCESS");
+});
+test("Freighter manual permission denial leaves no session or transaction submission",async({page})=>{
+ await installFakeFreighter(page,{authorized:false,denyRequest:true});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/business");
+ await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
+ await page.getByRole("button",{name:"Connect Freighter"}).click();
+ await expect(page.getByRole("alert").filter({hasText:"Access denied by wallet."})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+ const req=await page.evaluate(()=>(window as typeof window&{freighterRequests:string[]}).freighterRequests);
+ expect(req).toContain("REQUEST_ACCESS");
+ expect(req).not.toContain("SUBMIT_TRANSACTION");
+ expect(req).not.toContain("SUBMIT_AUTH_ENTRY");
+});
