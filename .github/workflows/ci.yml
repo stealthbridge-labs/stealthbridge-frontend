@@ -50,6 +50,14 @@ jobs:
         run: npm run test:browser
         env:
           STEALTHBRIDGE_TEST_PREVIEW: "1"
+      - name: Require desktop/mobile technical-preview network-state evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: technical-preview-state-evidence
+          path: test-results/**/preview-network-evidence/*.png
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
