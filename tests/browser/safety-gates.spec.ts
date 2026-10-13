@@ -411,9 +411,10 @@ test("invalid or duplicate deep-link filters cannot make up a configured corrido
  await expect(page).toHaveURL(/\/preview\/corridors$/);
 });
 
-async function installFakeFreighter(page:Page,options:{authorized:boolean;networkPassphrase?:string;denyRequest?:boolean}){
+async function installFakeFreighter(page:Page,options:{authorized:boolean;networkPassphrase?:string;denyRequest?:boolean;switchAddressOnAccess?:boolean;revokeAfterAccess?:boolean;switchNetworkOnAccess?:boolean}){
  await page.addInitScript(({authorized,networkPassphrase,denyRequest,account})=>{
   const testnetPassphrase="Test SDF Network ; September 2015";
+  const replacementAccount="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX";
   const bridge=window as typeof window&{
    mockAllowed:boolean;mockNetwork:string;mockAddress:string;mockDenied:boolean;
    freighterRequests:string[];
@@ -437,13 +438,21 @@ async function installFakeFreighter(page:Page,options:{authorized:boolean;networ
     case "REQUEST_ACCESS":
       body=bridge.mockDenied?{publicKey:"",apiError:{code:-4,message:"Access denied by wallet."}}:
        {publicKey:bridge.mockAddress};
-      if(!bridge.mockDenied)bridge.mockAllowed=true;
+      if(!bridge.mockDenied){
+       bridge.mockAllowed=!revokeAfterAccess;
+       if(switchAddressOnAccess)bridge.mockAddress=replacementAccount;
+       if(switchNetworkOnAccess)bridge.mockNetwork="Public Global Stellar Network ; September 2015";
+      }
       break;
     default:body={apiError:{code:-1,message:"Unsupported wallet test request"}};
    }
    window.postMessage({source:"FREIGHTER_EXTERNAL_MSG_RESPONSE",messagedId:packet.messageId,...body},window.location.origin);
   });
- },{authorized:options.authorized,networkPassphrase:options.networkPassphrase??testnetPassphrase,denyRequest:options.denyRequest??false,account:VALID_WATCH_ONLY_ACCOUNT});
+ },{authorized:options.authorized,networkPassphrase:options.networkPassphrase??testnetPassphrase,
+     denyRequest:options.denyRequest??false,account:VALID_WATCH_ONLY_ACCOUNT,
+     switchAddressOnAccess:options.switchAddressOnAccess??false,
+     revokeAfterAccess:options.revokeAfterAccess??false,
+     switchNetworkOnAccess:options.switchNetworkOnAccess??false});
 }
 test("previous Freighter permission restores Testnet public address without a new approval request",async({page})=>{
  await installFakeFreighter(page,{authorized:true});
@@ -488,6 +497,39 @@ test("Freighter manual permission denial leaves no session or transaction submis
  expect(req).not.toContain("SUBMIT_TRANSACTION");
  expect(req).not.toContain("SUBMIT_AUTH_ENTRY");
 });
+
+
+test("fresh Freighter grant is rechecked for the same account and Testnet before exposing local connection",async({page})=>{
+ await installFakeFreighter(page,{authorized:false});
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/business");
+ await page.getByRole("button",{name:"Connect Freighter"}).click();
+ await expect(page.getByText("Freighter connected on Testnet")).toBeVisible();
+ const calls=await page.evaluate(()=>(window as typeof window&{freighterRequests:string[]}).freighterRequests);
+ expect(calls).toContain("REQUEST_ACCESS");
+ expect(calls).toContain("REQUEST_ALLOWED_STATUS");
+ expect(calls).toContain("REQUEST_PUBLIC_KEY");
+ expect(calls).toContain("REQUEST_NETWORK_DETAILS");
+ expect(calls).not.toContain("SUBMIT_TRANSACTION");
+ expect(calls).not.toContain("SUBMIT_AUTH_ENTRY");
+ await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+});
+
+for(const scenario of [
+ {label:"account switch",options:{switchAddressOnAccess:true},error:/account changed during connection/},
+ {label:"permission revocation",options:{revokeAfterAccess:true},error:/permission changed during connection/},
+ {label:"network switch",options:{switchNetworkOnAccess:true},error:/Switch Freighter to Stellar Testnet/}
+] as const){
+ test("Freighter cannot commit stale manual approval after "+scenario.label,async({page})=>{
+  await installFakeFreighter(page,{authorized:false,...scenario.options});
+  await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+  await page.goto("/preview/send");
+  await page.getByRole("button",{name:"Connect Freighter"}).click();
+  await expect(page.getByRole("alert").filter({hasText:scenario.error})).toBeVisible();
+  await expect(page.getByText("Freighter connected on Testnet")).toHaveCount(0);
+  await expect(page.getByRole("button",{name:/Transfer unavailable/})).toBeDisabled();
+ });
+}
 
 test("read-only network states retain accessibility and visual evidence on desktop/mobile",async({page},testInfo)=>{
  const folder=testInfo.outputPath("preview-network-evidence");
