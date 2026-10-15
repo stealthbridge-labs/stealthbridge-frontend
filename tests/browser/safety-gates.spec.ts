@@ -610,7 +610,9 @@ test("observability dashboard reconciles live RPC and persisted checkpoint witho
  await expect(page.getByTestId("database-state")).toHaveText("Verified observation");
  await expect(page.getByTestId("contracts-state")).toHaveText("Unknown");
  await expect(page.getByText("All financial flags disabled")).toBeVisible();
- await expect(page.getByText("No verified deployment")).toBeVisible();
+ // The fixture deliberately returns HTTP 503 for source discovery: a missing
+ // contract response is UNKNOWN, not an asserted undeployed manifest.
+ await expect(page.getByText("Not established")).toBeVisible();
  await expect(page.getByRole("status")).toContainText("Financial execution is disabled");
  await expect(page.getByRole("link",{name:"Look up a Testnet transaction"})).toHaveAttribute("href","/explorer");
  expect(sent.sort()).toEqual([
@@ -637,7 +639,9 @@ test("observability labels stale, unavailable, and wrong-network dependencies wi
  await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
  await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
  await expect(page.getByTestId("database-state")).toHaveText("Unavailable or not configured");
- await expect(page.getByText("Unavailable — fail closed")).toBeVisible();
+ // After the recovery attempt the capabilities endpoint returned four
+ // validated false flags, while the RPC and DB remain unavailable.
+ await expect(page.getByText("All financial flags disabled")).toBeVisible();
 });
 
 test("observability refuses another Stellar network even with nominally fresh ledger data",async({page})=>{
