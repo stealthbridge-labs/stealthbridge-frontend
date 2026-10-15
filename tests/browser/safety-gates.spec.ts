@@ -8,7 +8,7 @@ const network=(passphrase:string,ageSeconds:number)=>({
  ledger_closed_at_unix:String(currentUnix()-ageSeconds),ledger_hash:"a".repeat(64),source:"stellar-rpc"
 });
 const checkpoint=(ageSeconds:number)=>({
- ledger_sequence:1234,ledger_hash:"b".repeat(64),
+ ledger_sequence:1234,ledger_hash:"a".repeat(64),
  ledger_closed_at_unix:String(currentUnix()-ageSeconds),source:"stellar-rpc"
 });
 
@@ -642,6 +642,52 @@ test("observability labels stale, unavailable, and wrong-network dependencies wi
  // After the recovery attempt the capabilities endpoint returned four
  // validated false flags, while the RPC and DB remain unavailable.
  await expect(page.getByText("All financial flags disabled")).toBeVisible();
+});
+
+
+test("observability keeps only public session readings, supports deliberate refresh, and copies a redacted receipt",async({page})=>{
+ await page.addInitScript(()=>{
+  Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+   writeText:async(text:string)=>{(window as typeof window &{__obsCopied?:string}).__obsCopied=text;}
+  }});
+ });
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/observability");
+ const timeline=page.getByTestId("observation-timeline");
+ await expect(timeline).toBeVisible();
+ await expect(timeline.locator("tbody tr")).toHaveCount(1);
+ await expect(page.getByTestId("observer-integrity")).toContainText("Ledger hashes agree");
+ await expect(page.getByRole("checkbox",{name:"Auto-recheck every 30s"})).not.toBeChecked();
+ // An explicit second observation does not erase the first reading.
+ await page.waitForTimeout(1150);
+ await page.getByRole("button",{name:"Refresh observations"}).click();
+ await expect(timeline.locator("tbody tr")).toHaveCount(2);
+ await page.getByRole("button",{name:"Copy public evidence"}).click();
+ await expect(page.locator(".observability-copy-status")).toContainText("Public evidence copied.");
+ const receipt=await page.evaluate(()=>(window as typeof window&{__obsCopied?:string}).__obsCopied);
+ expect(receipt).toBeDefined();
+ const data=JSON.parse(receipt!);
+ expect(data.network).toBe("testnet");
+ expect(data.scope).toBe("public-read-only");
+ expect(data.paymentExecutionEnabled).toBe(false);
+ expect(data.observations).toHaveLength(2);
+ expect(JSON.stringify(data)).not.toMatch(/ledger_hash|passphrase|secret|wallet|privateKey|accountAddress|rawEvents/i);
+ await page.reload();
+ await expect(page.getByTestId("observation-timeline").locator("tbody tr")).toHaveCount(1);
+});
+
+test("observability rejects same-ledger contradictory hashes and never labels a conflict as synced",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.route("**/api/bridge/v1/observer",route=>route.fulfill({
+  json:{...checkpoint(10),ledger_hash:"b".repeat(64)}
+ }));
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("observer-state")).toHaveText("Disagreement detected");
+ await expect(page.getByTestId("observer-integrity")).toContainText("Ledger hash disagreement");
+ await expect(page.getByRole("status").filter({hasText:/Public RPC and saved observer disagree/})).toBeVisible();
+ await expect(page.getByTestId("observation-timeline").getByText("Ledger hash disagreement")).toBeVisible();
+ await expect(page.getByText("Payment execution").locator("..").getByText("Disabled")).toBeVisible();
 });
 
 test("observability refuses another Stellar network even with nominally fresh ledger data",async({page})=>{
