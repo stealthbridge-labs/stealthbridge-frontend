@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
-import {Activity,ArrowLeft,ArrowRight,BookOpen,Layers,Database,Globe2,Code2,LockKeyhole,RefreshCw,Search,ShieldCheck,Wallet} from "lucide-react";
+import {Activity,ArrowLeft,ArrowRight,BookOpen,Layers,Building2,Database,Globe2,Code2,LockKeyhole,RefreshCw,Search,ShieldCheck,Wallet} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscovery} from "@/lib/bridge-api";
@@ -9,6 +9,7 @@ import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscove
 type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;loading:boolean;error:boolean};
 const initial:Status={network:null,ready:null,contracts:null,loading:true,error:false};
 const links=[
+ {href:"/preview/approvals",title:"Business review controls",label:"Maker-checker policy",icon:Building2,detail:"Explore tenant-aware reviewer separation rules without enabling settlements."},
  {href:"/preview/developers",title:"Developer integration",label:"Read-only SDK preflight",icon:Code2,detail:"Check the Testnet API, platform catalog, source-only Soroban state, and SDK integration boundaries."},
  {href:"/preview/modules",title:"Platform modules",label:"Product availability",icon:Layers,detail:"Compare real backend capability stages for consumer, business, developer and partner modules; no financial execution."},
  {href:"/preview/business",title:"Business workspace",label:"Treasury visibility",icon:Wallet,detail:"Inspect the public Testnet network, configured corridors and a consented public wallet account."},
