@@ -1,6 +1,6 @@
 # Public Testnet observation timeline (source-pinned SDK v0.2)
 
-The technical Preview observability page reuses the pure read-only `src/observation-health.ts` source from the StealthBridge SDK, pinned to a reviewed Git commit by CI. It consumes only five existing read-only same-origin GET endpoints through `src/lib/bridge-api.ts`: `/v1/network`, `/v1/observer`, `/ready`, `/v1/capabilities`, and `/v1/contracts`. Neither the wallet nor public corridors nor any provider callback is queried to build this timeline.
+The technical Preview observability page reuses the pure read-only `src/observation-health.ts` source from the StealthBridge SDK, pinned byte-for-byte to SDK commit `3bf69c478461958026839832627042bc3f1b9577` by CI. It consumes only five existing read-only same-origin GET endpoints through `src/lib/bridge-api.ts`: `/v1/network`, `/v1/observer`, `/ready`, `/v1/capabilities`, and `/v1/contracts`. Neither the wallet nor public corridors nor any provider callback is queried to build this timeline.
 
 ## What users see
 
@@ -15,3 +15,5 @@ The SDK `assessPublicObservations` verdict `public-metadata-current` applies **o
 ## Regression and review
 
 Run `npm run typecheck`, `STEALTHBRIDGE_SITE_MODE=preview npm run build`, and the Playwright safety suite. Its observability tests exercise a valid equal-hash public reading, misleading equal-height/different-hash RPC and observer results, wrong-network rejection, unavailable contracts, browser session reset, copying a sanitized JSON receipt, and continued disabled execution. The copied SDK helper must match the immutable reviewed SDK source revision byte-for-byte; its source pin cannot be replaced with a floating branch or tag. A passing simulated browser test is **not** evidence of live Testnet confidentiality or service uptime.
+
+CI: `node scripts/verify-observation-health.mjs` compares the local pure observation module to the exact immutable SDK revision above before the TypeScript and Playwright build; it never fetches remote data from the user's browser.
