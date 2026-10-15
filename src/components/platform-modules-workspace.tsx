@@ -70,7 +70,7 @@ export function PlatformModulesWorkspace(){
    <section aria-label="Filter product modules">
     <h2 className="preview-hub-title">Product modules</h2>
     <div className="preview-home-toolbar" role="group" aria-label="Audience">
-     {audiences.map(value=><Button type="button" variant={audience===value?"default":"outline"}
+     {audiences.map(value=><Button type="button" variant={audience===value?"primary":"outline"}
       size="sm" key={value} aria-pressed={audience===value}
       onClick={()=>setAudience(value)}>{value==="all"?"All":value[0].toUpperCase()+value.slice(1)}</Button>)}
     </div>
