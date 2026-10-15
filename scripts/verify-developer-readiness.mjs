@@ -20,7 +20,7 @@ const dashboard=await readFile("src/components/developer-workspace.tsx","utf8");
 assert.ok(dashboard.includes("assessDeveloperReadiness("));
 console.log("PASS: frontend uses pinned SDK developer preflight without payment claims");
 
-const BUSINESS_SDK_REF="1cdf23e0cd09bf9385fcdcb5da7d8984b242a754";
+const BUSINESS_SDK_REF="79497fb79986fcf0839f9655e3f81350865c04f2";
 const businessReply=await fetch(
  "https://raw.githubusercontent.com/stealthbridge-labs/stealthbridge-sdk/"+
  BUSINESS_SDK_REF+"/src/business-review.ts",
