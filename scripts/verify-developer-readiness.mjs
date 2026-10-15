@@ -37,3 +37,18 @@ for(const requirement of ["financialExecutionAuthorized:false","DUPLICATE_REVIEW
  assert.ok(business.includes(requirement),"Business policy review invariant missing: "+requirement);
 }
 console.log("PASS: business review policy matches pinned SDK and cannot authorize payment");
+
+// Canonical business draft identity is pinned to reviewed SDK source, not a fork.
+const ENVELOPE_SDK_REF="4866ebf8dfc41b60a84c66bf355a9e3b5037aca5";
+const envelopeReply=await fetch(
+ "https://raw.githubusercontent.com/stealthbridge-labs/stealthbridge-sdk/"+
+ ENVELOPE_SDK_REF+"/src/business-envelope.ts",
+ {redirect:"error",signal:AbortSignal.timeout(12_000)}
+);
+if(!envelopeReply.ok)throw new Error("Pinned SDK business envelope is unavailable");
+const envelopeSource=await envelopeReply.text();
+if(envelopeSource.length<100||envelopeSource.length>12_000)
+ throw new Error("SDK envelope source exceeded approved size limits");
+assert.equal(await readFile("src/lib/business-envelope.ts","utf8"),envelopeSource,
+ "Frontend canonical review envelope must match pinned SDK");
+console.log("PASS: frontend business draft fingerprints match pinned SDK source");
