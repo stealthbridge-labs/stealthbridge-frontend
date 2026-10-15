@@ -1,4 +1,6 @@
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
+import {assertActivityFilters,validateActivityPage} from "./observer-activity";
+import type {ActivityFilters,PublicActivityPage} from "./observer-activity";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -216,3 +218,20 @@ export interface ContractDiscovery extends ApiContractDiscovery {
   notes?:string;
  };
 }
+
+/** Display only bounded historical public Testnet contract-event metadata.
+ * A journal record is never a verified privacy proof or fiat payout.
+ */
+export async function readObserverActivity(
+ filters:ActivityFilters={},signal?:AbortSignal
+):Promise<PublicActivityPage>{
+ const limit=assertActivityFilters(filters);
+ const params=new URLSearchParams({limit:String(limit)});
+ if(filters.contractId)params.set("contract_id",filters.contractId);
+ if(filters.before)params.set("before",filters.before);
+ const value=await read<unknown>("v1/observer/activity?"+params,signal);
+ if(!validateActivityPage(value,{...filters,limit}))
+  throw new Error("Public Testnet journal was malformed, out of order or claimed unsupported execution.");
+ return value;
+}
+export type {ActivityContract,ActivityEvent,PublicActivityPage,ActivityFilters} from "./observer-activity";
