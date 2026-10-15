@@ -25,6 +25,8 @@ jobs:
         run: node scripts/verify-sdk-wire.mjs
       - name: Verify read-only observer health uses exact pinned SDK implementation
         run: node scripts/verify-observation-health.mjs
+      - name: Validate product catalog and preview isolation
+        run: node --experimental-strip-types --test tests/platform-modules.test.mjs
       - run: npm run typecheck
       - run: npm run build
         env:
