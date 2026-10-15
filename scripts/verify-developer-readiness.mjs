@@ -19,3 +19,21 @@ for(const marker of ["funds_movement_enabled: false","wallet_signing_enabled: fa
 const dashboard=await readFile("src/components/developer-workspace.tsx","utf8");
 assert.ok(dashboard.includes("assessDeveloperReadiness("));
 console.log("PASS: frontend uses pinned SDK developer preflight without payment claims");
+
+const BUSINESS_SDK_REF="1cdf23e0cd09bf9385fcdcb5da7d8984b242a754";
+const businessReply=await fetch(
+ "https://raw.githubusercontent.com/stealthbridge-labs/stealthbridge-sdk/"+
+ BUSINESS_SDK_REF+"/src/business-review.ts",
+ {redirect:"error",signal:AbortSignal.timeout(12_000)}
+);
+if(!businessReply.ok)throw new Error("Pinned SDK business review policy is unavailable");
+const business=await businessReply.text();
+if(business.length<100||business.length>16_384)
+ throw new Error("Business policy source is outside reviewed size limits");
+assert.equal(await readFile("src/lib/business-review.ts","utf8"),business,
+ "Business approval preflight must match pinned SDK source");
+for(const requirement of ["financialExecutionAuthorized:false","DUPLICATE_REVIEWER",
+ "WRONG_ORGANIZATION","SAME_INITIATOR","MAX_RECORDS"]){
+ assert.ok(business.includes(requirement),"Business policy review invariant missing: "+requirement);
+}
+console.log("PASS: business review policy matches pinned SDK and cannot authorize payment");
