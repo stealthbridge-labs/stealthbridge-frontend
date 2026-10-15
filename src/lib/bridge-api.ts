@@ -1,3 +1,4 @@
+import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
@@ -215,4 +216,11 @@ export interface ContractDiscovery extends ApiContractDiscovery {
   txHashes:never[];
   notes?:string;
  };
+}
+
+/** Read-only platform discovery; invalid capability claims fail closed. */
+export async function readPlatformModules(signal?:AbortSignal):Promise<PlatformCatalog>{
+ const value=await read<unknown>("v1/platform/modules",signal);
+ if(!validPlatformCatalog(value))throw new Error("Unverified platform capability inventory. Financial execution remains disabled.");
+ return value;
 }
