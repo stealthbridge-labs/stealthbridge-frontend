@@ -205,7 +205,7 @@ export function ObservabilityWorkspace(){
        }}><Copy size={15} aria-hidden="true"/> Copy public evidence</Button>
      </div>
     </div>
-    <p className="observability-copy-status" role="status" aria-live="polite">{copyStatus}</p>
+    <p className="observability-copy-status" aria-live="polite">{copyStatus}</p>
     {history.length===0?
      <p className="observability-history-empty">Awaiting the first backend reading. Missing observations are never synthesized.</p>:
      <div className="observability-history-scroll">
