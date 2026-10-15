@@ -52,6 +52,14 @@ jobs:
         run: npm run test:browser
         env:
           STEALTHBRIDGE_TEST_PREVIEW: "1"
+      - name: Retain public Testnet activity empty/history screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testnet-public-activity-evidence
+          path: test-results/**/testnet-activity*.png
+          if-no-files-found: error
+          retention-days: 7
       - name: Require desktop/mobile technical-preview network-state evidence
         if: always()
         uses: actions/upload-artifact@v4
