@@ -82,7 +82,7 @@ export function ContractExplorer(){
    <Brand/>
    <span className="network-chip"><i/> Stellar Testnet</span>
    <Link href="/preview" className="back-link">Workspace hub <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/corridors">Corridor directory <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/business">Business preview <ArrowRight size={15} aria-hidden/></Link>
-   <Link className="back-link" href="/explorer">Transaction explorer <ArrowRight size={15} aria-hidden/></Link>
+   <Link className="back-link" href="/preview/activity">Testnet activity <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/explorer">Transaction explorer <ArrowRight size={15} aria-hidden/></Link>
    <Link className="back-link" href="/"><ArrowLeft size={16} aria-hidden/> Home</Link>
   </header>
   <main id="main-content" className="workspace-main">
