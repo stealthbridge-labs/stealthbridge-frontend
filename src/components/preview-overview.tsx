@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
-import {Activity,ArrowLeft,ArrowRight,BookOpen,Database,Globe2,LockKeyhole,RefreshCw,Search,ShieldCheck,Wallet} from "lucide-react";
+import {Activity,ArrowLeft,ArrowRight,BookOpen,Layers,Database,Globe2,LockKeyhole,RefreshCw,Search,ShieldCheck,Wallet} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscovery} from "@/lib/bridge-api";
@@ -9,6 +9,7 @@ import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscove
 type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;loading:boolean;error:boolean};
 const initial:Status={network:null,ready:null,contracts:null,loading:true,error:false};
 const links=[
+ {href:"/preview/modules",title:"Platform modules",label:"Product availability",icon:Layers,detail:"Compare real backend capability stages for consumer, business, developer and partner modules; no financial execution."},
  {href:"/preview/business",title:"Business workspace",label:"Treasury visibility",icon:Wallet,detail:"Inspect the public Testnet network, configured corridors and a consented public wallet account."},
  {href:"/preview/send",title:"Send workspace",label:"Consumer experience",icon:Globe2,detail:"Explore private-payment research availability without any enabled money movement."},
  {href:"/preview/corridors",title:"Corridor directory",label:"Real PostgreSQL records",icon:Database,detail:"Query and paginate enabled operator-created routes by countries and declared privacy rail."},
