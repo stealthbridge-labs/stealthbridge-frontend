@@ -28,9 +28,11 @@ export type BusinessReviewErrorCode =
   "INVALID_POLICY" | "EXPIRED" | "INVALID_RECORD" | "WRONG_ORGANIZATION" |
   "SAME_INITIATOR" | "FORBIDDEN_ROLE" | "DUPLICATE_REVIEWER" | "TOO_MANY_RECORDS";
 export class BusinessReviewError extends Error {
-  constructor(public readonly code: BusinessReviewErrorCode) {
+  readonly code: BusinessReviewErrorCode;
+  constructor(code: BusinessReviewErrorCode) {
     super("StealthBridge business review policy rejected: "+code);
     this.name="BusinessReviewError";
+    this.code=code;
   }
 }
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
