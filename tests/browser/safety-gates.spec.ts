@@ -663,7 +663,7 @@ test("observability keeps only public session readings, supports deliberate refr
  await page.getByRole("button",{name:"Refresh observations"}).click();
  await expect(timeline.locator("tbody tr")).toHaveCount(2);
  await page.getByRole("button",{name:"Copy public evidence"}).click();
- await expect(page.getByRole("status").filter({hasText:"Public evidence copied."})).toBeVisible();
+ await expect(page.locator(".observability-copy-status")).toContainText("Public evidence copied.");
  const receipt=await page.evaluate(()=>(window as typeof window&{__obsCopied?:string}).__obsCopied);
  expect(receipt).toBeDefined();
  const data=JSON.parse(receipt!);
