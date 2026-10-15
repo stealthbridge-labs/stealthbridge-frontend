@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
-import {Activity,ArrowLeft,BookOpen,Check,Copy,Database,LockKeyhole,RefreshCw,Radio,ShieldAlert} from "lucide-react";
+import {Activity,ArrowLeft,BookOpen,Copy,Database,LockKeyhole,RefreshCw,Radio,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {ApiUnavailable,readBridge} from "@/lib/bridge-api";
@@ -28,10 +28,6 @@ function outcome<T>(settled:PromiseSettledResult<T>):Result<T>{
  }
  return unavailable("Could not validate this Testnet response");
 }
-function freshness(ledgerClosed:string,checkedAt:number):"fresh"|"stale"{
- const unix=Number(ledgerClosed),age=checkedAt-unix;
- return Number.isSafeInteger(unix)&&unix>0&&age>=-30&&age<=180?"fresh":"stale";
-}
 function textValue<T>(value:Result<T>,format:(v:T)=>string):string{
  return value.state==="available"?format(value.value):value.reason;
 }
@@ -40,7 +36,6 @@ function when(timestamp:string):string{
  if(!Number.isSafeInteger(value)||value<=0)return "Unverified timestamp";
  return new Date(value*1000).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"medium"});
 }
-const TESTNET="Test SDF Network ; September 2015";
 function healthOf(s:Snapshot){
  const read=<T,>(result:Result<T>):T|null=>result.state==="available"?result.value:null;
  return assessPublicObservations({
@@ -104,7 +99,6 @@ export function ObservabilityWorkspace(){
  const last=s?.observer.state==="available"?s.observer.value:null;
  const health=s?healthOf(s):null;
  const ledgerFresh=health?.liveFresh??false;
- const observerFresh=health?.observerFresh??false;
  const inSync=health?.observerComparison==="aligned";
  const hasConflict=health?.observerComparison==="ahead"||
   health?.observerComparison==="conflict";
@@ -135,7 +129,8 @@ export function ObservabilityWorkspace(){
    </div>
    <p role="status" aria-live="polite" className="observability-summary">
     {view.loading?"Checking backend dependencies and Stellar Testnet…":
-     hasConflict?"Public RPC and saved observer disagree. No financial execution is permitted.": 
+     hasConflict?"Public RPC and saved observer disagree. No financial execution is permitted.":
+     health?.verdict==="unsupported-claim"?"Unsafe financial or deployment claim detected. No financial execution is permitted.":
      ledgerFresh&&dbReady?"Live Testnet and database dependency checks passed. Financial execution is disabled.":
      "One or more dependencies are unverified, stale or unavailable. No financial execution is permitted."}
    </p>
@@ -200,6 +195,10 @@ export function ObservabilityWorkspace(){
       <Button variant="outline" size="sm" disabled={view.loading||history.length===0}
        onClick={()=>{
         const summary=publicEvidenceReceipt(history,Math.floor(Date.now()/1000));
+        if(!navigator.clipboard?.writeText){
+         setCopyStatus("Clipboard unavailable. Check browser permissions.");
+         return;
+        }
         void navigator.clipboard.writeText(JSON.stringify(summary,null,2))
          .then(()=>setCopyStatus("Public evidence copied. No wallet or private data included."))
          .catch(()=>setCopyStatus("Clipboard unavailable. Check browser permissions."));
