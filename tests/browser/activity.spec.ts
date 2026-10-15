@@ -44,24 +44,31 @@ test("public history supports stable older-page loads and filtered contract iden
   seen.push(url.pathname+url.search);
   if(url.pathname.endsWith("/v1/network"))return route.fulfill({json:ledger()});
   const before=url.searchParams.get("before");
-  const items=before?[event(ONE,"a",100)]:[event(TWO,"b",101)];
-  const cursor=before?null:TWO+"."+CONTRACT;
+  // A page advertises a next cursor only when it fills the requested limit.
+  // Show 10 genuinely distinct, synthetic PUBLIC event IDs for this fixture.
+  const first=Array.from({length:10},(_,index)=>{
+   const ledger=110-index;
+   const id=String(ledger).padStart(19,"0")+"-0000000001";
+   return event(id,"b",ledger);
+  });
+  const items=before?[event(ONE,"a",100)]:first;
+  const cursor=before?null:first.at(-1)!.id+"."+CONTRACT;
   return route.fulfill({json:activity(items,cursor)});
  });
  await page.goto("/preview/activity");
- await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(1);
+ await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(10);
  await expect(page.getByText(TWO,{exact:true})).toBeVisible();
  await expect(page.getByRole("button",{name:/Load older public events/})).toBeEnabled();
  await page.getByRole("button",{name:/Load older public events/}).click();
- await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(2);
+ await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(11);
  await expect(page.getByRole("button",{name:/Load older public events/})).toHaveCount(0);
  await expect(page.getByText(ONE,{exact:true})).toBeVisible();
  await expect(page.getByText("No observer checkpoint configured")).toHaveCount(0);
- await expect(page.getByRole("link",{name:/Inspect public Testnet transaction/})).toHaveCount(2);
+ await expect(page.getByRole("link",{name:/Inspect public Testnet transaction/})).toHaveCount(11);
  const control=page.getByLabel("Observed contract");
  await control.selectOption(CONTRACT);
- await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(1);
- expect(seen.some(s=>s.includes("before="+TWO+"."+CONTRACT))).toBe(true);
+ await expect(page.getByRole("heading",{name:/Contract event/})).toHaveCount(10);
+ expect(seen.some(s=>s.includes("before="+String(101).padStart(19,"0")+"-0000000001."+CONTRACT))).toBe(true);
  expect(seen.some(s=>s.includes("contract_id="+CONTRACT))).toBe(true);
  await page.screenshot({path:testInfo.outputPath("testnet-activity-with-public-events.png"),fullPage:true,animations:"disabled"});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
@@ -75,7 +82,7 @@ test("forged confidential payment readiness or private XDR is rejected",async({p
    payment_execution_enabled:true}});
  });
  await page.goto("/preview/activity");
- await expect(page.getByRole("alert")).toContainText("malformed");
+ await expect(page.getByRole("alert").filter({hasText:"malformed"})).toBeVisible();
  await expect(page.getByText(TWO,{exact:true})).toHaveCount(0);
  await expect(page.getByText("Financial execution")).toBeVisible();
  await expect(page.getByText("Disabled",{exact:true})).toBeVisible();
@@ -87,7 +94,7 @@ test("database errors remain unavailable rather than misreported as no events",a
   return route.fulfill({status:503,json:{error:{code:"DEPENDENCY_UNAVAILABLE"}}});
  });
  await page.goto("/preview/activity");
- await expect(page.getByRole("alert")).toContainText("HTTP 503");
+ await expect(page.getByRole("alert").filter({hasText:"HTTP 503"})).toBeVisible();
  await expect(page.getByRole("heading",{name:"No observer checkpoint configured"})).toHaveCount(0);
 });
 test("proxy refuses malformed and duplicated activity parameters before backend access",async({request})=>{
