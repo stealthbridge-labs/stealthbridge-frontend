@@ -1,11 +1,13 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
-import {Activity,ArrowLeft,BookOpen,Database,LockKeyhole,RefreshCw,Radio,ShieldAlert} from "lucide-react";
+import {Activity,ArrowLeft,BookOpen,Check,Copy,Database,LockKeyhole,RefreshCw,Radio,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {ApiUnavailable,readBridge} from "@/lib/bridge-api";
 import type {Capabilities,ContractDiscovery,NetworkStatus,ObservedLedgerCheckpoint,ServiceReadiness} from "@/lib/bridge-api";
+import {assessPublicObservations,appendPublicEvidence,publicEvidenceReceipt} from "@/lib/observation-health";
+import type {PublicEvidenceRecord} from "@/lib/observation-health";
 
 /** A failed dependency remains missing; the UI never fills with demo balances or simulated ledgers. */
 type Result<T>={state:"available";value:T}|{state:"unavailable";reason:string};
@@ -39,10 +41,32 @@ function when(timestamp:string):string{
  return new Date(value*1000).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"medium"});
 }
 const TESTNET="Test SDF Network ; September 2015";
+function healthOf(s:Snapshot){
+ const read=<T,>(result:Result<T>):T|null=>result.state==="available"?result.value:null;
+ return assessPublicObservations({
+  checkedAtUnix:s.checkedAt,
+  network:read(s.network),
+  observer:read(s.observer),
+  readiness:read(s.ready),
+  capabilities:read(s.capabilities),
+  contracts:read(s.contracts),
+ });
+}
+const comparisonText={
+ aligned:"Ledger hashes agree",
+ lagging:"Observer behind RPC",
+ stale:"Stale observation",
+ ahead:"Observer ahead of live RPC",
+ conflict:"Ledger hash disagreement",
+ unavailable:"Not independently verified",
+} as const;
 
 export function ObservabilityWorkspace(){
  const [revision,setRevision]=useState(0);
  const [view,setView]=useState<ViewState>({loading:true,snapshot:null});
+ const [history,setHistory]=useState<PublicEvidenceRecord[]>([]);
+ const [autoRefresh,setAutoRefresh]=useState(false);
+ const [copyStatus,setCopyStatus]=useState("");
  useEffect(()=>{
   const abort=new AbortController();
   setView({loading:true,snapshot:null});
@@ -54,23 +78,36 @@ export function ObservabilityWorkspace(){
    readBridge<ContractDiscovery>("contracts",abort.signal)
   ] as const).then(([network,observer,ready,capabilities,contracts])=>{
    if(abort.signal.aborted)return;
-   setView({loading:false,snapshot:{
+   const checkedAt=Math.floor(Date.now()/1000);
+   const snapshot:Snapshot={
     network:outcome(network),observer:outcome(observer),ready:outcome(ready),
     capabilities:outcome(capabilities),contracts:outcome(contracts),
-    checkedAt:Math.floor(Date.now()/1000)
-   }});
+    checkedAt,
+   };
+   setView({loading:false,snapshot});
+   setHistory(previous=>appendPublicEvidence(previous,healthOf(snapshot)));
+   setCopyStatus("");
   });
   return ()=>abort.abort();
  },[revision]);
+ useEffect(()=>{
+  if(!autoRefresh)return;
+  // Opt-in only; do not poll hidden tabs or keep timers after navigation.
+  const id=window.setInterval(()=>{
+   if(document.visibilityState==="visible")setRevision(value=>value+1);
+  },30_000);
+  return ()=>window.clearInterval(id);
+ },[autoRefresh]);
 
  const s=view.snapshot;
  const live=s?.network.state==="available"?s.network.value:null;
  const last=s?.observer.state==="available"?s.observer.value:null;
- const ledgerFresh=live&&live.passphrase===TESTNET&&s?
-  freshness(live.ledger_closed_at_unix,s.checkedAt)==="fresh":false;
- const observerFresh=last&&s?freshness(last.ledger_closed_at_unix,s.checkedAt)==="fresh":false;
- const inSync=ledgerFresh&&observerFresh&&live&&last&&
-  last.ledger_sequence<=live.ledger_sequence;
+ const health=s?healthOf(s):null;
+ const ledgerFresh=health?.liveFresh??false;
+ const observerFresh=health?.observerFresh??false;
+ const inSync=health?.observerComparison==="aligned";
+ const hasConflict=health?.observerComparison==="ahead"||
+  health?.observerComparison==="conflict";
  const dbReady=s?.ready.state==="available"&&s.ready.value.database==="connected";
  const capabilitiesConfirmed=s?.capabilities.state==="available"&&
   Object.values(s.capabilities.value).every(value=>value===false);
@@ -98,6 +135,7 @@ export function ObservabilityWorkspace(){
    </div>
    <p role="status" aria-live="polite" className="observability-summary">
     {view.loading?"Checking backend dependencies and Stellar Testnet…":
+     hasConflict?"Public RPC and saved observer disagree. No financial execution is permitted.": 
      ledgerFresh&&dbReady?"Live Testnet and database dependency checks passed. Financial execution is disabled.":
      "One or more dependencies are unverified, stale or unavailable. No financial execution is permitted."}
    </p>
@@ -112,9 +150,12 @@ export function ObservabilityWorkspace(){
     <article className="observability-tile">
      <Activity size={22} aria-hidden="true"/>
      <h2>Observer checkpoint</h2>
-     <strong data-testid="observer-state">{status(Boolean(inSync),"Not current or missing")}</strong>
+     <strong data-testid="observer-state">{view.loading?"Checking…":hasConflict?"Disagreement detected":
+      status(Boolean(inSync),"Not current or missing")}</strong>
      <p>{s?textValue(s.observer,o=>"Stored #"+o.ledger_sequence.toLocaleString()):"Awaiting database response"}</p>
      {last&&<small>Last persisted close: {when(last.ledger_closed_at_unix)}</small>}
+     {health&&<small data-testid="observer-integrity">{comparisonText[health.observerComparison]}
+      {health.ledgerGap!==null&&health.ledgerGap>0?` · ${health.ledgerGap.toLocaleString()} ledgers behind`:""}</small>}
     </article>
     <article className="observability-tile">
      <Database size={22} aria-hidden="true"/>
@@ -143,6 +184,46 @@ export function ObservabilityWorkspace(){
      <div><span>RPC vs saved observer</span><strong>{view.loading?"Checking…":inSync?"Both observations current":"Independently unverified"}</strong></div>
      <div><span>Payment execution</span><strong>Disabled</strong></div>
     </div>
+   </section>
+   <section className="observability-history" aria-label="Session observation evidence">
+    <div className="observability-history-head">
+     <div>
+      <span className="section-index">Testnet / Public evidence</span>
+      <h2>Observation timeline</h2>
+      <p>Last {history.length} actual read attempts in this tab. No wallet, transaction payload or personal information is saved.</p>
+     </div>
+     <div className="observability-history-actions">
+      <label className="observability-auto">
+       <input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)}/>
+       Auto-recheck every 30s
+      </label>
+      <Button variant="outline" size="sm" disabled={view.loading||history.length===0}
+       onClick={()=>{
+        const summary=publicEvidenceReceipt(history,Math.floor(Date.now()/1000));
+        void navigator.clipboard.writeText(JSON.stringify(summary,null,2))
+         .then(()=>setCopyStatus("Public evidence copied. No wallet or private data included."))
+         .catch(()=>setCopyStatus("Clipboard unavailable. Check browser permissions."));
+       }}><Copy size={15} aria-hidden="true"/> Copy public evidence</Button>
+     </div>
+    </div>
+    <p className="observability-copy-status" role="status" aria-live="polite">{copyStatus}</p>
+    {history.length===0?
+     <p className="observability-history-empty">Awaiting the first backend reading. Missing observations are never synthesized.</p>:
+     <div className="observability-history-scroll">
+      <table className="observability-history-table" data-testid="observation-timeline">
+       <caption>Public Testnet readings from this browser session; newest first</caption>
+       <thead><tr><th scope="col">Checked</th><th scope="col">Live ledger</th><th scope="col">Observer</th><th scope="col">Gap</th><th scope="col">Integrity</th></tr></thead>
+       <tbody>{[...history].reverse().map(entry=><tr key={entry.checkedAtUnix}>
+        <th scope="row">{new Date(entry.checkedAtUnix*1000).toLocaleTimeString()}</th>
+        <td>{entry.liveLedger?.toLocaleString()??"Unavailable"}</td>
+        <td>{entry.observerLedger?.toLocaleString()??"Unavailable"}</td>
+        <td>{entry.ledgerGap===null?"Unknown":entry.ledgerGap.toLocaleString()}</td>
+        <td><span className={entry.verdict==="inconsistent"||entry.verdict==="unsupported-claim"?
+         "observability-warning":"observability-observed"}>{comparisonText[entry.observerComparison]}</span></td>
+       </tr>)}</tbody>
+      </table>
+     </div>}
+    <p className="observability-disclaimer">A green reading is only public ledger metadata agreement, never proof of Soroban deployment, confidentiality, fiat settlement or permission to transact. History is temporary and clears when you leave this tab.</p>
    </section>
    {s&&<p className="observability-disclaimer">Last checked {when(String(s.checkedAt))}. Refresh for a new reading. Stored observer state can lag RPC; a successful response does not demonstrate a private transfer or a bank payout.</p>}
    <div className="observability-navigation">
