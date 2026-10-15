@@ -13,6 +13,7 @@ const links=[
  {href:"/preview/send",title:"Send workspace",label:"Consumer experience",icon:Globe2,detail:"Explore private-payment research availability without any enabled money movement."},
  {href:"/preview/corridors",title:"Corridor directory",label:"Real PostgreSQL records",icon:Database,detail:"Query and paginate enabled operator-created routes by countries and declared privacy rail."},
  {href:"/preview/contracts",title:"Soroban registry",label:"Rust source ABI",icon:BookOpen,detail:"Browse all three reviewed source interfaces and independently verified deployment status."},
+ {href:"/preview/observability",title:"System observability",label:"Five live read-only checks",icon:Activity,detail:"Compare Stellar RPC, observer checkpoint, backend readiness and disabled payment capabilities without fabricated status."},
  {href:"/explorer",title:"Transaction explorer",label:"On-chain observation",icon:Search,detail:"Look up a real Testnet transaction hash, returning inclusion metadata only."},
 ] as const;
 export function PreviewOverview(){

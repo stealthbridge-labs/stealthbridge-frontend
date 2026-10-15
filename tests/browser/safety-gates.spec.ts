@@ -592,3 +592,63 @@ test("read-only network states retain accessibility and visual evidence on deskt
   fullPage:true,animations:"disabled"});
  expect(runtimeErrors).toEqual([]);
 });
+
+
+test("observability dashboard reconciles live RPC and persisted checkpoint without enabling payments",async({page},testInfo)=>{
+ const sent:string[]=[];
+ page.on("request",request=>{
+  if(request.url().includes("/api/bridge/")){
+   expect(request.method()).toBe("GET");
+   sent.push(new URL(request.url()).pathname);
+  }
+ });
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/observability");
+ await expect(page.getByRole("heading",{name:"Know what is real."})).toBeVisible();
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("observer-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("database-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("contracts-state")).toHaveText("Unknown");
+ await expect(page.getByText("All financial flags disabled")).toBeVisible();
+ // The fixture deliberately returns HTTP 503 for source discovery: a missing
+ // contract response is UNKNOWN, not an asserted undeployed manifest.
+ await expect(page.getByText("Not established")).toBeVisible();
+ await expect(page.getByRole("status")).toContainText("Financial execution is disabled");
+ await expect(page.getByRole("link",{name:"Look up a Testnet transaction"})).toHaveAttribute("href","/explorer");
+ expect(sent.sort()).toEqual([
+  "/api/bridge/v1/network","/api/bridge/v1/observer","/api/bridge/ready",
+  "/api/bridge/v1/capabilities","/api/bridge/v1/contracts",
+ ].sort());
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+ const folder=testInfo.outputPath("observability-evidence");
+ await page.screenshot({path:folder+".png",fullPage:true,animations:"disabled"});
+});
+
+test("observability labels stale, unavailable, and wrong-network dependencies without synthesizing success",async({page})=>{
+ await mockReadApi(page,{state:"stale",passphrase:testnetPassphrase,paymentClaim:true});
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByTestId("database-state")).toHaveText("Unavailable or not configured");
+ await expect(page.getByText("Unavailable — fail closed")).toBeVisible();
+ await expect(page.getByRole("status")).toContainText("No financial execution is permitted");
+ await page.unrouteAll({behavior:"wait"});
+ await mockReadApi(page,{state:"degraded"});
+ await page.getByRole("button",{name:"Refresh observations"}).click();
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByTestId("database-state")).toHaveText("Unavailable or not configured");
+ // After the recovery attempt the capabilities endpoint returned four
+ // validated false flags, while the RPC and DB remain unavailable.
+ await expect(page.getByText("All financial flags disabled")).toBeVisible();
+});
+
+test("observability refuses another Stellar network even with nominally fresh ledger data",async({page})=>{
+ await mockReadApi(page,{state:"recovered",
+  passphrase:"Public Global Stellar Network ; September 2015"});
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByRole("status")).toContainText("No financial execution is permitted");
+});
