@@ -7,6 +7,7 @@ import {Button} from "@/components/ui/button";
 import {readPlatformModules} from "@/lib/bridge-api";
 import type {PlatformCatalog} from "@/lib/platform-modules";
 import {assessBusinessReview} from "@/lib/business-review";
+import {digestBusinessEnvelope,type ReviewOperation} from "@/lib/business-envelope";
 
 // Deterministic offline fixture: NOT an organization, signed approval, or money movement.
 const FIXTURE_CLOCK=1_800_000_000;
@@ -22,6 +23,10 @@ function previewCount(required:2|3|4){
 
 export function BusinessReviewWorkspace(){
  const [required,setRequired]=useState<2|3|4>(2);
+ const [operation,setOperation]=useState<ReviewOperation>("invoice-review");
+ const [reference,setReference]=useState("INVOICE_001");
+ const [fingerprint,setFingerprint]=useState<string|null>(null);
+ const [fingerprintError,setFingerprintError]=useState("");
  const [catalog,setCatalog]=useState<PlatformCatalog|null>(null);
  const [checked,setChecked]=useState(false);
  useEffect(()=>{
@@ -71,6 +76,40 @@ export function BusinessReviewWorkspace(){
      <div><LockKeyhole size={19} aria-hidden/><span>Financial execution</span>
       <strong>{review.financialExecutionAuthorized?"Enabled":"Disabled"}</strong></div>
     </div>
+   </section>
+   <section aria-label="Canonical draft identity">
+    <h2 className="preview-hub-title">Draft fingerprint (local demonstration)</h2>
+    <p>This exercise calculates an unsigned Testnet-bound SHA-256 fingerprint from
+    synthetic organization and maker identifiers. It does not create a draft
+    on the backend, collect signatures, or authorize a payment.</p>
+    <div className="preview-home-toolbar">
+     <label htmlFor="business-draft-operation">Draft type</label>
+     <select id="business-draft-operation" value={operation}
+      onChange={event=>{
+       setOperation(event.target.value as ReviewOperation);setFingerprint(null);setFingerprintError("");
+      }} aria-label="Draft operation">
+      <option value="invoice-review">Invoice review</option>
+      <option value="vendor-onboarding">Vendor onboarding</option>
+      <option value="treasury-policy">Treasury policy</option>
+     </select>
+     <label htmlFor="business-draft-reference">Reference identifier</label>
+     <input id="business-draft-reference" value={reference} maxLength={64}
+      onChange={event=>{setReference(event.target.value);setFingerprint(null);setFingerprintError("");}}
+      placeholder="INVOICE_001" autoComplete="off" spellCheck={false}/>
+     <Button type="button" variant="outline" size="sm"
+      onClick={()=>{
+       void digestBusinessEnvelope({
+        organization:FIXTURE_ORGANIZATION,actor:FICTIONAL_SUBJECT,
+        operation,reference,requestKey:"synthetic_business_request_0001"
+       }).then(result=>{setFingerprint(result.sha256);setFingerprintError("");})
+         .catch(()=>{setFingerprint(null);setFingerprintError("Use an ASCII reference of 8–64 letters, digits, hyphens or underscores.");});
+      }}>Calculate local digest</Button>
+    </div>
+    {fingerprintError&&<p role="alert">{fingerprintError}</p>}
+    {fingerprint&&<div className="registry-boundary" role="status">
+     <p>Unsigned draft SHA-256 fingerprint (not an approval):</p>
+     <code data-testid="business-draft-sha256" style={{overflowWrap:"anywhere"}}>{fingerprint}</code>
+    </div>}
    </section>
    <section aria-label="Backend module availability">
     <h2 className="preview-hub-title">Backend availability</h2>
