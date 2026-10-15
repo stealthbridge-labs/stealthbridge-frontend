@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - name: Reject frontend/Soroban ABI drift from pinned reviewed contracts
         run: node scripts/verify-soroban-interface.mjs
       - name: Reject frontend/SDK generated wire-model drift
