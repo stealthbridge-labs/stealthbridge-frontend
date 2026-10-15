@@ -42,7 +42,7 @@ export function TestnetActivity(){
   controller.current=request;
   setLoading(true);setMoreLoading(false);setError(null);setPage(null);setNetwork(null);
   Promise.allSettled([
-   readObserverActivity({limit:PAGE_SIZE,...selected?{contractId:selected}:{}},request.signal),
+   readObserverActivity({limit:PAGE_SIZE,...(selected?{contractId:selected}:{})},request.signal),
    readBridge<NetworkStatus>("network",request.signal)
   ]).then(([activity,status])=>{
    if(request.signal.aborted)return;
@@ -63,7 +63,7 @@ export function TestnetActivity(){
   setMoreLoading(true);setError(null);
   try{
    const next=await readObserverActivity({
-    limit:PAGE_SIZE,before:cursor,...selected?{contractId:selected}:{}
+    limit:PAGE_SIZE,before:cursor,...(selected?{contractId:selected}:{})
    },request.signal);
    if(request.signal.aborted)return;
    setPage(previous=>{
