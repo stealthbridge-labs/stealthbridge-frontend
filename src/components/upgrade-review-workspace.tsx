@@ -4,11 +4,13 @@ import Link from "next/link";
 import {ArrowLeft, ShieldAlert, RefreshCcw, FileCode2} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
+import {WalletConnect} from "@/components/wallet-connect";
 import {assessRegistryUpgrade,type RegistryUpgradeAssessment,type UpgradeableRegistry} from "@/lib/upgrade-review";
 
 const HEX=/^[0-9a-f]{64}$/;
 export function UpgradeReviewWorkspace(){
  const [registry,setRegistry]=useState<UpgradeableRegistry>("policy-registry");
+ const [operatorAddress,setOperatorAddress]=useState("");
  const [candidate,setCandidate]=useState("");
  const [pending,setPending]=useState("");
  const [current,setCurrent]=useState("");
@@ -94,6 +96,21 @@ export function UpgradeReviewWorkspace(){
        Operator signing and independent RPC verification always required.</p>
      </div>
     </div>}
+   </section>
+   <section aria-label="Operator wallet comparison">
+    <h2 className="preview-hub-title">Verify your local Freighter operator</h2>
+    <p>Enter the public G-address intended to control your Testnet registry.
+    Freighter can reveal its currently selected account after your approval.
+    This check never requests seed phrases, signing or deployment.</p>
+    <label style={{display:"grid",gap:"0.4rem",maxWidth:"740px"}}>
+     Proposed Testnet administrator G-address
+     <input type="text" value={operatorAddress} autoComplete="off" maxLength={56}
+      spellCheck={false} placeholder="Your public G-address only"
+      onChange={event=>setOperatorAddress(event.target.value)}/>
+    </label>
+    <WalletConnect expectedOperatorAddress={operatorAddress}/>
+    <p>Matching public addresses does not prove you control an administrator key,
+     guarantee sufficient Testnet XLM, or authorize an upgrade. Signing stays local to your wallet.</p>
    </section>
    <section aria-label="Next deployment process">
     <h2 className="preview-hub-title">Release process</h2>
