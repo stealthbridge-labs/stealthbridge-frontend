@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalStellarAccountAddress} from "./stellar-address.ts";
 
 const HORIZON="https://horizon-testnet.stellar.org";
 const MAX_ACCOUNT_BYTES=32_768;
