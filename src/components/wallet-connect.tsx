@@ -4,6 +4,7 @@ import {getNetwork,getAddress,isConnected,isAllowed,requestAccess} from "@stella
 import {Wallet,AlertTriangle,CheckCircle2,Eye,Unplug} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
+import {getPublicTestnetAccount,type PublicTestnetAccount} from "@/lib/stellar-testnet-account";
 
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
 
@@ -21,6 +22,10 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  const [watchedAddress,setWatchedAddress]=useState<string|null>(null);
  const walletRun=useRef(0);
  const [watchError,setWatchError]=useState<string|null>(null);
+ const [observed,setObserved]=useState<PublicTestnetAccount|null>(null);
+ const [balancePending,setBalancePending]=useState(false);
+ const [balanceError,setBalanceError]=useState<string|null>(null);
+ const balanceRun=useRef(0);
  const correct=network===TESTNET_PASSPHRASE;
  const operatorProvided=expectedOperatorAddress!==undefined&&expectedOperatorAddress.trim().length>0;
  const expectedOperator=operatorProvided?canonicalStellarAccountAddress(expectedOperatorAddress!):null;
@@ -128,6 +133,19 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   }finally{if(generation===walletRun.current)setPending(false);}
  };
 
+ const checkPublicAccount=async()=>{
+  const target=address??watchedAddress;
+  if(!target)return;
+  const generation=++balanceRun.current;
+  setObserved(null);setBalanceError(null);setBalancePending(true);
+  try{
+   const result=await getPublicTestnetAccount(target);
+   if(balanceRun.current===generation)setObserved(result);
+  }catch(e){
+   if(balanceRun.current===generation)setBalanceError(e instanceof Error?e.message:"Unable to verify public Testnet account");
+  }finally{if(balanceRun.current===generation)setBalancePending(false);}
+ };
+
  const watch=()=>{
   const verified=canonicalStellarAccountAddress(watchInput);
   if(!verified){
@@ -168,6 +186,21 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    </div>
    {watchError?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{watchError}</p>:null}
    {watchedAddress?<div className="wallet-connected" role="status"><Eye size={18} aria-hidden/><div><strong>Watch-only address · not connected</strong><code>{watchedAddress}</code><a className="wallet-explorer-link" href={"https://stellar.expert/explorer/testnet/account/"+watchedAddress} target="_blank" rel="noopener noreferrer">Open public Testnet explorer (shares address with explorer)</a></div></div>:null}
+  </div>
+  <div className="wallet-watch" aria-label="Consented public Testnet account lookup">
+   <p>Optional public Testnet account lookup: Stellar Horizon will receive the selected public
+   G-address directly from your browser only when you click the button. This does not access
+   private keys, verify contract tokens, or make any payment.</p>
+   <Button type="button" variant="outline" disabled={balancePending||!(address||watchedAddress)}
+    onClick={()=>void checkPublicAccount()}>
+    {balancePending?"Checking public Testnet account…":"Check Testnet XLM balance"}
+   </Button>
+   {observed&&(address??watchedAddress)===observed.address?
+    <p role="status" data-testid="verified-testnet-xlm">
+     Stellar Testnet native XLM balance: <strong>{observed.nativeXlmBalance} XLM</strong>.
+     Ledger account sequence {observed.sequence}. This is not an available-to-spend amount.
+    </p>:null}
+   {balanceError?<p role="alert" className="wallet-error">{balanceError}</p>:null}
   </div>
   <p className="wallet-security-note">Connecting Freighter requests public-account access only. There is no transaction signing, payment submission, address upload, or wallet history indexing.</p>
  </section>;
