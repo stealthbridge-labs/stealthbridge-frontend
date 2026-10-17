@@ -4,10 +4,11 @@ import Link from "next/link";
 import {Activity,ArrowLeft,ArrowRight,BookOpen,Layers,Building2,Database,Globe2,Code2,LockKeyhole,RefreshCw,Search,ShieldCheck,Wallet} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
-import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscovery} from "@/lib/bridge-api";
+import {readBridge,readGovernanceRelease,type NetworkStatus,type ServiceReadiness,type ContractDiscovery} from "@/lib/bridge-api";
+import type {GovernanceRelease} from "@/lib/governance-release";
 
-type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;loading:boolean;error:boolean};
-const initial:Status={network:null,ready:null,contracts:null,loading:true,error:false};
+type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;governance:GovernanceRelease|null;loading:boolean;error:boolean};
+const initial:Status={network:null,ready:null,contracts:null,governance:null,loading:true,error:false};
 const links=[
  {href:"/preview/governance",title:"Verified governance release",label:"On-chain Testnet receipts",icon:ShieldCheck,detail:"Inspect real deployed Soroban contract IDs and live-checked deployment transactions; financial execution remains disabled."},
  {href:"/preview/upgrades",title:"Protocol upgrade review",label:"Soroban operations",icon:Layers,detail:"Inspect proposed registry WASM hashes and timelocks without signing, deploying or claiming authority."},
@@ -30,14 +31,16 @@ export function PreviewOverview(){
   Promise.allSettled([
    readBridge<NetworkStatus>("network",controller.signal),
    readBridge<ServiceReadiness>("ready",controller.signal),
-   readBridge<ContractDiscovery>("contracts",controller.signal)
+   readBridge<ContractDiscovery>("contracts",controller.signal),
+   readGovernanceRelease(controller.signal)
   ]).then(results=>{
    if(controller.signal.aborted)return;
-   const [network,ready,contracts]=results;
+   const [network,ready,contracts,governance]=results;
    setStatus({
     network:network.status==="fulfilled"?network.value:null,
     ready:ready.status==="fulfilled"?ready.value:null,
     contracts:contracts.status==="fulfilled"?contracts.value:null,
+    governance:governance.status==="fulfilled"?governance.value:null,
     loading:false,
     error:results.some(result=>result.status==="rejected")
    });
@@ -61,7 +64,7 @@ export function PreviewOverview(){
    <div className="preview-health" aria-live="polite">
     <div><Activity size={19} aria-hidden/><span>Stellar ledger</span><strong>{status.loading?"Checking…":fresh?`#${status.network?.ledger_sequence.toLocaleString()}`:"Unverified"}</strong></div>
     <div><Database size={19} aria-hidden/><span>Managed database</span><strong>{status.loading?"Checking…":status.ready?.database==="connected"?"Connected":"Not confirmed"}</strong></div>
-    <div><BookOpen size={19} aria-hidden/><span>Soroban contracts</span><strong>{status.loading?"Checking…":status.contracts?.manifest.status==="not-deployed"?"Source only":"Unverified"}</strong></div>
+    <div><BookOpen size={19} aria-hidden/><span>Soroban governance</span><strong>{status.loading?"Checking…":status.governance?"3 confirmed deployments":"Not freshly confirmed"}</strong></div>
     <div><LockKeyhole size={19} aria-hidden/><span>Financial execution</span><strong>Disabled</strong></div>
    </div>
    <div className="preview-home-toolbar">

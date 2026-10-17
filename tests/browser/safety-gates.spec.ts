@@ -250,6 +250,17 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
  expect(requests.every(value=>!value.includes("/settlements"))).toBe(true);
 });
 
+test("governance release page refuses forged payment and live WASM claims",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
+  status:200,contentType:"application/json",
+  body:JSON.stringify({schema_version:1,network:"testnet",
+   payment_execution_enabled:true,onchain_code_freshly_verified:true,contracts:[]})
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/Release receipts could not be confirmed/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
+});
+
 test("Soroban registry explorer rejects falsely deployed source metadata",async({page})=>{
  await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase,
   contractsPayload:{...sourceOnlyContracts,on_chain_verified:true}});
