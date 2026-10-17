@@ -52,7 +52,7 @@ export function GovernanceWorkspace(){
    </div>
    <div className="preview-home-toolbar">
     <p role="status">{state.loading?"Checking Stellar Testnet receipts…":release?"Three published governance deployments confirmed by Testnet receipts. Payment execution disabled.":state.error}</p>
-    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,error:null});setRevision(n=>n+1);}}>
+    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,code:null,error:null,codeError:null});setRevision(n=>n+1);}}>
      <RefreshCw size={16} aria-hidden/> Recheck live receipts
     </Button>
    </div>
