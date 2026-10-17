@@ -30,7 +30,7 @@ jobs:
       - name: Enforce pinned SDK developer preflight parity
         run: node scripts/verify-developer-readiness.mjs
       - name: Regression-test developer integration and preview isolation
-        run: node --experimental-strip-types --test tests/developer-readiness.test.mjs tests/business-review.test.mjs tests/business-envelope.test.mjs tests/business-live-input.test.mjs tests/upgrade-review.test.mjs tests/operator-wallet.test.mjs
+        run: node --experimental-strip-types --test tests/developer-readiness.test.mjs tests/business-review.test.mjs tests/business-envelope.test.mjs tests/business-live-input.test.mjs tests/upgrade-review.test.mjs tests/operator-wallet.test.mjs tests/stellar-testnet-account.test.mjs
       - name: Verify pinned SDK Soroban upgrade policy
         run: node scripts/verify-upgrade-review.mjs
       - run: npm run typecheck
