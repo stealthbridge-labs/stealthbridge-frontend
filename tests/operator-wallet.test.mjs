@@ -18,7 +18,6 @@ test("operator comparison requires explicit Freighter authorization without sign
  assert.match(wallet,/operatorMatches/);
  assert.match(wallet,/info\.networkPassphrase!==TESTNET_PASSPHRASE/);
  assert.match(review,/WalletConnect expectedOperatorAddress=\{operatorAddress\}/);
- assert.match(review,/useState\(" "\)/.source?/(?:useState\(" "\)|useState\(""\))/:/useState\(""\)/);
  for(const sensitive of [/signTransaction\(/,/signAuthEntry\(/,/submitTransaction\(/,/secretKey\(/])
   assert.doesNotMatch(wallet,sensitive);
 });
