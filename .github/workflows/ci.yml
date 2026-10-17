@@ -35,6 +35,8 @@ jobs:
         run: node scripts/verify-upgrade-review.mjs
       - name: Pin frontend governance readback validator to SDK source
         run: node scripts/verify-governance-release.mjs
+      - name: Verify frontend current executable hash policy against SDK
+        run: node scripts/verify-governance-code.mjs
       - name: Reject public governance release marketing evidence drift
         run: node scripts/verify-public-governance-evidence.mjs
       - run: npm run typecheck

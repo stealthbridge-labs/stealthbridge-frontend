@@ -250,6 +250,22 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
  expect(requests.every(value=>!value.includes("/settlements"))).toBe(true);
 });
 
+test("governance release page reports unknown current code rather than claiming unverified WASM",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
+  status:503,contentType:"application/json",body:"{}"
+ }));
+ await page.route("**/api/bridge/v1/governance/code",route=>route.fulfill({
+  status:200,contentType:"application/json",body:JSON.stringify({
+   schema_version:1,network:"testnet",payment_execution_enabled:true,
+   all_executable_hashes_match_release:true,contracts:[]
+  })
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/Release receipts could not be confirmed/)).toBeVisible();
+ await expect(page.getByText(/All three observed executable hashes match/)).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
+});
+
 test("governance release page refuses forged payment and live WASM claims",async({page})=>{
  await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
   status:200,contentType:"application/json",

@@ -1,6 +1,7 @@
 import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
+import {validGovernanceCode,type GovernanceCodeObservation} from "./governance-code";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -232,5 +233,15 @@ export async function readPlatformModules(signal?:AbortSignal):Promise<PlatformC
 export async function readGovernanceRelease(signal?:AbortSignal):Promise<GovernanceRelease>{
  const value=await read<unknown>("v1/governance/release",signal);
  if(!validGovernanceRelease(value))throw new Error("Governance receipts invalid, stale or misrepresent financial capabilities.");
+ return value;
+}
+
+/** Current contract-instance executable hashes and TTLs from read-only Testnet
+ * getLedgerEntries, never a decoded current administrator, independent audit,
+ * payment authorization, or full WASM byte-for-byte re-download.
+ */
+export async function readGovernanceCode(signal?:AbortSignal):Promise<GovernanceCodeObservation>{
+ const value=await read<unknown>("v1/governance/code",signal);
+ if(!validGovernanceCode(value))throw new Error("Current Testnet executable hash response was invalid or overstated safety.");
  return value;
 }
