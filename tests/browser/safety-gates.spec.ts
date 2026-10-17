@@ -233,7 +233,8 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
  await page.goto("/preview/contracts");
  await expect(page.getByRole("heading",{name:"Soroban Registry Explorer"})).toBeVisible();
  await expect(page.getByText("ABI matched")).toBeVisible();
- await expect(page.getByText("Not deployed",{exact:true}).first()).toBeVisible();
+ await expect(page.getByText("Legacy manifest",{exact:true}).first()).toBeVisible();
+ await expect(page.getByRole("link",{name:"View independently checked deployment receipts"})).toHaveAttribute("href","/preview/governance");
  await expect(page.getByRole("button",{name:/Corridor registry/})).toHaveAttribute("aria-pressed","true");
  await page.getByRole("button",{name:/Policy registry/}).click();
  await expect(page.getByRole("heading",{name:"Policy registry"})).toBeVisible();
