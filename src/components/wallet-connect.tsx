@@ -12,7 +12,7 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
  * and Freighter access only reveals a public address on a deliberate click.
  * Neither path signs, submits, or saves account identifiers on our servers.
  */
-export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean}){
+export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string}){
  const [address,setAddress]=useState<string|null>(null);
  const [network,setNetwork]=useState<string|null>(null);
  const [pending,setPending]=useState(false);
@@ -22,6 +22,9 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  const walletRun=useRef(0);
  const [watchError,setWatchError]=useState<string|null>(null);
  const correct=network===TESTNET_PASSPHRASE;
+ const operatorProvided=expectedOperatorAddress!==undefined&&expectedOperatorAddress.trim().length>0;
+ const expectedOperator=operatorProvided?canonicalStellarAccountAddress(expectedOperatorAddress!):null;
+ const operatorMatches=Boolean(expectedOperator&&address&&correct&&expectedOperator===address);
  const backendMatches=backendNetworkVerified&&expectedNetworkPassphrase===TESTNET_PASSPHRASE;
 
  useEffect(()=>{
@@ -140,6 +143,12 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   <div className="wallet-top"><div><h3>Wallet connection</h3><p>Choose Freighter to connect, or watch a public Stellar address without connecting. No private keys or seeds are requested.</p></div><Wallet size={23} aria-hidden/></div>
   {address&&correct&&backendMatches?<div className="wallet-connected"><CheckCircle2 aria-hidden size={18}/><div><strong>Freighter connected on Testnet</strong><code title={address}>{address}</code></div></div>:null}
   {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC readiness or ledger freshness cannot be verified. No signing is available.</p>:null}
+  {operatorProvided?<div role="status" className="wallet-security-note" data-testid="freighter-operator-match">
+   {!expectedOperator?"Operator address is invalid. Enter a checksummed public G-address.":
+    !address?"Connect Freighter on Testnet to compare its active public account with your proposed administrator address.":
+    operatorMatches?"Freighter public account matches the proposed Testnet administrator address. No signature or deployment authority has been established.":
+    "Freighter account does not match the proposed administrator address, or the active network is not Testnet. Do not approve deployments."}
+  </div>:null}
   <div className="wallet-address-actions">
    <Button variant="outline" disabled={pending} onClick={connect} type="button">{pending?"Connecting…":address?"Recheck wallet":"Connect Freighter"}</Button>
    {address?<Button type="button" variant="outline" onClick={()=>{walletRun.current++;setAddress(null);setNetwork(null);setPending(false);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
