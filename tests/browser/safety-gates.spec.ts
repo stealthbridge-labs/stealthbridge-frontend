@@ -355,7 +355,8 @@ test("Testnet workspace home renders real backend health and navigates to intera
  await page.goto("/preview");
  await expect(page.getByRole("heading",{name:"Build on verified ground."})).toBeVisible();
  await expect(page.getByText("Connected",{exact:true})).toBeVisible();
- await expect(page.getByText("Source only",{exact:true})).toBeVisible();
+ await expect(page.getByText("Not freshly confirmed",{exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:/Verified governance release/})).toHaveAttribute("href","/preview/governance");
  await expect(page.getByRole("link",{name:/Soroban registry/})).toHaveAttribute("href","/preview/contracts");
  await expect(page.getByRole("link",{name:/Corridor directory/})).toHaveAttribute("href","/preview/corridors");
  await page.getByRole("link",{name:/Soroban registry/}).click();
