@@ -9,6 +9,7 @@ import {readBridge,type NetworkStatus,type ServiceReadiness,type ContractDiscove
 type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;loading:boolean;error:boolean};
 const initial:Status={network:null,ready:null,contracts:null,loading:true,error:false};
 const links=[
+ {href:"/preview/governance",title:"Verified governance release",label:"On-chain Testnet receipts",icon:ShieldCheck,detail:"Inspect real deployed Soroban contract IDs and live-checked deployment transactions; financial execution remains disabled."},
  {href:"/preview/upgrades",title:"Protocol upgrade review",label:"Soroban operations",icon:Layers,detail:"Inspect proposed registry WASM hashes and timelocks without signing, deploying or claiming authority."},
  {href:"/preview/approvals",title:"Business review controls",label:"Maker-checker policy",icon:Building2,detail:"Explore tenant-aware reviewer separation rules without enabling settlements."},
  {href:"/preview/developers",title:"Developer integration",label:"Read-only SDK preflight",icon:Code2,detail:"Check the Testnet API, platform catalog, source-only Soroban state, and SDK integration boundaries."},

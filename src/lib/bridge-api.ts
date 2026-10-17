@@ -1,5 +1,6 @@
 import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
+import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -222,5 +223,14 @@ export interface ContractDiscovery extends ApiContractDiscovery {
 export async function readPlatformModules(signal?:AbortSignal):Promise<PlatformCatalog>{
  const value=await read<unknown>("v1/platform/modules",signal);
  if(!validPlatformCatalog(value))throw new Error("Unverified platform capability inventory. Financial execution remains disabled.");
+ return value;
+}
+
+/** Historical published release receipts, rechecked against live Testnet txs by the backend.
+ * Not current WASM/admin verification and never payment authority.
+ */
+export async function readGovernanceRelease(signal?:AbortSignal):Promise<GovernanceRelease>{
+ const value=await read<unknown>("v1/governance/release",signal);
+ if(!validGovernanceRelease(value))throw new Error("Governance receipts invalid, stale or misrepresent financial capabilities.");
  return value;
 }
