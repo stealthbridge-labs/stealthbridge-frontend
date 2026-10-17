@@ -24,6 +24,22 @@ const example=[
  'console.log(catalog.modules, capabilities);',
 ].join("\n");
 
+const businessExample=[
+ 'import { readBusinessReviewStatus } from "@stealthbridge/sdk";',
+ '',
+ '// Run only in a trusted authenticated backend context.',
+ '// IDs and ephemeral session come from independently verified login.',
+ 'const review = await readBusinessReviewStatus({',
+ '  apiBaseUrl: backendTestnetOrigin,',
+ '  network: "testnet",',
+ '  organization: authorizedOrganizationId,',
+ '  requestId: requestedReviewId,',
+ '  bearerToken: ephemeralOrganizationReadSession,',
+ '});',
+ 'console.log(review.review_count, review.remaining_reviewers);',
+ '// A reviewer count is never transfer authority.',
+].join("\\n");
+
 export function DeveloperWorkspace(){
  const [revision,setRevision]=useState(0);
  const [view,setView]=useState<{loading:boolean;assessment:DeveloperReadiness|null}>({
@@ -105,6 +121,13 @@ export function DeveloperWorkspace(){
     <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",padding:"1.25rem",borderRadius:"1rem",
       background:"var(--color-background-secondary, #0d1823)",color:"#e4edf7",overflowX:"auto",
       fontSize:"0.82rem",lineHeight:1.7}}><code>{example}</code></pre>
+    <h3>Authenticated business review status (server-side)</h3>
+    <p>This SDK reader is not exposed through the marketing proxy. It requires a
+    previously verified short-lived organization session, the matching tenant UUID,
+    and a reviewed API origin. No public session-issuance flow is enabled yet.</p>
+    <pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",padding:"1.25rem",borderRadius:"1rem",
+      background:"var(--color-background-secondary, #0d1823)",color:"#e4edf7",overflowX:"auto",
+      fontSize:"0.82rem",lineHeight:1.7}}><code>{businessExample}</code></pre>
     <Link href="/preview/modules" className="back-link"><BookOpen size={16} aria-hidden/> Explore all product modules</Link>
    </section>
   </main>
