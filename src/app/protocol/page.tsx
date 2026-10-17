@@ -7,6 +7,8 @@ import evidence from "@/lib/governance-release-evidence.v2.json";
 export const metadata:Metadata={
  title:"Public Testnet governance infrastructure | StealthBridge",
  description:"Verified historic Stellar Testnet deployments for StealthBridge governance, with public transaction links. Financial execution is not enabled.",
+ alternates:{canonical:"/protocol"},
+ openGraph:{title:"Public Testnet governance infrastructure | StealthBridge",description:"Reviewed historic Testnet Soroban deployment receipts. Payments and fees remain disabled.",url:"/protocol",type:"website"},
  robots:{index:true,follow:true},
 };
 const names:Record<string,string>={
