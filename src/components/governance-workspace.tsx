@@ -4,7 +4,8 @@ import Link from "next/link";
 import {ArrowLeft,ExternalLink,RefreshCw,ShieldCheck,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
-import {readGovernanceRelease,readGovernanceCode} from "@/lib/bridge-api";
+import {readGovernanceRelease,readGovernanceCode,readGovernanceAdministrator} from "@/lib/bridge-api";
+import type {GovernanceAdministratorObservation} from "@/lib/governance-administrator";
 import type {GovernanceCodeObservation} from "@/lib/governance-code";
 import type {GovernanceRelease} from "@/lib/governance-release";
 
@@ -12,13 +13,14 @@ export function GovernanceWorkspace(){
  const [revision,setRevision]=useState(0);
  const [state,setState]=useState<{
   loading:boolean;release:GovernanceRelease|null;code:GovernanceCodeObservation|null;
-  error:string|null;codeError:string|null
- }>({loading:true,release:null,code:null,error:null,codeError:null});
+  administrator:GovernanceAdministratorObservation|null;
+  error:string|null;codeError:string|null;adminError:string|null
+ }>({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null});
  useEffect(()=>{
   const ctl=new AbortController();
   async function inspect(){
-   const [releaseResult,codeResult]=await Promise.allSettled([
-    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal)
+   const [releaseResult,codeResult,adminResult]=await Promise.allSettled([
+    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal),readGovernanceAdministrator(ctl.signal)
    ]);
    if(ctl.signal.aborted)return;
    const release=releaseResult.status==="fulfilled"?releaseResult.value:null;
@@ -26,10 +28,16 @@ export function GovernanceWorkspace(){
    if(code&&(!release||Math.abs(code.observed_ledger_sequence-release.observed_ledger_sequence)>15)){
     code=null; // Never combine incompatible or asynchronously distant ledgers.
    }
+   let administrator=adminResult.status==="fulfilled"?adminResult.value:null;
+   if(administrator&&(!code||!code.all_executable_hashes_match_release||
+     Math.abs(administrator.observed_ledger_sequence-code.observed_ledger_sequence)>15)){
+     administrator=null;
+   }
    setState({
-    loading:false,release,code,
+    loading:false,release,code,administrator,
     error:release?null:"Release receipts could not be confirmed against a fresh Testnet observation.",
-    codeError:code?null:"Current executable hashes and entry expiry could not be confirmed from the same fresh Testnet head."
+    codeError:code?null:"Current executable hashes and entry expiry could not be confirmed from the same fresh Testnet head.",
+    adminError:administrator?null:"The current Soroban administrator storage could not be independently confirmed. Check RPC, contract code and ledger freshness."
    });
   }
   void inspect();
@@ -37,6 +45,7 @@ export function GovernanceWorkspace(){
  },[revision]);
  const release=state.release;
  const code=state.code;
+ const administrator=state.administrator;
  return <div className="workspace-page preview-home">
   <header className="workspace-header"><Brand/><span className="network-chip"><i aria-hidden/> Stellar Testnet · Public receipts</span>
    <Link href="/preview" className="back-link"><ArrowLeft size={16} aria-hidden/> Workspace</Link>
@@ -52,7 +61,7 @@ export function GovernanceWorkspace(){
    </div>
    <div className="preview-home-toolbar">
     <p role="status">{state.loading?"Checking Stellar Testnet receipts…":release?"Three published governance deployments confirmed by Testnet receipts. Payment execution disabled.":state.error}</p>
-    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,code:null,error:null,codeError:null});setRevision(n=>n+1);}}>
+    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null});setRevision(n=>n+1);}}>
      <RefreshCw size={16} aria-hidden/> Recheck live receipts
     </Button>
    </div>
@@ -76,7 +85,38 @@ export function GovernanceWorkspace(){
       </div>)}
      </dl>
     </div>:<p role="status"><ShieldAlert size={16} aria-hidden/> {state.codeError} No current-code health claim is available.</p>}
-    <p>Current admin independently verified: <strong>No</strong>. WASM bytes freshly re-downloaded: <strong>No</strong>. Transfer, platform-fee collection and customer payments: <strong>Disabled</strong>.</p>
+    <p>Current admin read from verified instance storage: <strong>{administrator?"Yes":"Unavailable"}</strong>. WASM bytes freshly re-downloaded: <strong>No</strong>. Transfer, platform-fee collection and customer payments: <strong>Disabled</strong>.</p>
+   </section>:null}
+   {release?<section aria-label="Administrator recovery and current ownership" className="registry-panel" style={{padding:"1.25rem",marginBottom:"1.25rem"}}>
+    <div className="registry-panel-heading"><ShieldCheck size={20} aria-hidden/><div>
+     <h2>Current governance administrators</h2>
+     <p>Read-only administrator storage, recovery nominations and registry pause state</p>
+    </div></div>
+    {administrator?<div>
+     <p role="status"><strong>{administrator.all_administrators_match_deployment
+       ?"Administrators still match the deployment record."
+       :"At least one administrator has changed since deployment."}</strong></p>
+     <p>{administrator.same_administrator_for_all_contracts
+       ?"All three currently share the same administrator address."
+       :"Governance administration is split across addresses — review carefully."}</p>
+     <p>Observed in Testnet ledger #{administrator.observed_ledger_sequence.toLocaleString()}.
+      This proves stored on-chain addresses, <strong>not</strong> access to their keys or the ability to sign claims.</p>
+     <dl>{administrator.contracts.map(entry=><div key={entry.contract_id} style={{overflowWrap:"anywhere",marginBottom:"1rem"}}>
+      <dt>{entry.name.replaceAll("-"," ")} administrator</dt>
+      <dd><code>{entry.current_administrator}</code></dd>
+      {entry.pending_administrator?<><dt>Pending recovery nomination</dt>
+        <dd><code>{entry.pending_administrator}</code> — not yet accepted by the successor</dd></>:null}
+      {entry.paused!==null?<><dt>Registry paused</dt><dd>{entry.paused?"Yes":"No"}</dd></>:null}
+     </div>)}</dl>
+    </div>:<p role="status"><ShieldAlert size={16} aria-hidden/> {state.adminError} Administrator custody is not assumed.</p>}
+    <h3>Before changing computers</h3>
+    <p>The local CLI name <code>operator_local</code> is not a recoverable account identity.
+     Preserve access to the original signer until you have verified a new wallet with offline
+     recovery and completed both parties' on-chain administrator handover. A newly generated
+     alias on another PC has no automatic authority. Never paste a seed phrase or secret into this site.</p>
+    <p>GovernanceGate remains an immutable deployment-time administrator record;
+     registry succession does not rewrite GovernanceGate storage. FeeVault is separate and
+     not deployed, and no operator fee claims are available here.</p>
    </section>:null}
    {release?<section aria-label="Testnet governance release" className="registry-panel" style={{padding:"1.25rem"}}>
     <div className="registry-panel-heading"><ShieldCheck size={21} aria-hidden/><div>

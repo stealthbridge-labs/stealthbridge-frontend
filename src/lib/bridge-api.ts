@@ -2,6 +2,7 @@ import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
 import {validGovernanceCode,type GovernanceCodeObservation} from "./governance-code";
+import {validGovernanceAdministrator,type GovernanceAdministratorObservation} from "./governance-administrator";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -243,5 +244,14 @@ export async function readGovernanceRelease(signal?:AbortSignal):Promise<Governa
 export async function readGovernanceCode(signal?:AbortSignal):Promise<GovernanceCodeObservation>{
  const value=await read<unknown>("v1/governance/code",signal);
  if(!validGovernanceCode(value))throw new Error("Current Testnet executable hash response was invalid or overstated safety.");
+ return value;
+}
+
+/** Validated Soroban current admin values from signed-network public ledger
+ * observations, never an assertion that we own or can sign for those addresses.
+ */
+export async function readGovernanceAdministrator(signal?:AbortSignal):Promise<GovernanceAdministratorObservation>{
+ const value=await read<unknown>("v1/governance/admin",signal);
+ if(!validGovernanceAdministrator(value))throw new Error("Current governance administrator response is invalid or overstates authority.");
  return value;
 }

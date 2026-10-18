@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 export const dynamic="force-dynamic";
-const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/platform/modules","v1/corridors","v1/corridors/page","v1/observer","v1/contracts","v1/governance/release","v1/governance/code"]);
+const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/platform/modules","v1/corridors","v1/corridors/page","v1/observer","v1/contracts","v1/governance/release","v1/governance/code","v1/governance/admin"]);
 export async function GET(_request:NextRequest,context:{params:Promise<{parts:string[]}>}){
  if(process.env.STEALTHBRIDGE_SITE_MODE!=="preview") return NextResponse.json({code:"PREVIEW_DISABLED"},{status:404});
  const {parts}=await context.params;

@@ -266,6 +266,20 @@ test("governance release page reports unknown current code rather than claiming 
  await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
 });
 
+test("governance recovery workspace never treats forged admin proof as key custody",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/admin",route=>route.fulfill({
+  status:200,contentType:"application/json",body:JSON.stringify({
+    schema_version:1,network:"testnet",signer_possession_verified:true,
+    payment_execution_enabled:true,contracts:[]
+  })
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/No customer transfer|Payment execution disabled|Payment execution remains disabled/i).first()).toBeVisible();
+ await expect(page.getByText(/Administrator custody is not assumed/)).toHaveCount(0);
+ // If historical release receipts are unavailable, no current admin card appears.
+ await expect(page.getByText(/Pending recovery nomination/)).toHaveCount(0);
+});
+
 test("governance release page refuses forged payment and live WASM claims",async({page})=>{
  await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
   status:200,contentType:"application/json",
