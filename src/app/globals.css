@@ -422,6 +422,64 @@
 .corridor-result strong,.corridor-result code,.corridor-record-id{overflow-wrap:anywhere;word-break:break-word;min-width:0}
 .corridor-result p{max-width:100%;min-width:0}
 
+
+/* Read-only Testnet observability: accessible semantic cards, responsive metrics. */
+.observability-page{min-height:100vh}
+.observability-intro{display:flex;align-items:end;justify-content:space-between;gap:28px;padding:44px 0 12px}
+.observability-intro>div{max-width:760px}
+.observability-intro h1{font-size:clamp(40px,5vw,76px);line-height:1.08;letter-spacing:-.06em;margin:17px 0 16px}
+.observability-intro p{color:var(--muted);font-size:15px;line-height:1.85;max-width:670px;margin:0}
+.observability-intro button{flex-shrink:0}
+.observability-summary{padding:17px 22px;background:#0e3036;border:1px solid rgba(128,246,219,.25);border-radius:12px;color:#d6f6eb;font-size:13px;line-height:1.6;margin:24px 0}
+.observability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.observability-tile{display:flex;flex-direction:column;gap:13px;min-width:0;min-height:244px;padding:26px;background:linear-gradient(140deg,#0e3337,#081f27);border:1px solid rgba(134,229,210,.2);border-radius:18px}
+.observability-tile>svg{color:var(--aqua)}
+.observability-tile h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#a8d2c8;margin:5px 0 0}
+.observability-tile strong{font-size:clamp(20px,2.2vw,29px);line-height:1.3;letter-spacing:-.035em;color:#e9fff8;overflow-wrap:anywhere}
+.observability-tile p,.observability-tile small{font-size:13px;line-height:1.55;margin:0;color:#a8c9c0;overflow-wrap:anywhere}
+.observability-tile small{font-size:11px;color:#91b5b1;margin-top:auto}
+.observability-details{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:25px;margin:20px 0 10px;padding:32px;background:#09242b;border:1px solid var(--line);border-radius:18px}
+.observability-details>div:first-child svg{color:#99e7d0}
+.observability-details h2{font-size:26px;letter-spacing:-.045em;margin:15px 0}
+.observability-details p{color:var(--muted);line-height:1.75;font-size:13px;margin:0;max-width:400px}
+.observability-gates{display:grid;align-content:center;gap:0}
+.observability-gates>div{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line)}
+.observability-gates>div:last-child{border-bottom:0}
+.observability-gates span{font-size:12px;color:#a3c7c0}
+.observability-gates strong{text-align:right;font-size:12px;font-weight:650;color:#e3f9f5}
+.observability-disclaimer{max-width:810px;font-size:12px;line-height:1.8;color:#a3c2be;margin:22px 0}
+.observability-navigation{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0 45px}
+.observability-navigation a{padding:12px 17px;border-radius:30px;border:1px solid rgba(140,243,216,.3);font-size:12px;color:#d2f9ef}
+.observability-navigation a:hover{border-color:var(--aqua);background:#113939}
+@media(max-width:800px){.observability-intro{align-items:flex-start;flex-direction:column}.observability-details{grid-template-columns:1fr}.observability-grid{gap:12px}}
+@media(max-width:560px){.observability-grid{grid-template-columns:1fr}.observability-tile{min-height:208px}.observability-intro{padding-top:25px}.observability-details{padding:22px}.observability-gates>div{align-items:start;flex-direction:column;gap:5px}.observability-gates strong{text-align:left}}
+@media(prefers-reduced-motion:reduce){.observability-navigation a{transition:none}}
+
+
+/* Browser-local, never-persisted public evidence timeline. */
+.observability-history{margin:28px 0;padding:26px;border:1px solid rgba(130,230,208,.24);border-radius:18px;background:linear-gradient(130deg,#082a2f,#071c23)}
+.observability-history-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.observability-history-head h2{font-size:clamp(24px,3vw,35px);letter-spacing:-.045em;line-height:1.15;margin:12px 0}
+.observability-history-head p{font-size:13px;line-height:1.65;color:#b1d2c9;max-width:560px;margin:0}
+.observability-history-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px}
+.observability-auto{display:flex;gap:9px;align-items:center;color:#d4ece5;font-size:12px;cursor:pointer}
+.observability-auto input{width:18px;height:18px;accent-color:#6bdabc}
+.observability-auto input:focus-visible,.observability-history button:focus-visible{outline:3px solid #9dffdd;outline-offset:3px}
+.observability-copy-status{margin:11px 0;min-height:20px;color:#cee7e0;font-size:12px}
+.observability-history-empty{padding:25px 12px;color:#b2d0c7;font-size:13px}
+.observability-history-scroll{max-width:100%;overflow-x:auto}
+.observability-history-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;text-align:left}
+.observability-history-table caption{text-align:left;font-size:11px;color:#b2cfc8;padding:4px 0 10px}
+.observability-history-table th,.observability-history-table td{padding:13px 12px;border-bottom:1px solid rgba(123,212,188,.19);white-space:nowrap}
+.observability-history-table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#b3d4ca}
+.observability-history-table tbody th{font-weight:500;color:#e1fcf0}
+.observability-history-table tbody td{color:#c9e3d8}
+.observability-history-table tbody tr:last-child th,.observability-history-table tbody tr:last-child td{border-bottom:0}
+.observability-warning{color:#ffb4a9;font-weight:700}
+.observability-observed{color:#b7e5d6}
+@media(max-width:790px){.observability-history{padding:19px}.observability-history-head{align-items:flex-start;flex-direction:column}.observability-history-actions{justify-content:flex-start}}
+@media(prefers-reduced-motion:reduce){.observability-history *{scroll-behavior:auto!important}}
+
 /* Testnet Activity: visible public metadata only; contrast-first, not animation-led. */
 .activity-shell .workspace-main{max-width:1320px}
 .activity-shell .workspace-header{justify-content:flex-start;gap:24px}

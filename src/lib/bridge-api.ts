@@ -1,6 +1,10 @@
-import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
+import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import {assertActivityFilters,validateActivityPage} from "./observer-activity";
 import type {ActivityFilters,PublicActivityPage} from "./observer-activity";
+import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
+import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
+import {validGovernanceCode,type GovernanceCodeObservation} from "./governance-code";
+import {validGovernanceAdministrator,type GovernanceAdministratorObservation} from "./governance-administrator";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -217,6 +221,41 @@ export interface ContractDiscovery extends ApiContractDiscovery {
   txHashes:never[];
   notes?:string;
  };
+}
+
+/** Read-only platform discovery; invalid capability claims fail closed. */
+export async function readPlatformModules(signal?:AbortSignal):Promise<PlatformCatalog>{
+ const value=await read<unknown>("v1/platform/modules",signal);
+ if(!validPlatformCatalog(value))throw new Error("Unverified platform capability inventory. Financial execution remains disabled.");
+ return value;
+}
+
+/** Historical published release receipts, rechecked against live Testnet txs by the backend.
+ * Not current WASM/admin verification and never payment authority.
+ */
+export async function readGovernanceRelease(signal?:AbortSignal):Promise<GovernanceRelease>{
+ const value=await read<unknown>("v1/governance/release",signal);
+ if(!validGovernanceRelease(value))throw new Error("Governance receipts invalid, stale or misrepresent financial capabilities.");
+ return value;
+}
+
+/** Current contract-instance executable hashes and TTLs from read-only Testnet
+ * getLedgerEntries, never a decoded current administrator, independent audit,
+ * payment authorization, or full WASM byte-for-byte re-download.
+ */
+export async function readGovernanceCode(signal?:AbortSignal):Promise<GovernanceCodeObservation>{
+ const value=await read<unknown>("v1/governance/code",signal);
+ if(!validGovernanceCode(value))throw new Error("Current Testnet executable hash response was invalid or overstated safety.");
+ return value;
+}
+
+/** Validated Soroban current admin values from signed-network public ledger
+ * observations, never an assertion that we own or can sign for those addresses.
+ */
+export async function readGovernanceAdministrator(signal?:AbortSignal):Promise<GovernanceAdministratorObservation>{
+ const value=await read<unknown>("v1/governance/admin",signal);
+ if(!validGovernanceAdministrator(value))throw new Error("Current governance administrator response is invalid or overstates authority.");
+ return value;
 }
 
 /** Display only bounded historical public Testnet contract-event metadata.

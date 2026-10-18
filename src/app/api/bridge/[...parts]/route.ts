@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {isContractStrKey,isActivityCursor} from "@/lib/observer-activity";
 export const dynamic="force-dynamic";
-const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/corridors","v1/corridors/page","v1/observer","v1/observer/activity","v1/contracts"]);
+const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/platform/modules","v1/corridors","v1/corridors/page","v1/observer","v1/observer/activity","v1/contracts","v1/governance/release","v1/governance/code","v1/governance/admin"]);
 export async function GET(_request:NextRequest,context:{params:Promise<{parts:string[]}>}){
  if(process.env.STEALTHBRIDGE_SITE_MODE!=="preview") return NextResponse.json({code:"PREVIEW_DISABLED"},{status:404});
  const {parts}=await context.params;
@@ -22,7 +22,7 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
   if(before!==null&&(!isActivityCursor(before)||
       (contract!==null&&!before.endsWith("."+contract))))
    return NextResponse.json({code:"INVALID_CURSOR"},{status:400});
- }else if(path==="v1/corridors/page"){
+ }else if(path==="v1/corridors/page")
   const allowedParams=new Set(["limit","after","origin_country","destination_country","privacy_rail"]);
  if([...search.keys()].some(k=>!allowedParams.has(k)||search.getAll(k).length>1))
    return NextResponse.json({code:"INVALID_QUERY"},{status:400});
