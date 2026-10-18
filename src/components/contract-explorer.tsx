@@ -82,7 +82,7 @@ export function ContractExplorer(){
    <Brand/>
    <span className="network-chip"><i/> Stellar Testnet</span>
    <Link href="/preview" className="back-link">Workspace hub <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/corridors">Corridor directory <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/preview/business">Business preview <ArrowRight size={15} aria-hidden/></Link>
-   <Link className="back-link" href="/explorer">Transaction explorer <ArrowRight size={15} aria-hidden/></Link>
+   <Link className="back-link" href="/preview/activity">Testnet activity <ArrowRight size={15} aria-hidden/></Link><Link className="back-link" href="/explorer">Transaction explorer <ArrowRight size={15} aria-hidden/></Link>
    <Link className="back-link" href="/"><ArrowLeft size={16} aria-hidden/> Home</Link>
   </header>
   <main id="main-content" className="workspace-main">
@@ -93,12 +93,12 @@ export function ContractExplorer(){
    </div>
    <div className="registry-status-strip" aria-live="polite">
     <div><span>Source verification</span><strong>{state.loading?"Checking…":state.error?"Unavailable":"ABI matched"}</strong></div>
-    <div><span>On-chain deployment</span><strong>{state.loading?"Checking…":undiscovered?"Legacy manifest":"Not verified"}</strong></div>
+    <div><span>On-chain deployment</span><strong>{state.loading?"Checking…":undiscovered?"Not deployed":"Not verified"}</strong></div>
     <div><span>Testnet RPC</span><strong>{state.loading?"Checking…":verified?"Fresh":"Not confirmed"}</strong></div>
     <div><span>Payment execution</span><strong>Disabled</strong></div>
    </div>
    <div className="registry-toolbar">
-    <p>This legacy source inventory predates the deployed Testnet governance release. <Link href="/preview/governance">View independently checked deployment receipts</Link>.</p>
+    <p>Source interface is not a deployed contract address. Live Soroban reads require an independently verified Testnet deployment.</p>
     <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={state.loading}>
      <RefreshCw size={16} aria-hidden/> {state.loading?"Checking backend…":"Refresh verification"}
     </Button>
@@ -152,11 +152,11 @@ export function ContractExplorer(){
      <div className="registry-panel-heading"><Database size={21} aria-hidden/><div><h2>Backend evidence</h2><p>Observed, not simulated</p></div></div>
      <dl>
       <div><dt>Network</dt><dd>Stellar Testnet</dd></div>
-      <div><dt>Legacy manifest</dt><dd>Source-only compatibility snapshot</dd></div>
+      <div><dt>Contract manifest</dt><dd>Not deployed</dd></div>
       <div><dt>Ledger sequence</dt><dd>{state.network?.ledger_sequence.toLocaleString()??"Not available"}</dd></div>
       <div><dt>Ledger freshness</dt><dd>{freshLedger(state.network)?"Fresh observation":"Unverified or stale"}</dd></div>
       <div><dt>PostgreSQL readiness</dt><dd>{state.readiness?.database??"Not confirmed"}</dd></div>
-      <div><dt>Deployment records</dt><dd><Link href="/preview/governance">Read separate Testnet release receipts</Link></dd></div>
+      <div><dt>Configured chain addresses</dt><dd>None verified</dd></div>
      </dl>
      <div className="registry-next"><CheckCircle2 size={17} aria-hidden/><div>
       <strong>What becomes available next?</strong>

@@ -10,6 +10,7 @@ import type {GovernanceRelease} from "@/lib/governance-release";
 type Status={network:NetworkStatus|null;ready:ServiceReadiness|null;contracts:ContractDiscovery|null;governance:GovernanceRelease|null;loading:boolean;error:boolean};
 const initial:Status={network:null,ready:null,contracts:null,governance:null,loading:true,error:false};
 const links=[
+ {href:"/preview/activity",title:"Testnet activity",label:"Public contract journal",icon:Activity,detail:"Explore actually stored Testnet contract-event IDs, observer checkpoints and historical pagination—no private transfer claims."},
  {href:"/preview/governance",title:"Verified governance release",label:"On-chain Testnet receipts",icon:ShieldCheck,detail:"Inspect real deployed Soroban contract IDs and live-checked deployment transactions; financial execution remains disabled."},
  {href:"/preview/upgrades",title:"Protocol upgrade review",label:"Soroban operations",icon:Layers,detail:"Inspect proposed registry WASM hashes and timelocks without signing, deploying or claiming authority."},
  {href:"/preview/approvals",title:"Business review controls",label:"Maker-checker policy",icon:Building2,detail:"Explore tenant-aware reviewer separation rules without enabling settlements."},

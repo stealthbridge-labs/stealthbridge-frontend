@@ -1,13 +1,28 @@
 import {NextRequest,NextResponse} from "next/server";
+import {isContractStrKey,isActivityCursor} from "@/lib/observer-activity";
 export const dynamic="force-dynamic";
-const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/platform/modules","v1/corridors","v1/corridors/page","v1/observer","v1/contracts","v1/governance/release","v1/governance/code","v1/governance/admin"]);
+const allowed = new Set(["health","ready","v1/network","v1/capabilities","v1/platform/modules","v1/corridors","v1/corridors/page","v1/observer","v1/observer/activity","v1/contracts","v1/governance/release","v1/governance/code","v1/governance/admin"]);
 export async function GET(_request:NextRequest,context:{params:Promise<{parts:string[]}>}){
  if(process.env.STEALTHBRIDGE_SITE_MODE!=="preview") return NextResponse.json({code:"PREVIEW_DISABLED"},{status:404});
  const {parts}=await context.params;
  const path=parts.join("/");
  // Only the corridor-page route may forward validated discovery parameters.
  const search=_request.nextUrl.searchParams;
- if(path==="v1/corridors/page"){
+ if(path==="v1/observer/activity"){
+  const allowedParams=new Set(["limit","contract_id","before"]);
+  if([...search.keys()].some(key=>!allowedParams.has(key)||search.getAll(key).length!==1))
+   return NextResponse.json({code:"INVALID_QUERY"},{status:400});
+  const limit=search.get("limit");
+  if(limit!==null&&(!/^[0-9]{1,2}$/.test(limit)||Number(limit)<1||Number(limit)>25))
+   return NextResponse.json({code:"INVALID_LIMIT"},{status:400});
+  const contract=search.get("contract_id");
+  if(contract!==null&&!isContractStrKey(contract))
+   return NextResponse.json({code:"INVALID_CONTRACT_ID"},{status:400});
+  const before=search.get("before");
+  if(before!==null&&(!isActivityCursor(before)||
+      (contract!==null&&!before.endsWith("."+contract))))
+   return NextResponse.json({code:"INVALID_CURSOR"},{status:400});
+ }else if(path==="v1/corridors/page")
   const allowedParams=new Set(["limit","after","origin_country","destination_country","privacy_rail"]);
  if([...search.keys()].some(k=>!allowedParams.has(k)||search.getAll(k).length>1))
    return NextResponse.json({code:"INVALID_QUERY"},{status:400});
@@ -36,7 +51,7 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
    return NextResponse.json({code:"INVALID_BACKEND_URL"},{status:503});
   }
   const destination=new URL(url.toString().replace(/\/$/,"")+"/"+path);
-  if(path==="v1/corridors/page") destination.search=search.toString();
+  if(path==="v1/corridors/page"||path==="v1/observer/activity") destination.search=search.toString();
   // Never follow upstream redirects: a compromised backend could redirect
     // this server-side proxy to an internal or unrelated destination.
     const res=await fetch(destination,{method:"GET",headers:{accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(10000),cache:"no-store"});
