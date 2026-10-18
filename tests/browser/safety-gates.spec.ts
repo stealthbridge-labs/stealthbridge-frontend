@@ -251,6 +251,10 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
 });
 
 test("governance release page reports unknown current code rather than claiming unverified WASM",async({page})=>{
+ // Exercise the explicitly permitted compatibility path for older backends.
+ await page.route("**/api/bridge/v1/governance/snapshot",route=>route.fulfill({
+  status:404,json:{code:"NOT_FOUND"}
+ }));
  await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
   status:503,contentType:"application/json",body:"{}"
  }));
@@ -267,6 +271,10 @@ test("governance release page reports unknown current code rather than claiming 
 });
 
 test("governance recovery workspace never treats forged admin proof as key custody",async({page})=>{
+ // Exercise the explicitly permitted compatibility path for older backends.
+ await page.route("**/api/bridge/v1/governance/snapshot",route=>route.fulfill({
+  status:404,json:{code:"NOT_FOUND"}
+ }));
  await page.route("**/api/bridge/v1/governance/admin",route=>route.fulfill({
   status:200,contentType:"application/json",body:JSON.stringify({
     schema_version:1,network:"testnet",signer_possession_verified:true,
@@ -281,6 +289,10 @@ test("governance recovery workspace never treats forged admin proof as key custo
 });
 
 test("governance release page refuses forged payment and live WASM claims",async({page})=>{
+ // Exercise the explicitly permitted compatibility path for older backends.
+ await page.route("**/api/bridge/v1/governance/snapshot",route=>route.fulfill({
+  status:404,json:{code:"NOT_FOUND"}
+ }));
  await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
   status:200,contentType:"application/json",
   body:JSON.stringify({schema_version:1,network:"testnet",

@@ -4,7 +4,8 @@ import Link from "next/link";
 import {ArrowLeft,ExternalLink,RefreshCw,ShieldCheck,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
-import {readGovernanceRelease,readGovernanceCode,readGovernanceAdministrator} from "@/lib/bridge-api";
+import {ApiUnavailable,readGovernanceRelease,readGovernanceCode,readGovernanceAdministrator,readGovernanceSnapshot} from "@/lib/bridge-api";
+import type {GovernanceSnapshot} from "@/lib/governance-snapshot";
 import type {GovernanceAdministratorObservation} from "@/lib/governance-administrator";
 import type {GovernanceCodeObservation} from "@/lib/governance-code";
 import type {GovernanceRelease} from "@/lib/governance-release";
@@ -14,19 +15,54 @@ export function GovernanceWorkspace(){
  const [state,setState]=useState<{
   loading:boolean;release:GovernanceRelease|null;code:GovernanceCodeObservation|null;
   administrator:GovernanceAdministratorObservation|null;
-  error:string|null;codeError:string|null;adminError:string|null
- }>({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null});
+  error:string|null;codeError:string|null;adminError:string|null;snapshot:GovernanceSnapshot|null;
+ }>({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null,snapshot:null});
  useEffect(()=>{
   const ctl=new AbortController();
   async function inspect(){
+   // Prefer the single, same-ledger Rust API read. A successful response
+   // replaces three independently timed RPC/receipt requests.
+   // On an unavailable older backend, retain explicitly degraded legacy reads.
+   let snapshot:GovernanceSnapshot|null=null;
+   try { snapshot=await readGovernanceSnapshot(ctl.signal); }
+   catch(error) {
+    if(ctl.signal.aborted)return;
+    // Only a genuine missing endpoint on a previous backend version permits
+    // the read-only legacy fallback. A failing or malformed *implemented*
+    // snapshot must never be disguised by independent successful requests.
+    if(!(error instanceof ApiUnavailable && error.status===404)){
+     setState({
+      loading:false,snapshot:null,release:null,code:null,administrator:null,
+      error:"Atomic Testnet governance snapshot is invalid or unavailable. No common-ledger assurance is possible.",
+      codeError:"Current executable state unavailable until a valid snapshot can be read.",
+      adminError:"Current administrator state unavailable until a valid snapshot can be read."
+     });
+     return;
+    }
+   }
+   if(ctl.signal.aborted)return;
+   if(snapshot){
+    const consistent=snapshot.state==="consistent-observations";
+    setState({
+     loading:false,snapshot,
+     release:snapshot.release,
+     code:consistent?snapshot.code:null,
+     administrator:consistent?snapshot.administrators:null,
+     error:null,
+     codeError:consistent?null:"Same-ledger executable integrity could not be established.",
+     adminError:consistent?null:"Same-ledger administrator integrity could not be established."
+    });
+    return;
+   }
    const [releaseResult,codeResult,adminResult]=await Promise.allSettled([
-    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal),readGovernanceAdministrator(ctl.signal)
+    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal),
+    readGovernanceAdministrator(ctl.signal)
    ]);
    if(ctl.signal.aborted)return;
    const release=releaseResult.status==="fulfilled"?releaseResult.value:null;
    let code=codeResult.status==="fulfilled"?codeResult.value:null;
    if(code&&(!release||code.observed_ledger_sequence!==release.observed_ledger_sequence)){
-    code=null; // Never combine incompatible or asynchronously distant ledgers.
+    code=null; // Never imply one ledger from independent requests.
    }
    let administrator=adminResult.status==="fulfilled"?adminResult.value:null;
    if(administrator&&(!code||!code.all_executable_hashes_match_release||
@@ -37,7 +73,7 @@ export function GovernanceWorkspace(){
      administrator=null;
    }
    setState({
-    loading:false,release,code,administrator,
+    loading:false,release,code,administrator,snapshot:null,
     error:release?null:"Release receipts could not be confirmed against a fresh Testnet observation.",
     codeError:code?null:"Current executable hashes and entry expiry could not be confirmed from the same fresh Testnet head.",
     adminError:administrator?null:"The current Soroban administrator storage could not be independently confirmed. Check RPC, contract code and ledger freshness."
@@ -64,10 +100,29 @@ export function GovernanceWorkspace(){
    </div>
    <div className="preview-home-toolbar">
     <p role="status">{state.loading?"Checking Stellar Testnet receipts…":release?"Three published governance deployments confirmed by Testnet receipts. Payment execution disabled.":state.error}</p>
-    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null});setRevision(n=>n+1);}}>
+    <Button type="button" variant="outline" disabled={state.loading} onClick={()=>{setState({loading:true,release:null,code:null,administrator:null,error:null,codeError:null,adminError:null,snapshot:null});setRevision(n=>n+1);}}>
      <RefreshCw size={16} aria-hidden/> Recheck live receipts
     </Button>
    </div>
+   <section aria-label="Same-ledger governance evidence" className="registry-panel"
+     style={{padding:"1.25rem",marginBottom:"1.25rem"}} aria-live="polite">
+    <div className="registry-panel-heading"><ShieldCheck size={20} aria-hidden/><div>
+     <h2>Atomic governance evidence</h2>
+     <p>One shared contract-instance ledger read · historical transaction receipts separately verified</p>
+    </div></div>
+    {state.loading?<p role="status">Checking same-ledger governance state…</p>:
+     state.snapshot?<div role="status">
+      <p><strong>{state.snapshot.state==="consistent-observations"?
+       "Public code, deployment and administrator observations agree.":
+       "Governance observations disagree — manual review required."}</strong></p>
+      <p>Observed ledger #{state.snapshot.observed_ledger_sequence.toLocaleString()}.
+       Canonical manifest attested: <strong>No</strong>. Signer possession verified: <strong>No</strong>.
+       Payment execution and platform fee collection: <strong>Disabled</strong>.</p>
+      <p>{state.snapshot.reason}</p>
+     </div>:
+     <p role="status">Same-ledger snapshot unavailable or invalid. Independently fetched
+      receipts may still be shown below, but cannot establish a unified governance state.</p>}
+   </section>
    {release?<section aria-label="Current governance contract code check" className="registry-panel" style={{padding:"1.25rem",marginBottom:"1.25rem"}}>
     <div className="registry-panel-heading"><ShieldCheck size={21} aria-hidden/><div>
      <h2>Current Testnet executable hashes</h2>

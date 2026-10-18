@@ -5,6 +5,7 @@ import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
 import {validGovernanceCode,type GovernanceCodeObservation} from "./governance-code";
 import {validGovernanceAdministrator,type GovernanceAdministratorObservation} from "./governance-administrator";
+import {validGovernanceSnapshot,type GovernanceSnapshot} from "./governance-snapshot";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -274,3 +275,10 @@ export async function readObserverActivity(
  return value;
 }
 export type {ActivityContract,ActivityEvent,PublicActivityPage,ActivityFilters} from "./observer-activity";
+
+/** One bounded Testnet instance read plus separately verified deployment receipts. */
+export async function readGovernanceSnapshot(signal?:AbortSignal):Promise<GovernanceSnapshot>{
+ const value=await read<unknown>("v1/governance/snapshot",signal);
+ if(!validGovernanceSnapshot(value))throw new Error("Invalid, stale or overstated same-ledger governance evidence.");
+ return value;
+}
