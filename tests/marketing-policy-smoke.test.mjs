@@ -11,7 +11,7 @@ async function fixture({leakPreview=false,leakApi=false,writeEnabled=false,redir
  const server=createServer((req,res)=>{
   requests.push(req.method+" "+req.url);
   if(redirect&&req.url==="/"){res.writeHead(302,{Location:"https://malicious.invalid"});return res.end();}
-  const page=["/","/business","/send","/platform"].includes(req.url);
+  const page=["/","/business","/send","/platform","/protocol"].includes(req.url);
   const preview=String(req.url).startsWith("/preview");
   const api=String(req.url).startsWith("/api/bridge");
   const status=page?200:preview&&leakPreview?200:

@@ -8,7 +8,7 @@ const network=(passphrase:string,ageSeconds:number)=>({
  ledger_closed_at_unix:String(currentUnix()-ageSeconds),ledger_hash:"a".repeat(64),source:"stellar-rpc"
 });
 const checkpoint=(ageSeconds:number)=>({
- ledger_sequence:1234,ledger_hash:"b".repeat(64),
+ ledger_sequence:1234,ledger_hash:"a".repeat(64),
  ledger_closed_at_unix:String(currentUnix()-ageSeconds),source:"stellar-rpc"
 });
 
@@ -233,7 +233,8 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
  await page.goto("/preview/contracts");
  await expect(page.getByRole("heading",{name:"Soroban Registry Explorer"})).toBeVisible();
  await expect(page.getByText("ABI matched")).toBeVisible();
- await expect(page.getByText("Not deployed",{exact:true}).first()).toBeVisible();
+ await expect(page.getByText("Legacy manifest",{exact:true}).first()).toBeVisible();
+ await expect(page.getByRole("link",{name:"View independently checked deployment receipts"})).toHaveAttribute("href","/preview/governance");
  await expect(page.getByRole("button",{name:/Corridor registry/})).toHaveAttribute("aria-pressed","true");
  await page.getByRole("button",{name:/Policy registry/}).click();
  await expect(page.getByRole("heading",{name:"Policy registry"})).toBeVisible();
@@ -247,6 +248,47 @@ test("Soroban registry page renders canonical Rust modules and interactive metho
  expect(requests.length).toBeGreaterThan(0);
  expect(requests.every(value=>value.startsWith("GET "))).toBe(true);
  expect(requests.every(value=>!value.includes("/settlements"))).toBe(true);
+});
+
+test("governance release page reports unknown current code rather than claiming unverified WASM",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
+  status:503,contentType:"application/json",body:"{}"
+ }));
+ await page.route("**/api/bridge/v1/governance/code",route=>route.fulfill({
+  status:200,contentType:"application/json",body:JSON.stringify({
+   schema_version:1,network:"testnet",payment_execution_enabled:true,
+   all_executable_hashes_match_release:true,contracts:[]
+  })
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/Release receipts could not be confirmed/)).toBeVisible();
+ await expect(page.getByText(/All three observed executable hashes match/)).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
+});
+
+test("governance recovery workspace never treats forged admin proof as key custody",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/admin",route=>route.fulfill({
+  status:200,contentType:"application/json",body:JSON.stringify({
+    schema_version:1,network:"testnet",signer_possession_verified:true,
+    payment_execution_enabled:true,contracts:[]
+  })
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/confidentiality, user payments, fee collection and fiat payouts are not enabled/i)).toBeVisible();
+ await expect(page.getByText(/Administrator custody is not assumed/)).toHaveCount(0);
+ // If historical release receipts are unavailable, no current admin card appears.
+ await expect(page.getByText(/Pending recovery nomination/)).toHaveCount(0);
+});
+
+test("governance release page refuses forged payment and live WASM claims",async({page})=>{
+ await page.route("**/api/bridge/v1/governance/release",route=>route.fulfill({
+  status:200,contentType:"application/json",
+  body:JSON.stringify({schema_version:1,network:"testnet",
+   payment_execution_enabled:true,onchain_code_freshly_verified:true,contracts:[]})
+ }));
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/Release receipts could not be confirmed/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
 });
 
 test("Soroban registry explorer rejects falsely deployed source metadata",async({page})=>{
@@ -343,7 +385,8 @@ test("Testnet workspace home renders real backend health and navigates to intera
  await page.goto("/preview");
  await expect(page.getByRole("heading",{name:"Build on verified ground."})).toBeVisible();
  await expect(page.getByText("Connected",{exact:true})).toBeVisible();
- await expect(page.getByText("Source only",{exact:true})).toBeVisible();
+ await expect(page.getByText("Not freshly confirmed",{exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:/Verified governance release/})).toHaveAttribute("href","/preview/governance");
  await expect(page.getByRole("link",{name:/Soroban registry/})).toHaveAttribute("href","/preview/contracts");
  await expect(page.getByRole("link",{name:/Corridor directory/})).toHaveAttribute("href","/preview/corridors");
  await page.getByRole("link",{name:/Soroban registry/}).click();
@@ -591,4 +634,110 @@ test("read-only network states retain accessibility and visual evidence on deskt
  await page.screenshot({path:path.join(folder,"tablet-high-contrast-reduced-motion.png"),
   fullPage:true,animations:"disabled"});
  expect(runtimeErrors).toEqual([]);
+});
+
+
+test("observability dashboard reconciles live RPC and persisted checkpoint without enabling payments",async({page},testInfo)=>{
+ const sent:string[]=[];
+ page.on("request",request=>{
+  if(request.url().includes("/api/bridge/")){
+   expect(request.method()).toBe("GET");
+   sent.push(new URL(request.url()).pathname);
+  }
+ });
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/observability");
+ await expect(page.getByRole("heading",{name:"Know what is real."})).toBeVisible();
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("observer-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("database-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("contracts-state")).toHaveText("Unknown");
+ await expect(page.getByText("All financial flags disabled")).toBeVisible();
+ // The fixture deliberately returns HTTP 503 for source discovery: a missing
+ // contract response is UNKNOWN, not an asserted undeployed manifest.
+ await expect(page.getByText("Not established")).toBeVisible();
+ await expect(page.getByRole("status")).toContainText("Financial execution is disabled");
+ await expect(page.getByRole("link",{name:"Look up a Testnet transaction"})).toHaveAttribute("href","/explorer");
+ expect(sent.sort()).toEqual([
+  "/api/bridge/v1/network","/api/bridge/v1/observer","/api/bridge/ready",
+  "/api/bridge/v1/capabilities","/api/bridge/v1/contracts",
+ ].sort());
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow).toBeLessThanOrEqual(2);
+ const folder=testInfo.outputPath("observability-evidence");
+ await page.screenshot({path:folder+".png",fullPage:true,animations:"disabled"});
+});
+
+test("observability labels stale, unavailable, and wrong-network dependencies without synthesizing success",async({page})=>{
+ await mockReadApi(page,{state:"stale",passphrase:testnetPassphrase,paymentClaim:true});
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByTestId("database-state")).toHaveText("Unavailable or not configured");
+ await expect(page.getByText("Unavailable — fail closed")).toBeVisible();
+ await expect(page.getByRole("status")).toContainText("No financial execution is permitted");
+ await page.unrouteAll({behavior:"wait"});
+ await mockReadApi(page,{state:"degraded"});
+ await page.getByRole("button",{name:"Refresh observations"}).click();
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByTestId("database-state")).toHaveText("Unavailable or not configured");
+ // After the recovery attempt the capabilities endpoint returned four
+ // validated false flags, while the RPC and DB remain unavailable.
+ await expect(page.getByText("All financial flags disabled")).toBeVisible();
+});
+
+
+test("observability keeps only public session readings, supports deliberate refresh, and copies a redacted receipt",async({page})=>{
+ await page.addInitScript(()=>{
+  Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+   writeText:async(text:string)=>{(window as typeof window &{__obsCopied?:string}).__obsCopied=text;}
+  }});
+ });
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.goto("/preview/observability");
+ const timeline=page.getByTestId("observation-timeline");
+ await expect(timeline).toBeVisible();
+ await expect(timeline.locator("tbody tr")).toHaveCount(1);
+ await expect(page.getByTestId("observer-integrity")).toContainText("Ledger hashes agree");
+ await expect(page.getByRole("checkbox",{name:"Auto-recheck every 30s"})).not.toBeChecked();
+ // An explicit second observation does not erase the first reading.
+ await page.waitForTimeout(1150);
+ await page.getByRole("button",{name:"Refresh observations"}).click();
+ await expect(timeline.locator("tbody tr")).toHaveCount(2);
+ await page.getByRole("button",{name:"Copy public evidence"}).click();
+ await expect(page.locator(".observability-copy-status")).toContainText("Public evidence copied.");
+ const receipt=await page.evaluate(()=>(window as typeof window&{__obsCopied?:string}).__obsCopied);
+ expect(receipt).toBeDefined();
+ const data=JSON.parse(receipt!);
+ expect(data.network).toBe("testnet");
+ expect(data.scope).toBe("public-read-only");
+ expect(data.paymentExecutionEnabled).toBe(false);
+ expect(data.observations).toHaveLength(2);
+ expect(JSON.stringify(data)).not.toMatch(/ledger_hash|passphrase|secret|wallet|privateKey|accountAddress|rawEvents/i);
+ await page.reload();
+ await expect(page.getByTestId("observation-timeline").locator("tbody tr")).toHaveCount(1);
+});
+
+test("observability rejects same-ledger contradictory hashes and never labels a conflict as synced",async({page})=>{
+ await mockReadApi(page,{state:"recovered",passphrase:testnetPassphrase});
+ await page.route("**/api/bridge/v1/observer",route=>route.fulfill({
+  json:{...checkpoint(10),ledger_hash:"b".repeat(64)}
+ }));
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Verified observation");
+ await expect(page.getByTestId("observer-state")).toHaveText("Disagreement detected");
+ await expect(page.getByTestId("observer-integrity")).toContainText("Ledger hash disagreement");
+ await expect(page.getByRole("status").filter({hasText:/Public RPC and saved observer disagree/})).toBeVisible();
+ await expect(page.getByTestId("observation-timeline").getByText("Ledger hash disagreement")).toBeVisible();
+ await expect(page.getByText("Payment execution").locator("..").getByText("Disabled")).toBeVisible();
+});
+
+test("observability refuses another Stellar network even with nominally fresh ledger data",async({page})=>{
+ await mockReadApi(page,{state:"recovered",
+  passphrase:"Public Global Stellar Network ; September 2015"});
+ await page.goto("/preview/observability");
+ await expect(page.getByTestId("live-rpc-state")).toHaveText("Stale or unavailable");
+ await expect(page.getByTestId("observer-state")).toHaveText("Not current or missing");
+ await expect(page.getByRole("status")).toContainText("No financial execution is permitted");
 });

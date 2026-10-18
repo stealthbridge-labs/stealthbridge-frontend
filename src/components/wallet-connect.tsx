@@ -4,6 +4,7 @@ import {getNetwork,getAddress,isConnected,isAllowed,requestAccess} from "@stella
 import {Wallet,AlertTriangle,CheckCircle2,Eye,Unplug} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
+import {getPublicTestnetAccount,type PublicTestnetAccount} from "@/lib/stellar-testnet-account";
 
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
 
@@ -12,7 +13,7 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
  * and Freighter access only reveals a public address on a deliberate click.
  * Neither path signs, submits, or saves account identifiers on our servers.
  */
-export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean}){
+export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string}){
  const [address,setAddress]=useState<string|null>(null);
  const [network,setNetwork]=useState<string|null>(null);
  const [pending,setPending]=useState(false);
@@ -21,7 +22,14 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  const [watchedAddress,setWatchedAddress]=useState<string|null>(null);
  const walletRun=useRef(0);
  const [watchError,setWatchError]=useState<string|null>(null);
+ const [observed,setObserved]=useState<PublicTestnetAccount|null>(null);
+ const [balancePending,setBalancePending]=useState(false);
+ const [balanceError,setBalanceError]=useState<string|null>(null);
+ const balanceRun=useRef(0);
  const correct=network===TESTNET_PASSPHRASE;
+ const operatorProvided=expectedOperatorAddress!==undefined&&expectedOperatorAddress.trim().length>0;
+ const expectedOperator=operatorProvided?canonicalStellarAccountAddress(expectedOperatorAddress!):null;
+ const operatorMatches=Boolean(expectedOperator&&address&&correct&&expectedOperator===address);
  const backendMatches=backendNetworkVerified&&expectedNetworkPassphrase===TESTNET_PASSPHRASE;
 
  useEffect(()=>{
@@ -125,6 +133,19 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   }finally{if(generation===walletRun.current)setPending(false);}
  };
 
+ const checkPublicAccount=async()=>{
+  const target=address??watchedAddress;
+  if(!target)return;
+  const generation=++balanceRun.current;
+  setObserved(null);setBalanceError(null);setBalancePending(true);
+  try{
+   const result=await getPublicTestnetAccount(target);
+   if(balanceRun.current===generation)setObserved(result);
+  }catch(e){
+   if(balanceRun.current===generation)setBalanceError(e instanceof Error?e.message:"Unable to verify public Testnet account");
+  }finally{if(balanceRun.current===generation)setBalancePending(false);}
+ };
+
  const watch=()=>{
   const verified=canonicalStellarAccountAddress(watchInput);
   if(!verified){
@@ -140,6 +161,12 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
   <div className="wallet-top"><div><h3>Wallet connection</h3><p>Choose Freighter to connect, or watch a public Stellar address without connecting. No private keys or seeds are requested.</p></div><Wallet size={23} aria-hidden/></div>
   {address&&correct&&backendMatches?<div className="wallet-connected"><CheckCircle2 aria-hidden size={18}/><div><strong>Freighter connected on Testnet</strong><code title={address}>{address}</code></div></div>:null}
   {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC readiness or ledger freshness cannot be verified. No signing is available.</p>:null}
+  {operatorProvided?<div role="status" className="wallet-security-note" data-testid="freighter-operator-match">
+   {!expectedOperator?"Operator address is invalid. Enter a checksummed public G-address.":
+    !address?"Connect Freighter on Testnet to compare its active public account with your proposed administrator address.":
+    operatorMatches?"Freighter public account matches the proposed Testnet administrator address. No signature or deployment authority has been established.":
+    "Freighter account does not match the proposed administrator address, or the active network is not Testnet. Do not approve deployments."}
+  </div>:null}
   <div className="wallet-address-actions">
    <Button variant="outline" disabled={pending} onClick={connect} type="button">{pending?"Connecting…":address?"Recheck wallet":"Connect Freighter"}</Button>
    {address?<Button type="button" variant="outline" onClick={()=>{walletRun.current++;setAddress(null);setNetwork(null);setPending(false);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
@@ -159,6 +186,21 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    </div>
    {watchError?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{watchError}</p>:null}
    {watchedAddress?<div className="wallet-connected" role="status"><Eye size={18} aria-hidden/><div><strong>Watch-only address · not connected</strong><code>{watchedAddress}</code><a className="wallet-explorer-link" href={"https://stellar.expert/explorer/testnet/account/"+watchedAddress} target="_blank" rel="noopener noreferrer">Open public Testnet explorer (shares address with explorer)</a></div></div>:null}
+  </div>
+  <div className="wallet-watch" aria-label="Consented public Testnet account lookup">
+   <p>Optional public Testnet account lookup: Stellar Horizon will receive the selected public
+   G-address directly from your browser only when you click the button. This does not access
+   private keys, verify contract tokens, or make any payment.</p>
+   <Button type="button" variant="outline" disabled={balancePending||!(address||watchedAddress)}
+    onClick={()=>void checkPublicAccount()}>
+    {balancePending?"Checking public Testnet account…":"Check Testnet XLM balance"}
+   </Button>
+   {observed&&(address??watchedAddress)===observed.address?
+    <p role="status" data-testid="verified-testnet-xlm">
+     Stellar Testnet native XLM balance: <strong>{observed.nativeXlmBalance} XLM</strong>.
+     Ledger account sequence {observed.sequence}. This is not an available-to-spend amount.
+    </p>:null}
+   {balanceError?<p role="alert" className="wallet-error">{balanceError}</p>:null}
   </div>
   <p className="wallet-security-note">Connecting Freighter requests public-account access only. There is no transaction signing, payment submission, address upload, or wallet history indexing.</p>
  </section>;

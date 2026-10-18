@@ -34,7 +34,7 @@ const probe=async(path,method="GET")=>{
  return res.status;
 };
 
-for(const p of ["/","/business","/send","/platform"]){
+for(const p of ["/","/business","/send","/platform","/protocol"]){
  assert.equal(await probe(p),200,"Marketing public page "+p+" must be served");
  console.log("PASS marketing page "+p);
 }
