@@ -78,7 +78,7 @@ test("same-ledger governance uses one backend read with no duplicate RPC fan-out
  expect(calls).toEqual(["/api/bridge/v1/governance/snapshot"]);
  await expect(page.getByText(/Payment execution and platform fee collection:/)).toContainText("Disabled");
 });
-test("forged execution flag invalidates the atomic response; no success is shown",async({page})=>{
+test("forged execution flag rejects snapshot without misleading fallback reads",async({page})=>{
  const calls:string[]=[];
  await page.route("**/api/bridge/**",route=>{
   const path=new URL(route.request().url()).pathname;
@@ -94,6 +94,21 @@ test("forged execution flag invalidates the atomic response; no success is shown
  await expect(page.getByText(/Same-ledger snapshot unavailable or invalid/)).toBeVisible();
  await expect(page.getByText("Public code, deployment and administrator observations agree.")).toHaveCount(0);
  await expect(page.getByRole("heading",{name:"Public deployment evidence"})).toHaveCount(0);
+ expect(calls).toEqual(["/api/bridge/v1/governance/snapshot"]);
+});
+
+test("legacy backend 404 permits read-only compatibility checks without implying atomic trust",async({page})=>{
+ const calls:string[]=[];
+ await page.route("**/api/bridge/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  calls.push(path);
+  return route.fulfill({status:path.endsWith("/v1/governance/snapshot")?404:503,
+                       json:{code:"UPSTREAM_UNAVAILABLE"}});
+ });
+ await page.goto("/preview/governance");
+ await expect(page.getByText(/Same-ledger snapshot unavailable or invalid/)).toBeVisible();
+ await expect(page.getByText(/Release receipts could not be confirmed/)).toBeVisible();
+ expect(calls).toContain("/api/bridge/v1/governance/snapshot");
  expect(calls).toContain("/api/bridge/v1/governance/release");
  expect(calls).toContain("/api/bridge/v1/governance/code");
  expect(calls).toContain("/api/bridge/v1/governance/admin");
