@@ -96,6 +96,10 @@ export function GovernanceWorkspace(){
      <p role="status"><strong>{administrator.all_administrators_match_deployment
        ?"Administrators still match the deployment record."
        :"At least one administrator has changed since deployment."}</strong></p>
+     {administrator.contracts.some(record=>record.pending_administrator!==null)?
+      <div role="alert" className="registry-boundary"><ShieldAlert size={17} aria-hidden/>
+       <p>Administrator succession is pending on at least one registry. The nominated wallet has not accepted ownership. Verify both signers and current contract storage before any changes.</p>
+      </div>:null}
      <p>{administrator.same_administrator_for_all_contracts
        ?"All three currently share the same administrator address."
        :"Governance administration is split across addresses — review carefully."}</p>
@@ -134,7 +138,7 @@ export function GovernanceWorkspace(){
        target="_blank" rel="noopener noreferrer" className="back-link">View public transaction <ExternalLink size={14} aria-hidden/></a>
      </article>)}
     </div>
-    <p>Current WASM reverified: <strong>No</strong>. Current admin reverified: <strong>No</strong>.
+    <p>Fresh WASM bytes re-downloaded: <strong>No</strong>. Current administrator entries independently observed: <strong>{administrator?"Yes":"Unavailable"}</strong>. Signer possession confirmed: <strong>No</strong>.
      No contract signing, wallet private keys, customer funds, transfer submission or platform-fee claim actions are exposed here.</p>
    </section>:null}
    <div className="registry-boundary"><ShieldCheck size={18} aria-hidden/>
