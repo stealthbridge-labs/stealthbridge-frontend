@@ -4,7 +4,7 @@ import Link from "next/link";
 import {ArrowLeft,ExternalLink,RefreshCw,ShieldCheck,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
-import {readGovernanceRelease,readGovernanceCode,readGovernanceAdministrator,readGovernanceSnapshot} from "@/lib/bridge-api";
+import {ApiUnavailable,readGovernanceRelease,readGovernanceCode,readGovernanceAdministrator,readGovernanceSnapshot} from "@/lib/bridge-api";
 import type {GovernanceSnapshot} from "@/lib/governance-snapshot";
 import type {GovernanceAdministratorObservation} from "@/lib/governance-administrator";
 import type {GovernanceCodeObservation} from "@/lib/governance-code";
@@ -25,7 +25,21 @@ export function GovernanceWorkspace(){
    // On an unavailable older backend, retain explicitly degraded legacy reads.
    let snapshot:GovernanceSnapshot|null=null;
    try { snapshot=await readGovernanceSnapshot(ctl.signal); }
-   catch { /* Fail closed; the legacy GET-only evidence path is below. */ }
+   catch(error) {
+    if(ctl.signal.aborted)return;
+    // Only a genuine missing endpoint on a previous backend version permits
+    // the read-only legacy fallback. A failing or malformed *implemented*
+    // snapshot must never be disguised by independent successful requests.
+    if(!(error instanceof ApiUnavailable && error.status===404)){
+     setState({
+      loading:false,snapshot:null,release:null,code:null,administrator:null,
+      error:"Atomic Testnet governance snapshot is invalid or unavailable. No common-ledger assurance is possible.",
+      codeError:"Current executable state unavailable until a valid snapshot can be read.",
+      adminError:"Current administrator state unavailable until a valid snapshot can be read."
+     });
+     return;
+    }
+   }
    if(ctl.signal.aborted)return;
    if(snapshot){
     const consistent=snapshot.state==="consistent-observations";
