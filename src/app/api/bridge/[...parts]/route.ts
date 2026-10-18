@@ -22,7 +22,7 @@ export async function GET(_request:NextRequest,context:{params:Promise<{parts:st
   if(before!==null&&(!isActivityCursor(before)||
       (contract!==null&&!before.endsWith("."+contract))))
    return NextResponse.json({code:"INVALID_CURSOR"},{status:400});
- }else if(path==="v1/corridors/page")
+ }else if(path==="v1/corridors/page"){
   const allowedParams=new Set(["limit","after","origin_country","destination_country","privacy_rail"]);
  if([...search.keys()].some(k=>!allowedParams.has(k)||search.getAll(k).length>1))
    return NextResponse.json({code:"INVALID_QUERY"},{status:400});
