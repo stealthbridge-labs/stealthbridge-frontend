@@ -274,7 +274,7 @@ test("governance recovery workspace never treats forged admin proof as key custo
   })
  }));
  await page.goto("/preview/governance");
- await expect(page.getByText(/No customer transfer|Payment execution disabled|Payment execution remains disabled/i).first()).toBeVisible();
+ await expect(page.getByText(/confidentiality, user payments, fee collection and fiat payouts are not enabled/i)).toBeVisible();
  await expect(page.getByText(/Administrator custody is not assumed/)).toHaveCount(0);
  // If historical release receipts are unavailable, no current admin card appears.
  await expect(page.getByText(/Pending recovery nomination/)).toHaveCount(0);

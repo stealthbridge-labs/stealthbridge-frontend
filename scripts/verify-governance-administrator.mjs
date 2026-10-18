@@ -11,7 +11,11 @@ for(const [remote,local,limit] of [
  if(!response.ok)throw new Error("Pinned administrator SDK source is not available");
  const text=await response.text();
  if(text.length<100||text.length>limit)throw new Error("Unexpected administrator source size");
- assert.equal(await readFile(local,"utf8"),text,"Frontend admin/StrKey validator drift from reviewed SDK");
+ const localSource=await readFile(local,"utf8");
+ const adapted=remote==="src/governance-administrator.ts"?
+   text.replace('import {canonicalStellarAccountAddress} from "./wallet.js";',
+     'import {canonicalStellarAccountAddress} from "./stellar-address";'):text;
+ assert.equal(localSource,adapted,"Frontend admin validation drift from reviewed SDK (only import path may differ)");
 }
 const content=await readFile("src/lib/governance-administrator.ts","utf8");
 for(const marker of ["signer_possession_verified!==false","fee_collection_enabled!==false",

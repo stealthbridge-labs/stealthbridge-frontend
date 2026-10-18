@@ -2,7 +2,7 @@
  * Verified keys and executable hashes are checked by the Rust API, but a
  * public address does NOT prove possession of private signing material.
  */
-import {canonicalStellarAccountAddress} from "./wallet.js";
+import {canonicalStellarAccountAddress} from "./stellar-address";
 export interface GovernanceAdministratorRecord {
  name:"corridor-registry"|"policy-registry"|"governance-gate";
  contract_id:string;
