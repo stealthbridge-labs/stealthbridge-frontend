@@ -1,5 +1,11 @@
 # StealthBridge Frontend
 
+## Deployed governance and actual frontend integration
+
+Three public Soroban governance contracts were deployed to Stellar Testnet on **17 October 2026**. The production Next.js site presents Business, Send and Platform; the gated engineering preview exposes real ledger, corridor, activity and governance observations. The browser calls **GET-only** `/api/bridge/*`; the Next.js server forwards allowlisted reads to the Rust backend using server-only `STEALTHBRIDGE_API_URL`. The backend obtains Testnet network/contract-instance observations from Stellar RPC and operator-configured records from Neon PostgreSQL. The frontend also obtains consented **public** Freighter wallet context without signing.
+
+Read the [cross-repository integration and deployed contract map](https://github.com/stealthbridge-labs/.github/blob/main/docs/INTEGRATION-TOPOLOGY.md) and [contract deployment evidence](https://github.com/stealthbridge-labs/stealthbridge-contracts/blob/main/deployments/testnet/VERIFIED-GOVERNANCE-RELEASE-2026-10-17.md). The preview's `/preview/governance` consumes Rust API release receipts, current executable-hash observations and current administrator storage; `/preview/activity` consumes bounded public observer-journal pages. These are **indirect contract reads through the backend**, not browser-authorized writes or proof of a payment rail. Do not infer that the legacy `deployments/testnet/manifest.json` has been promoted: canonical v1 remains an outdated `not-deployed` integration record pending reviewed replacement. No fee claiming, private transfers or payouts are enabled.
+
 **Engineering roadmap:** [View the repository-specific plan](ROADMAP.md).
 
 ## System architecture and where this product is heading
