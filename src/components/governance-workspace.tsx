@@ -20,15 +20,35 @@ export function GovernanceWorkspace(){
  useEffect(()=>{
   const ctl=new AbortController();
   async function inspect(){
-   const [releaseResult,codeResult,adminResult,snapshotResult]=await Promise.allSettled([
-    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal),readGovernanceAdministrator(ctl.signal),
-    readGovernanceSnapshot(ctl.signal)
+   // Prefer the single, same-ledger Rust API read. A successful response
+   // replaces three independently timed RPC/receipt requests.
+   // On an unavailable older backend, retain explicitly degraded legacy reads.
+   let snapshot:GovernanceSnapshot|null=null;
+   try { snapshot=await readGovernanceSnapshot(ctl.signal); }
+   catch { /* Fail closed; the legacy GET-only evidence path is below. */ }
+   if(ctl.signal.aborted)return;
+   if(snapshot){
+    const consistent=snapshot.state==="consistent-observations";
+    setState({
+     loading:false,snapshot,
+     release:snapshot.release,
+     code:consistent?snapshot.code:null,
+     administrator:consistent?snapshot.administrators:null,
+     error:null,
+     codeError:consistent?null:"Same-ledger executable integrity could not be established.",
+     adminError:consistent?null:"Same-ledger administrator integrity could not be established."
+    });
+    return;
+   }
+   const [releaseResult,codeResult,adminResult]=await Promise.allSettled([
+    readGovernanceRelease(ctl.signal),readGovernanceCode(ctl.signal),
+    readGovernanceAdministrator(ctl.signal)
    ]);
    if(ctl.signal.aborted)return;
    const release=releaseResult.status==="fulfilled"?releaseResult.value:null;
    let code=codeResult.status==="fulfilled"?codeResult.value:null;
    if(code&&(!release||code.observed_ledger_sequence!==release.observed_ledger_sequence)){
-    code=null; // Never combine incompatible or asynchronously distant ledgers.
+    code=null; // Never imply one ledger from independent requests.
    }
    let administrator=adminResult.status==="fulfilled"?adminResult.value:null;
    if(administrator&&(!code||!code.all_executable_hashes_match_release||
@@ -39,8 +59,7 @@ export function GovernanceWorkspace(){
      administrator=null;
    }
    setState({
-    loading:false,release,code,administrator,
-    snapshot:snapshotResult.status==="fulfilled"?snapshotResult.value:null,
+    loading:false,release,code,administrator,snapshot:null,
     error:release?null:"Release receipts could not be confirmed against a fresh Testnet observation.",
     codeError:code?null:"Current executable hashes and entry expiry could not be confirmed from the same fresh Testnet head.",
     adminError:administrator?null:"The current Soroban administrator storage could not be independently confirmed. Check RPC, contract code and ledger freshness."
