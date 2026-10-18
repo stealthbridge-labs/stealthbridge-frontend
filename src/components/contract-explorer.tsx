@@ -93,12 +93,12 @@ export function ContractExplorer(){
    </div>
    <div className="registry-status-strip" aria-live="polite">
     <div><span>Source verification</span><strong>{state.loading?"Checking…":state.error?"Unavailable":"ABI matched"}</strong></div>
-    <div><span>On-chain deployment</span><strong>{state.loading?"Checking…":undiscovered?"Not deployed":"Not verified"}</strong></div>
+    <div><span>On-chain deployment</span><strong>{state.loading?"Checking…":undiscovered?"Legacy v1 pending":"Not verified"}</strong></div>
     <div><span>Testnet RPC</span><strong>{state.loading?"Checking…":verified?"Fresh":"Not confirmed"}</strong></div>
     <div><span>Payment execution</span><strong>Disabled</strong></div>
    </div>
    <div className="registry-toolbar">
-    <p>Source interface is not a deployed contract address. Live Soroban reads require an independently verified Testnet deployment.</p>
+    <p>This page shows a legacy source-only interface and manifest. Three public governance contracts have separately verified Testnet deployment observations; review the dedicated governance workspace for current on-chain reads.</p>
     <Button variant="outline" size="sm" type="button" onClick={refresh} disabled={state.loading}>
      <RefreshCw size={16} aria-hidden/> {state.loading?"Checking backend…":"Refresh verification"}
     </Button>
@@ -128,7 +128,7 @@ export function ContractExplorer(){
      <div className="registry-panel-heading"><ShieldCheck size={22} aria-hidden/><div>
       <h2>{titles[selectedModule]??selectedModule}</h2><p>{purpose[selectedModule]??"Public Testnet source interface."}</p></div></div>
      <div className="registry-code-meta">
-      <span>Contract status: <strong>Source only</strong></span>
+      <span>Contract status: <strong>Source ABI only</strong></span>
       <a href={"https://github.com/stealthbridge-labs/stealthbridge-contracts/blob/main/"+definition?.source}
        target="_blank" rel="noreferrer">View Rust source <ExternalLink size={14} aria-hidden/></a>
      </div>
@@ -140,7 +140,7 @@ export function ContractExplorer(){
      {signature&&selectedMethod?<div className="registry-signature" aria-live="polite">
       <span>Declared Soroban function</span>
       <code>{selectedMethod}({signature.args.join(", ")}) → {signature.returns}</code>
-      <p>The backend confirms this source signature. No deployed contract ID is available, so the method cannot be invoked on Testnet.</p>
+      <p>This legacy metadata endpoint declares a source signature, not an authorized contract invocation. Actual governance deployments are inspected separately in the governance workspace.</p>
      </div>:<p className="state-muted">No public read method declared.</p>}
      <h3 className="registry-subheading">Privileged writes</h3>
      {definition?.writes.length?<div className="registry-admin-list">
@@ -152,16 +152,17 @@ export function ContractExplorer(){
      <div className="registry-panel-heading"><Database size={21} aria-hidden/><div><h2>Backend evidence</h2><p>Observed, not simulated</p></div></div>
      <dl>
       <div><dt>Network</dt><dd>Stellar Testnet</dd></div>
-      <div><dt>Contract manifest</dt><dd>Not deployed</dd></div>
+      <div><dt>Legacy manifest</dt><dd>v1 not-deployed (outdated integration record)</dd></div>
       <div><dt>Ledger sequence</dt><dd>{state.network?.ledger_sequence.toLocaleString()??"Not available"}</dd></div>
       <div><dt>Ledger freshness</dt><dd>{freshLedger(state.network)?"Fresh observation":"Unverified or stale"}</dd></div>
       <div><dt>PostgreSQL readiness</dt><dd>{state.readiness?.database??"Not confirmed"}</dd></div>
-      <div><dt>Configured chain addresses</dt><dd>None verified</dd></div>
+      <div><dt>Canonical v2 allowlist</dt><dd>Not approved; see separately observed Testnet governance deployment</dd></div>
      </dl>
      <div className="registry-next"><CheckCircle2 size={17} aria-hidden/><div>
       <strong>What becomes available next?</strong>
-      <p>After authorized deployment and bytecode, administrator, and constructor-bound address verification, the backend can expose separately reviewed on-chain read operations.</p>
+      <p>Three governance contracts were deployed to Testnet. The backend already exposes public release, code and administrator observations; canonical allowlist attestation and money movement remain separate future release gates.</p>
      </div></div>
+     <Link className="registry-link" href="/preview/governance">View independently checked deployment receipts <ArrowRight size={15} aria-hidden/></Link>
      <Link className="registry-link" href="/preview/send">Explore the Send workspace <ArrowRight size={15} aria-hidden/></Link>
     </aside>
    </div>:null}
@@ -169,6 +170,6 @@ export function ContractExplorer(){
     <p>Governance flags do not prove confidentiality, asset issuance, liquidity, or a bank payout. Signing and transfers remain disabled regardless of backend availability.</p>
    </div>
   </main>
-  <footer className="workspace-footer">StealthBridge · Soroban source explorer · No deployed contract interactions or payments</footer>
+  <footer className="workspace-footer">StealthBridge · Soroban source explorer · No writable contract interactions or payments</footer>
  </div>;
 }
