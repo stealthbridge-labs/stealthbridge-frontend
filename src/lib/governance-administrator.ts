@@ -14,7 +14,7 @@ export interface GovernanceAdministratorRecord {
 export interface GovernanceAdministratorObservation {
  schema_version:1;network:"testnet";
  source:"stellar-rpc/getLedgerEntries/contract-instance-storage";
- observed_ledger_sequence:number;
+ observed_ledger_sequence:number;observed_ledger_closed_at_unix:string;
  reviewed_release_executable_hashes_confirmed:true;
  administrator_entries_read_from_current_storage:true;
  same_administrator_for_all_contracts:boolean;
@@ -43,6 +43,8 @@ export function validGovernanceAdministrator(value:unknown):value is GovernanceA
     value.source!=="stellar-rpc/getLedgerEntries/contract-instance-storage"||
     !Number.isSafeInteger(value.observed_ledger_sequence)||
     Number(value.observed_ledger_sequence)<5244293||
+    typeof value.observed_ledger_closed_at_unix!=="string"||
+    !/^[0-9]{1,20}$/.test(value.observed_ledger_closed_at_unix)||
     value.reviewed_release_executable_hashes_confirmed!==true||
     value.administrator_entries_read_from_current_storage!==true||
     value.signer_possession_verified!==false||
@@ -52,6 +54,10 @@ export function validGovernanceAdministrator(value:unknown):value is GovernanceA
     typeof value.same_administrator_for_all_contracts!=="boolean"||
     typeof value.all_administrators_match_deployment!=="boolean"||
     !Array.isArray(value.contracts)||value.contracts.length!==FIXED.length)return false;
+ const closed=Number(value.observed_ledger_closed_at_unix);
+ const nowUnix=Math.floor(Date.now()/1000);
+ if(!Number.isSafeInteger(closed)||closed<1||!Number.isSafeInteger(nowUnix)||
+    nowUnix-closed>180||nowUnix-closed< -30)return false;
  const contracts:unknown[]=value.contracts;
  let same=true,unchanged=true,first:string|undefined;
  for(let i=0;i<FIXED.length;i++){

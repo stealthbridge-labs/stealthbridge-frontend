@@ -103,7 +103,7 @@ export function GovernanceWorkspace(){
      <p>{administrator.same_administrator_for_all_contracts
        ?"All three currently share the same administrator address."
        :"Governance administration is split across addresses — review carefully."}</p>
-     <p>Observed in Testnet ledger #{administrator.observed_ledger_sequence.toLocaleString()}.
+     <p>Observed in Testnet ledger #{administrator.observed_ledger_sequence.toLocaleString()}. Ledger closed at {new Date(Number(administrator.observed_ledger_closed_at_unix)*1000).toLocaleString("en-GB",{timeZone:"UTC"})} UTC.
       This proves stored on-chain addresses, <strong>not</strong> access to their keys or the ability to sign claims.</p>
      <dl>{administrator.contracts.map(entry=><div key={entry.contract_id} style={{overflowWrap:"anywhere",marginBottom:"1rem"}}>
       <dt>{entry.name.replaceAll("-"," ")} administrator</dt>

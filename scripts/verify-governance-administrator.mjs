@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-const REF="a5d1313b49baa18f340b43a4e4ddfa4a770da0af";
+const REF="f8e8f719e10c8026bfbbd524a905a05635ff264e";
 for(const [remote,local,limit] of [
  ["src/governance-administrator.ts","src/lib/governance-administrator.ts",14000],
  ["src/wallet.ts","src/lib/wallet.ts",3000]
