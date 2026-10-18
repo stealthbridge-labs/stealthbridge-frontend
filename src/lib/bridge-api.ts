@@ -22,7 +22,7 @@ export interface TransactionObservation extends ApiTransactionObservation {}
 export class ApiUnavailable extends Error {
  constructor(public readonly status:number,public readonly endpoint:string,
   public readonly code:string|null=null,public readonly traceId:string|null=null){
-  const summary=status===503?"The data service is not configured or available.":"The data service returned HTTP "+status+".";
+  const summary=status===503?"The data service returned HTTP 503: dependency unavailable or unconfigured.":"The data service returned HTTP "+status+".";
   super(summary+(code?" Error code: "+code+".":"")+(traceId?" Request ID: "+traceId+".":""));this.name="ApiUnavailable";
  }
 }
