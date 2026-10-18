@@ -18,7 +18,7 @@ Public landing and Business / Send stories
 Opt-in engineering preview
   ├─ GET-only server proxy → Rust API → Stellar Testnet RPC
   ├─ Rust API → Neon/PostgreSQL (real enabled corridor records only)
-  ├─ Read-only contract discovery → source-only 3-contract ABI
+  ├─ Source-only ABI discovery (legacy canonical v1) + separate live governance receipts/code/admin GET reads
   └─ Freighter public-key permission or local watch-only G-address
 Future, only after separate reviews
   ├─ Signed wallet identity + authenticated Business organizations
@@ -28,7 +28,7 @@ Future, only after separate reviews
 
 **Today's boundary:** the browser can display observed Testnet metadata and actual operator-configured data, but the application **cannot** authorize, sign, or send value. Wallet connection is not payment permission, and a watched public address is not proof of ownership. The ABI is validated against the reviewed Soroban source interface, not an attestation of deployed contracts.
 
-**Near-term implementation roadmap:** improve live cross-service acceptance, replace duplicated handwritten HTTP models with a pinned SDK consumer, make disabled/unavailable states clear across devices, add authenticated organization/session UX only when the backend verifies nonce-bound signatures, and display independently attested on-chain governance data after a real deployment.
+**Near-term implementation roadmap:** improve live cross-service acceptance, replace duplicated handwritten HTTP models with a pinned SDK consumer, make disabled/unavailable states clear across devices, add authenticated organization/session UX only when the backend verifies nonce-bound signatures, and expand currently available, separately verified Testnet governance observations after canonical manifest approval.
 
 **Long-term product target:** a production-quality Business console with approvals, real quotes, role-aware audit and reconciliation, plus a consumer Send journey with explicit privacy disclosures, user-confirmed wallet actions and recoverable payment state. None of these can claim success before cryptographic, financial, compliance and operator evidence exists.
 
