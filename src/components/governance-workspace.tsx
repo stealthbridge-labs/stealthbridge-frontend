@@ -25,12 +25,15 @@ export function GovernanceWorkspace(){
    if(ctl.signal.aborted)return;
    const release=releaseResult.status==="fulfilled"?releaseResult.value:null;
    let code=codeResult.status==="fulfilled"?codeResult.value:null;
-   if(code&&(!release||Math.abs(code.observed_ledger_sequence-release.observed_ledger_sequence)>15)){
+   if(code&&(!release||code.observed_ledger_sequence!==release.observed_ledger_sequence)){
     code=null; // Never combine incompatible or asynchronously distant ledgers.
    }
    let administrator=adminResult.status==="fulfilled"?adminResult.value:null;
    if(administrator&&(!code||!code.all_executable_hashes_match_release||
-     Math.abs(administrator.observed_ledger_sequence-code.observed_ledger_sequence)>15)){
+     !administrator.all_administrators_match_deployment||
+     !administrator.same_administrator_for_all_contracts||
+     administrator.contracts.some(c=>c.paused===true||c.pending_administrator!==null)||
+     administrator.observed_ledger_sequence!==code.observed_ledger_sequence)){
      administrator=null;
    }
    setState({
