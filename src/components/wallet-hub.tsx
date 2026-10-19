@@ -66,16 +66,22 @@ export function WalletHub({flow}:{flow:Flow}){
   <header className="workspace-header">
    <Brand/>
    <span className="network-chip"><i aria-hidden/> Stellar Testnet</span>
-   <Link href={flow==="send"?"/send":"/business"} className="back-link">
-    <ArrowLeft size={16} aria-hidden/> Back to {flow==="send"?"Send":"Business"}
+   <Link href="/" className="back-link">
+    <ArrowLeft size={16} aria-hidden/> Home
    </Link>
   </header>
   <main className="workspace-main" id="main-content">
    <div className="workspace-intro">
     <span className="section-index">StealthBridge / {flow==="send"?"Send":"Business"} / Wallet</span>
-    <h1>Set up your payment journey.</h1>
-    <p>Connect your own Stellar wallet, inspect the live Testnet, and prepare a private-payment request.
-     Your wallet stays under your control. Actual confidential transfers and payouts are not enabled yet.</p>
+    <h1>{flow==="send"?"Send with StealthBridge.":"StealthBridge Business workspace."}</h1>
+    <p>{flow==="send"?
+      "Connect your Stellar wallet, verify a real Testnet account and prepare your private international transfer. Payments and payouts are not enabled yet.":
+      "Connect your own wallet, verify live Testnet status and prepare confidential business settlement details. Financial settlement and approvals are not enabled yet."}</p>
+    <nav aria-label="Payment workspace navigation" className="wallet-workspace-links">
+     <Link href="/send" aria-current={flow==="send"?"page":undefined}>Send</Link>
+     <Link href="/business" aria-current={flow==="business"?"page":undefined}>Business</Link>
+     <Link href={flow==="send"?"/discover/send":"/discover/business"}>How it works <ArrowRight size={15} aria-hidden/></Link>
+    </nav>
    </div>
    <div className="wallet-product-grid">
     <div className="form-panel">
@@ -123,7 +129,7 @@ export function WalletHub({flow}:{flow:Flow}){
      </div>:null}
     </div>
    </div>
-   <section className="form-panel wallet-smart-area" aria-label="Smart account and privacy roadmap">
+   <section className="form-panel wallet-smart-area" aria-label="Passkey and smart account connection">
     <div className="panel-heading"><div>
      <h2>Passkey &amp; smart accounts</h2>
      <span>Programmable authorization for business teams and everyday users</span>
