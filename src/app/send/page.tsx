@@ -1,9 +1,10 @@
 import type {Metadata} from "next";
-import {ProductStory} from "@/components/product-story";
+import {WalletHub} from "@/components/wallet-hub";
+export const dynamic="force-dynamic";
 export const metadata:Metadata={
- title:"StealthBridge Send — A future remittance experience",
- description:"Discover StealthBridge Send, an in-development approach to clearer, more privacy-conscious international transfers.",
+ title:"StealthBridge Send — Connect your wallet",
+ description:"Connect a Stellar Testnet wallet and prepare an international transfer locally. Private payments remain disabled.",
  alternates:{canonical:"/send"},
- openGraph:{title:"StealthBridge Send — A future remittance experience",description:"Discover StealthBridge Send, an in-development approach to clearer, more privacy-conscious international transfers.",url:"/send",type:"website"},
+ openGraph:{title:"StealthBridge Send — Connect your wallet",description:"Explore the real Stellar Testnet wallet experience.",url:"/send",type:"website"}
 };
-export default function Page(){return <ProductStory product="send"/>;}
+export default function Page(){return <WalletHub flow="send"/>;}
