@@ -16,8 +16,8 @@ test("homepage navigation and calls to action use product destinations",async({p
 });
 
 for(const route of [
- {path:"/business",current:"Business",next:"Explore our approach",destination:"/platform"},
- {path:"/send",current:"Send",next:"Discover StealthBridge Business",destination:"/business"},
+ {path:"/discover/business",current:"Business",next:"Explore our approach",destination:"/platform"},
+ {path:"/discover/send",current:"Send",next:"Discover StealthBridge Business",destination:"/business"},
  {path:"/platform",current:"Platform",next:"Explore StealthBridge Business",destination:"/business"}
 ] as const){
  test(`${route.path} exposes its real product navigation`,async({page})=>{
