@@ -80,6 +80,7 @@ export function Home(){
  <p className="hero-reveal hero-lead">Private by design. Connected by purpose. We’re building cross-border payment experiences that give businesses more control and people more peace of mind.</p>
  <div className="hero-reveal hero-buttons">
  <Button size="lg" asChild><Link href="/business">StealthBridge Business <ArrowUpRight size={17}/></Link></Button>
+ <Button size="lg" variant="outline" asChild><Link href="/send">StealthBridge Send <ArrowRight size={17}/></Link></Button>
  <Button size="lg" variant="outline" asChild><Link href="/wallet">Connect wallet <ArrowRight size={17}/></Link></Button>
  </div>
  <div className="hero-reveal hero-note"><ShieldCheck size={16}/><span>In development on Stellar. Payment services are not yet available.</span></div>
