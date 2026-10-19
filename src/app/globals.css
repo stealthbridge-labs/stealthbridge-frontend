@@ -588,3 +588,5 @@
 .wallet-smart-area{margin-top:25px}.wallet-smart-area>.state-muted{margin-top:20px;line-height:1.7}.story-wallet-entry{margin-top:18px;width:fit-content}
 @media(max-width:850px){.wallet-product-grid{grid-template-columns:1fr}}
 @media(max-width:460px){.wallet-product-grid .form-panel{padding:20px}.wallet-public-status{align-items:flex-start}}
+
+.wallet-passkey-check{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:20px}.wallet-passkey-check p{max-width:550px;color:#b2d4ce;font-size:12px;line-height:1.6}

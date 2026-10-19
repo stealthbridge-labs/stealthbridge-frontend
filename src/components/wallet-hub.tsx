@@ -8,6 +8,7 @@ import {Button} from "@/components/ui/button";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
+import {preparePrivateTransfer} from "@/lib/private-transfer";
 
 type Rail="confidential-token"|"private-payments";
 type Flow="send"|"business";
@@ -26,7 +27,17 @@ export function WalletHub({flow}:{flow:Flow}){
  const [rail,setRail]=useState<Rail>(flow==="send"?"private-payments":"confidential-token");
  const [reviewed,setReviewed]=useState(false);
  const [smartAccount,setSmartAccount]=useState("");
+ const [passkeyState,setPasskeyState]=useState<"unknown"|"checking"|"available"|"unavailable">("unknown");
  const onWalletChange=useCallback((address:string|null)=>setConnected(address),[]);
+ const checkPasskeySupport=async()=>{
+  setPasskeyState("checking");
+  try{
+   const credential=window.PublicKeyCredential;
+   const ok=typeof credential?.isUserVerifyingPlatformAuthenticatorAvailable==="function"&&
+    await credential.isUserVerifyingPlatformAuthenticatorAvailable();
+   setPasskeyState(ok?"available":"unavailable");
+  }catch{setPasskeyState("unavailable");}
+ };
  useEffect(()=>{
   const ctl=new AbortController();
   setStatus(null);setStatusError(false);
@@ -43,10 +54,10 @@ export function WalletHub({flow}:{flow:Flow}){
   return ()=>ctl.abort();
  },[revision]);
  const target=addressType(recipient);
- const validAmount=/^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,7})?$/.test(amount)&&
-   Number(amount)>0;
- const selfPayment=connected!==null&&connected===recipient.trim().toUpperCase();
- const canReview=!!connected&&!!status&&!!target&&validAmount&&!selfPayment;
+ const preflight=preparePrivateTransfer({
+  sender:connected,recipient,amount,rail,backendTestnetFresh:Boolean(status)
+ });
+ const canReview=preflight.validLocalDraft;
  const review=()=>setReviewed(true);
  const failReason=rail==="private-payments"?
   "Stellar Private Payments proof integration, pool policy and withdrawal safety are not verified.":
@@ -120,6 +131,15 @@ export function WalletHub({flow}:{flow:Flow}){
     <p className="state-muted">StealthBridge will use Soroban contract accounts for passkeys, recovery
      and organization policies. No smart-account factory or relayer has been deployed and verified
      for customer use; connecting Freighter does not create a smart account.</p>
+    <div className="wallet-passkey-check">
+     <Button type="button" variant="outline" disabled={passkeyState==="checking"}
+      onClick={()=>void checkPasskeySupport()}>
+      {passkeyState==="checking"?"Checking device…":"Check device passkey support"}
+     </Button>
+     {passkeyState==="available"?<p role="status">This device reports a passkey-capable authenticator.
+      Smart-account creation requires a separately verified contract, WebAuthn verifier and account recovery integration.</p>:null}
+     {passkeyState==="unavailable"?<p role="status">A platform passkey authenticator is not available or could not be checked. Freighter remains the supported wallet connection.</p>:null}
+    </div>
     <label className="field" htmlFor="smart-watch">Already have a Soroban contract-account address?</label>
     <input id="smart-watch" className="tx-input" placeholder="C… public contract account" maxLength={56}
      value={smartAccount} spellCheck={false} autoComplete="off"

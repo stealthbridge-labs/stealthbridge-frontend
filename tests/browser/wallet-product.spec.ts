@@ -35,6 +35,8 @@ test("smart-account address format is validated without claiming wallet control"
  await watch.fill("not-a-contract");
  await expect(page.getByText(/Enter a valid C-address/)).toBeVisible();
  await watch.fill(C);
+ await page.getByRole("button",{name:"Check device passkey support"}).click();
+ await expect(page.getByRole("status").filter({hasText:/passkey|authenticator/i}).first()).toBeVisible();
  await expect(page.getByText(/Ownership and wallet authorization are not verified/)).toBeVisible();
  await expect(page.getByText(/No smart-account factory or relayer has been deployed/)).toBeVisible();
 });
