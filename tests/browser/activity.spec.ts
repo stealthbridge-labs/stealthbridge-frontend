@@ -109,3 +109,40 @@ test("proxy refuses malformed and duplicated activity parameters before backend 
  const write=await request.post("/api/bridge/v1/observer/activity",{data:{}});
  expect([404,405]).toContain(write.status());
 });
+
+test("migration-gated activity shows actual schema status without fabricated events",async({page})=>{
+ const calls:string[]=[];
+ await page.route("**/api/bridge/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  calls.push(route.request().method()+" "+path);
+  if(path.endsWith("/v1/network"))return route.fulfill({json:ledger()});
+  if(path.endsWith("/v1/observer/schema"))return route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"postgresql-sqlx-migrations",
+   schema_status:"migrations-pending",registered_migrations:7,required_migrations:10,
+   payment_execution_enabled:false,fee_collection_enabled:false
+  }});
+  return route.fulfill({status:503,json:{error:{code:"DEPENDENCY_UNAVAILABLE"}}});
+ });
+ await page.goto("/preview/activity");
+ await expect(page.getByRole("alert").filter({hasText:"HTTP 503"})).toBeVisible();
+ await expect(page.getByText(/Observer journal schema migrations pending: 7 of 10/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:"No observer checkpoint configured"})).toHaveCount(0);
+ expect(calls).toContain("GET /api/bridge/v1/observer/schema");
+ expect(calls.every(c=>c.startsWith("GET "))).toBe(true);
+});
+test("forged observer schema readiness is never surfaced as genuine",async({page})=>{
+ await page.route("**/api/bridge/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith("/v1/network"))return route.fulfill({json:ledger()});
+  if(path.endsWith("/v1/observer/schema"))return route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"postgresql-sqlx-migrations",
+   schema_status:"current",registered_migrations:7,required_migrations:10,
+   payment_execution_enabled:true,fee_collection_enabled:false
+  }});
+  return route.fulfill({status:503,json:{error:{code:"DEPENDENCY_UNAVAILABLE"}}});
+ });
+ await page.goto("/preview/activity");
+ await expect(page.getByRole("alert").filter({hasText:"HTTP 503"})).toBeVisible();
+ await expect(page.getByText(/Observer journal schema migrations pending/)).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"No observer checkpoint configured"})).toHaveCount(0);
+});

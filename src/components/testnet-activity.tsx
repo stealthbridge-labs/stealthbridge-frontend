@@ -8,7 +8,7 @@ import {
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {
- readBridge,readObserverActivity,type NetworkStatus,type PublicActivityPage
+ readBridge,readObserverActivity,readObserverSchema,type NetworkStatus,type PublicActivityPage,type ObserverSchema
 } from "@/lib/bridge-api";
 
 const PAGE_SIZE=10;
@@ -33,6 +33,7 @@ export function TestnetActivity(){
  const [selected,setSelected]=useState("");
  const [page,setPage]=useState<PublicActivityPage|null>(null);
  const [network,setNetwork]=useState<NetworkStatus|null>(null);
+ const [schema,setSchema]=useState<ObserverSchema|null>(null);
  const [loading,setLoading]=useState(true);
  const [moreLoading,setMoreLoading]=useState(false);
  const [error,setError]=useState<string|null>(null);
@@ -40,7 +41,7 @@ export function TestnetActivity(){
  useEffect(()=>{
   const request=new AbortController();
   controller.current=request;
-  setLoading(true);setMoreLoading(false);setError(null);setPage(null);setNetwork(null);
+  setLoading(true);setMoreLoading(false);setError(null);setPage(null);setNetwork(null);setSchema(null);
   Promise.allSettled([
    readObserverActivity({limit:PAGE_SIZE,...(selected?{contractId:selected}:{})},request.signal),
    readBridge<NetworkStatus>("network",request.signal)
@@ -48,8 +49,15 @@ export function TestnetActivity(){
    if(request.signal.aborted)return;
    if(status.status==="fulfilled")setNetwork(status.value);
    if(activity.status==="fulfilled")setPage(activity.value);
-   else setError(activity.reason instanceof Error?activity.reason.message:
-       "Unable to inspect stored public Testnet activity.");
+   else{
+    setError(activity.reason instanceof Error?activity.reason.message:
+        "Unable to inspect stored public Testnet activity.");
+    // A separate fail-closed public diagnostic clarifies migration availability
+    // without fabricating journal rows or querying the database from the browser.
+    void readObserverSchema(request.signal).then(status=>{
+     if(!request.signal.aborted)setSchema(status);
+    }).catch(()=>{ /* Older API/degraded network: preserve original error. */ });
+   }
    setLoading(false);
   });
   return ()=>request.abort();
@@ -125,7 +133,20 @@ export function TestnetActivity(){
    </section>
    {error&&<div className="activity-alert" role="alert">
     <AlertTriangle size={18} aria-hidden/>
-    <p>{error} No events have been fabricated. Check the Preview API and staging PostgreSQL.</p>
+    <div>
+     <p>{error} No events have been fabricated. Check the Preview API and staging PostgreSQL.</p>
+     {schema?.schema_status==="migrations-pending"&&
+      <p role="status">Observer journal schema migrations pending: {schema.registered_migrations} of {schema.required_migrations} reviewed SQLx migrations registered.
+       A protected database migration is required before public journal reads can work. No observer records or payments have been inferred.</p>}
+     {schema?.schema_status==="not-configured"&&
+      <p role="status">The backend PostgreSQL connection is not configured.</p>}
+     {schema?.schema_status==="unavailable"&&
+      <p role="status">The observer database or migration metadata could not be reached.</p>}
+     {schema?.schema_status==="schema-incomplete"&&
+      <p role="status">The registered migration count is current, but required observer tables or safeguards are unavailable.</p>}
+     {schema?.schema_status==="current"&&
+      <p role="status">Database schema is current; the observer worker or journal query still requires operational investigation.</p>}
+    </div>
    </div>}
    <div className="activity-layout">
     <section className="activity-feed" aria-label="Public Testnet event timeline" aria-busy={loading||moreLoading}>

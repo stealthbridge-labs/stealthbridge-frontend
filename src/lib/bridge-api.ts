@@ -1,5 +1,6 @@
 import {validPlatformCatalog,type PlatformCatalog} from "./platform-modules";
 import {assertActivityFilters,validateActivityPage} from "./observer-activity";
+import {validObserverSchema,type ObserverSchema} from "./observer-schema";
 import type {ActivityFilters,PublicActivityPage} from "./observer-activity";
 import canonicalSorobanInterface from "./public-soroban-interface.v1.json";
 import {validGovernanceRelease,type GovernanceRelease} from "./governance-release";
@@ -274,6 +275,12 @@ export async function readObserverActivity(
   throw new Error("Public Testnet journal was malformed, out of order or claimed unsupported execution.");
  return value;
 }
+export async function readObserverSchema(signal?:AbortSignal):Promise<ObserverSchema>{
+ const value=await read<unknown>("v1/observer/schema",signal);
+ if(!validObserverSchema(value))throw new Error("Observer schema status was malformed or overstated financial capability.");
+ return value;
+}
+export type {ObserverSchema} from "./observer-schema";
 export type {ActivityContract,ActivityEvent,PublicActivityPage,ActivityFilters} from "./observer-activity";
 
 /** One bounded Testnet instance read plus separately verified deployment receipts. */
