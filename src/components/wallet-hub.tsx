@@ -1,5 +1,5 @@
 "use client";
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowRight,CheckCircle2,Globe2,LockKeyhole,ShieldAlert,Wallet} from "lucide-react";
 import {Brand} from "@/components/brand";
@@ -9,6 +9,7 @@ import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
+import {validContractObservation,type ContractObservation} from "@/lib/contract-observation";
 
 type Rail="confidential-token"|"private-payments";
 type Flow="send"|"business";
@@ -27,6 +28,27 @@ export function WalletHub({flow}:{flow:Flow}){
  const [rail,setRail]=useState<Rail>(flow==="send"?"private-payments":"confidential-token");
  const [reviewed,setReviewed]=useState(false);
  const [smartAccount,setSmartAccount]=useState("");
+ const [contractEvidence,setContractEvidence]=useState<ContractObservation|null>(null);
+ const [contractPending,setContractPending]=useState(false);
+ const [contractError,setContractError]=useState<string|null>(null);
+ const contractGeneration=useRef(0);
+ const inspectContract=async()=>{
+  const address=smartAccount;
+  if(!isContractStrKey(address))return;
+  const request=++contractGeneration.current;
+  setContractPending(true);setContractError(null);setContractEvidence(null);
+  try{
+   const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",
+    signal:AbortSignal.timeout(9500)});
+   if(!response.ok)throw Error("Testnet contract check is unavailable.");
+   const value:unknown=await response.json();
+   if(!validContractObservation(value,address))throw Error("Received unverified contract evidence.");
+   if(request===contractGeneration.current)setContractEvidence(value);
+  }catch(error){
+   if(request===contractGeneration.current)
+    setContractError(error instanceof Error?error.message:"Testnet contract check failed.");
+  }finally{if(request===contractGeneration.current)setContractPending(false);}
+ };
  const [passkeyState,setPasskeyState]=useState<"unknown"|"checking"|"available"|"unavailable">("unknown");
  const onWalletChange=useCallback((address:string|null)=>setConnected(address),[]);
  const checkPasskeySupport=async()=>{
@@ -149,11 +171,21 @@ export function WalletHub({flow}:{flow:Flow}){
     <label className="field" htmlFor="smart-watch">Already have a Soroban contract-account address?</label>
     <input id="smart-watch" className="tx-input" placeholder="C… public contract account" maxLength={56}
      value={smartAccount} spellCheck={false} autoComplete="off"
-     onChange={e=>setSmartAccount(e.target.value)}/>
+     onChange={e=>{contractGeneration.current++;setSmartAccount(e.target.value);setContractEvidence(null);setContractError(null);setContractPending(false);}}/>
     {smartAccount?<p className="state-muted" role="status">
      {isContractStrKey(smartAccount)?"Valid contract-address format. Ownership and wallet authorization are not verified.":
       "Enter a valid C-address to inspect its public identifier. A C-address alone is not proof of a smart wallet."}
     </p>:null}
+    <div className="wallet-passkey-check">
+     <Button type="button" variant="outline" disabled={!isContractStrKey(smartAccount)||contractPending}
+      onClick={()=>void inspectContract()}>{contractPending?"Checking Testnet…":"Inspect contract on Testnet"}</Button>
+     {contractError?<p role="alert">{contractError} No contract ownership was inferred.</p>:null}
+     {contractEvidence?<p role="status">{contractEvidence.contract_instance_found?
+       "An active Soroban contract instance was found on Stellar Testnet.":
+       "No active Soroban contract instance was found at this address."}
+       {" "}Ledger #{contractEvidence.observed_ledger_sequence.toLocaleString()}.
+       This does not verify a smart wallet, account ownership, signer permissions, passkey recovery or private transfer capability.</p>:null}
+    </div>
     <p className="wallet-security-note">StealthBridge does not request seed phrases, silently generate
      private keys, store payment instructions, or claim a zero-knowledge proof was created when it was not.</p>
    </section>
