@@ -3,8 +3,8 @@ import path from "node:path";
 import {expect,test} from "@playwright/test";
 
 const productPages=[
- {route:"/business",name:"Business"},
- {route:"/send",name:"Send"},
+ {route:"/discover/business",name:"Business"},
+ {route:"/discover/send",name:"Send"},
  {route:"/platform",name:"Platform"}
 ] as const;
 
