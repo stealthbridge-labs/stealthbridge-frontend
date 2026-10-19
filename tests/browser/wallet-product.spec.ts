@@ -19,7 +19,7 @@ test("public wallet integrates real Testnet readiness but never implies funds ca
  });
  const response=await page.goto("/wallet?flow=send");
  expect(response?.status()).toBe(200);
- await expect(page.getByRole("heading",{level:1,name:"Set up your payment journey."})).toBeVisible();
+ await expect(page.getByRole("heading",{level:1,name:"Send with StealthBridge."})).toBeVisible();
  await expect(page.getByText(/Stellar Testnet connected · ledger #/)).toBeVisible();
  await expect(page.getByRole("button",{name:"Connect Freighter"})).toBeVisible();
  await page.getByLabel("Recipient's Stellar address").fill(G);
