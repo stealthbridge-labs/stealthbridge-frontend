@@ -1,5 +1,5 @@
 import {expect,test} from "@playwright/test";
-const pages=["/","/business","/send","/platform"];
+const pages=["/","/discover/business","/discover/send","/platform"];
 function luminance(rgb:number[]){
  const f=(v:number)=>{const x=v/255;return x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4;};
  return 0.2126*f(rgb[0])+0.7152*f(rgb[1])+0.0722*f(rgb[2]);
