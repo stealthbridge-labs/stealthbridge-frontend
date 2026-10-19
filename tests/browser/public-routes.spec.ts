@@ -2,9 +2,11 @@ import {expect,test} from "@playwright/test";
 
 const publicRoutes=[
  {path:"/",title:/StealthBridge \| Confidential payments/,heading:"Move value. Not exposure."},
- {path:"/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
- {path:"/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."},
- {path:"/platform",title:/StealthBridge Platform/,heading:"More than a payment rail."}
+ {path:"/business",title:/StealthBridge Business/,heading:"StealthBridge Business workspace."},
+ {path:"/send",title:/StealthBridge Send/,heading:"Send with StealthBridge."},
+ {path:"/platform",title:/StealthBridge Platform/,heading:"More than a payment rail."},
+ {path:"/discover/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
+ {path:"/discover/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."}
 ] as const;
 
 for(const route of publicRoutes){
@@ -28,7 +30,8 @@ for(const route of publicRoutes){
    expect(destination).not.toMatch(/github\.com|roadmap\.md|\/preview\//i);
   }
 
-  await expect(page.locator("form, input, select")).toHaveCount(0);
+  if(!["/send","/business"].includes(route.path))await expect(page.locator("form, input, select")).toHaveCount(0);
+ else await expect(page.getByRole("button",{name:"Connect Freighter"})).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/(?:USD|EUR|GBP)\s*[=→]\s*\d|[$€£]\s*\d[\d,.]*/);
  });
 }
