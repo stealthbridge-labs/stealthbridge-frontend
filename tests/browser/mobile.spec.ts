@@ -16,7 +16,7 @@ test("homepage mobile navigation expands and follows a product link",async({page
 });
 
 test("product-page mobile navigation expands, collapses, and navigates",async({page})=>{
- await page.goto("/business");
+ await page.goto("/discover/business");
 
  const navigation=page.getByRole("navigation",{name:"Product navigation"});
  await page.getByRole("button",{name:"Open menu"}).click();
