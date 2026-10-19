@@ -28,9 +28,11 @@ try{
  }
  assert.ok(ready,"Server failed to start: "+logs);
  await expectPage("/",["StealthBridge","Move value","Not exposure","/business","/send","/platform"]);
- await expectPage("/business",["StealthBridge Business","Confidentiality","In development"]);
- await expectPage("/send",["StealthBridge Send","Close to home","In development"]);
+ await expectPage("/business",["StealthBridge Business workspace.","Connect Freighter","Prepare a transfer"]);
+ await expectPage("/send",["Send with StealthBridge.","Connect Freighter","Prepare a transfer"]);
  await expectPage("/platform",["StealthBridge","More than","In development"]);
+ await expectPage("/discover/send",["StealthBridge Send","Close to home","In development"]);
+ await expectPage("/discover/business",["StealthBridge Business","Confidentiality","In development"]);
  const logo=await fetch(BASE+"/brand/stealthbridge-symbol.svg");
  assert.equal(logo.status,200,"Logo asset must exist");
  for(const path of ["/explorer","/preview/business","/preview/send","/api/bridge/v1/network"]){
