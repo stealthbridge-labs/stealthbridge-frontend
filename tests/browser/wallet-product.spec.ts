@@ -46,3 +46,48 @@ test("unavailable backend is visible; no amount privacy or transfer is implied",
  await expect(page.getByText(/Live network unavailable/)).toBeVisible();
  await expect(page.getByRole("button",{name:/Review privacy readiness/})).toBeDisabled();
 });
+
+test("a user consents to live public C-address lookup without granting signing",async({page})=>{
+ const contractCalls:string[]=[];
+ await page.route("**/api/public/status",route=>route.fulfill({json:network()}));
+ await page.route("**/api/public/contract/**",route=>{
+  contractCalls.push(route.request().method()+" "+new URL(route.request().url()).pathname);
+  return route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"stellar-rpc/getLedgerEntries",
+   contract_address:C,contract_instance_found:true,
+   observed_ledger_sequence:5275904,executable_wasm_hash:"a".repeat(64),
+   live_until_ledger:5300000,smart_account_verified:false,
+   signer_authority_verified:false,privacy_verified:false,
+   payment_execution_enabled:false,fee_collection_enabled:false
+  }});
+ });
+ await page.goto("/send");
+ const address=page.getByLabel("Already have a Soroban contract-account address?");
+ const inspect=page.getByRole("button",{name:"Inspect contract on Testnet"});
+ await expect(inspect).toBeDisabled();
+ await address.fill(C);
+ await expect(inspect).toBeEnabled();
+ expect(contractCalls).toEqual([]);
+ await inspect.click();
+ await expect(page.getByText(/An active Soroban contract instance was found on Stellar Testnet/)).toBeVisible();
+ await expect(page.getByText(/This does not verify a smart wallet, account ownership/)).toBeVisible();
+ expect(contractCalls).toEqual(["GET /api/public/contract/"+C]);
+ await expect(page.getByRole("button",{name:/Review privacy readiness/})).toBeDisabled();
+});
+test("forged contract signer authority is rejected and cannot enable a transfer",async({page})=>{
+ await page.route("**/api/public/status",route=>route.fulfill({json:network()}));
+ await page.route("**/api/public/contract/**",route=>route.fulfill({json:{
+  schema_version:1,network:"testnet",source:"stellar-rpc/getLedgerEntries",
+  contract_address:C,contract_instance_found:true,
+  observed_ledger_sequence:5275904,executable_wasm_hash:"a".repeat(64),
+  live_until_ledger:5300000,smart_account_verified:true,
+  signer_authority_verified:false,privacy_verified:false,
+  payment_execution_enabled:false,fee_collection_enabled:false
+ }}));
+ await page.goto("/business");
+ await page.getByLabel("Already have a Soroban contract-account address?").fill(C);
+ await page.getByRole("button",{name:"Inspect contract on Testnet"}).click();
+ await expect(page.getByRole("alert").filter({hasText:"unverified contract evidence"})).toBeVisible();
+ await expect(page.getByText(/An active Soroban contract instance was found/)).toHaveCount(0);
+ await expect(page.getByRole("button",{name:/Review privacy readiness/})).toBeDisabled();
+});
