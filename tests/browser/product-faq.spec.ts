@@ -1,5 +1,5 @@
 import {expect,test} from "@playwright/test";
-for(const route of ["/business","/send","/platform"]){
+for(const route of ["/discover/business","/discover/send","/platform"]){
  test(`${route} questions expand and collapse for keyboard users`,async({page})=>{
   await page.goto(route);
   const question=page.locator("details.story-faq-item").first();
