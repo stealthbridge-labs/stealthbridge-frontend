@@ -33,6 +33,11 @@ for(const route of publicRoutes){
  });
 }
 
+test("protocol release record is not a public product page",async({request})=>{
+ const response=await request.get("/protocol");
+ expect(response.status()).toBe(404);
+});
+
 test("unknown routes use the branded recovery page",async({page})=>{
  const response=await page.goto("/not-a-public-product");
 

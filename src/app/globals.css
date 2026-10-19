@@ -573,3 +573,18 @@
   transition-duration:0.01ms!important
  }
 }
+
+/* Public product wallet, sharing the trusted workspace design system. */
+.wallet-product-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;margin-top:46px}
+.wallet-product-grid .form-panel{min-width:0}
+.wallet-public-status{display:flex;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--line);padding:22px 0;color:#a3d5ca;font-size:12px}
+.wallet-public-status>span{flex:1;min-width:170px}.wallet-public-status svg{color:#8bf4da}
+.wallet-product-grid input.tx-input,.wallet-smart-area input.tx-input{width:100%;border:1px solid #8ddcd544;border-radius:12px;padding:14px;background:#0e333a;color:#effaf7;margin-top:10px}
+.wallet-product-grid select{width:100%;border:1px solid #8ddcd544;border-radius:12px;padding:14px;background:#0e333a;color:#effaf7;margin-top:10px;white-space:normal}
+.wallet-product-grid .form-panel>button{margin-top:25px}
+.wallet-product-grid .wallet-section{margin-top:24px}
+.wallet-review{display:flex;gap:14px;background:#163b40;border:1px solid #a6f1d548;border-radius:15px;padding:18px;margin-top:22px}
+.wallet-review svg{flex-shrink:0;color:#f0c7ab}.wallet-review strong{font-size:14px}.wallet-review p{font-size:12px;color:#bad8d0;line-height:1.65;margin:8px 0 0}
+.wallet-smart-area{margin-top:25px}.wallet-smart-area>.state-muted{margin-top:20px;line-height:1.7}.story-wallet-entry{margin-top:18px;width:fit-content}
+@media(max-width:850px){.wallet-product-grid{grid-template-columns:1fr}}
+@media(max-width:460px){.wallet-product-grid .form-panel{padding:20px}.wallet-public-status{align-items:flex-start}}

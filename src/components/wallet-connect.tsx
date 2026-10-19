@@ -13,7 +13,7 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
  * and Freighter access only reveals a public address on a deliberate click.
  * Neither path signs, submits, or saves account identifiers on our servers.
  */
-export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string}){
+export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress,onWalletChange}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string;onWalletChange?:(address:string|null)=>void}){
  const [address,setAddress]=useState<string|null>(null);
  const [network,setNetwork]=useState<string|null>(null);
  const [pending,setPending]=useState(false);
@@ -31,6 +31,7 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  const expectedOperator=operatorProvided?canonicalStellarAccountAddress(expectedOperatorAddress!):null;
  const operatorMatches=Boolean(expectedOperator&&address&&correct&&expectedOperator===address);
  const backendMatches=backendNetworkVerified&&expectedNetworkPassphrase===TESTNET_PASSPHRASE;
+ useEffect(()=>{onWalletChange?.(address&&correct?address:null);},[address,correct,onWalletChange]);
 
  useEffect(()=>{
   // Passive restoration never requests Freighter permissions: we check the

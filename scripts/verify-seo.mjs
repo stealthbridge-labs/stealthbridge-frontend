@@ -7,13 +7,13 @@ const robots = read("robots.ts");
 const site = read("site-metadata.ts");
 const root = read("layout.tsx");
 assert.match(site, /https:\/\/stealthbridge\.vercel\.app/);
-assert.ok(["/", "/business", "/send", "/platform", "/protocol"].every(path => site.includes('"'+path+'"')));
+assert.ok(["/", "/business", "/send", "/platform"].every(path => site.includes('"'+path+'"')));
 assert.match(sitemap, /PUBLIC_ROUTES\.map/);
 for (const excluded of ["/preview/", "/explorer", "/api/"]) assert.ok(robots.includes(excluded));
 assert.match(root, /metadataBase:/);
 assert.match(root, /summary_large_image/);
 assert.ok(read("opengraph-image.tsx").includes("ImageResponse"));
-for (const route of ["business","send","platform","protocol"]) {
+for (const route of ["business","send","platform"]) {
  const meta = read(route + "/page.tsx");
  assert.ok(meta.includes('canonical:"/' + route + '"'));
  assert.ok(meta.includes('openGraph:'));
