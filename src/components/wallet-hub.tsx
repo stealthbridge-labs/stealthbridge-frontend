@@ -22,7 +22,7 @@ function addressType(input:string):"classic"|"contract"|null{
  * intent, sender, amount or connected-wallet details leave this workspace.
  */
 async function readContractEvidence(address:string):Promise<ContractObservation>{
- const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",
+ const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",credentials:"omit",
   signal:AbortSignal.timeout(9500)});
  if(!response.ok)throw Error("Testnet contract check is unavailable.");
  const value:unknown=await response.json();
@@ -105,8 +105,16 @@ export function WalletHub({flow}:{flow:Flow}){
  });
  const recipientContractActive=target!=="contract" ||
   activePublicContractAtAddress(recipientEvidence,recipient.trim());
- const canReview=preflight.validLocalDraft&&recipientContractActive;
- const review=()=>setReviewed(true);
+ const canReview=preflight.validLocalDraft&&recipientContractActive&&Boolean(status&&validPublicWalletStatus(status));
+ const review=()=>{
+  // A browser tab can stay open past the three-minute network evidence window.
+  // Recheck wall-clock freshness at the actual review action, not just render.
+  if(status&&validPublicWalletStatus(status)&&recipientContractActive&&preflight.validLocalDraft){
+   setReviewed(true);
+  }else{
+   setReviewed(false);setRevision(n=>n+1);
+  }
+ };
  const failReason=rail==="private-payments"?
   "Stellar Private Payments proof integration, pool policy and withdrawal safety are not verified.":
   "Confidential Token verifier, issuer permissions and asset deployment are not verified.";
