@@ -62,12 +62,12 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  expect(data.message).toContain("No transaction, payment, approval or transfer is authorized");
  const forged=await page.request.post("/api/auth/verify",{data:{address,signature:"00".repeat(64)},headers:{origin}});
  expect(forged.status()).toBe(401);
- expect((await page.request.get("/api/auth/session")).json()).resolves.toMatchObject({authenticated:false});
+ expect(await (await page.request.get("/api/auth/session")).json()).toMatchObject({authenticated:false});
  const verified=await page.request.post("/api/auth/verify",{
   data:{address,signature:signature(data.message,privateKey)},headers:{origin}
  });
  expect(verified.status()).toBe(200);
- await expect(page.request.get("/api/auth/session").then(r=>r.json())).resolves.toMatchObject({authenticated:true,address});
+ expect(await (await page.request.get("/api/auth/session")).json()).toMatchObject({authenticated:true,address});
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toBeVisible();
  await expect(page.getByRole("link",{name:/Send internationally/})).toHaveAttribute("href","/app/send");
