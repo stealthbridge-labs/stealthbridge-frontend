@@ -1,4 +1,5 @@
 import {defineConfig} from "@playwright/test";
+import {randomBytes} from "node:crypto";
 
 const port=3199;
 const previewTests=process.env.STEALTHBRIDGE_TEST_PREVIEW==="1";
@@ -23,7 +24,7 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
+   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/account-access\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {
@@ -46,6 +47,8 @@ export default defineConfig({
   stderr:"pipe",
   env:{
    STEALTHBRIDGE_SITE_MODE:process.env.STEALTHBRIDGE_TEST_PREVIEW==="1"?"preview":"landing",
+   // Unique per-test-server secret; never reused for production sessions.
+   STEALTHBRIDGE_WEB_SESSION_SECRET:randomBytes(48).toString("hex"),
    STEALTHBRIDGE_API_URL:""
   }
  }

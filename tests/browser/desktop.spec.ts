@@ -7,7 +7,7 @@ test("homepage navigation and calls to action use product destinations",async({p
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For business"})).toHaveAttribute("href","/business");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For people"})).toHaveAttribute("href","/send");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Our approach"})).toHaveAttribute("href","#principles");
- await expect(page.getByRole("link",{name:"Open StealthBridge Send"})).toHaveAttribute("href","/send");
+ await expect(page.getByRole("banner").getByRole("link",{name:"Sign in"})).toHaveAttribute("href","/login");
  await expect(page.getByRole("link",{name:"StealthBridge Business",exact:true})).toHaveAttribute("href","/business");
  await expect(page.getByRole("link",{name:"StealthBridge Send",exact:true})).toHaveAttribute("href","/send");
 
@@ -68,7 +68,7 @@ test("product selector supports pointer and keyboard interaction",async({page})=
  await page.keyboard.press("Space");
  await expect(send).toHaveAttribute("aria-pressed","true");
  await expect(page.getByRole("heading",{level:3,name:"A quieter way to send money home."})).toBeVisible();
- await expect(page.getByRole("link",{name:"Discover StealthBridge Send"})).toHaveAttribute("href","/send");
+ await expect(page.locator("#products").getByRole("link",{name:"Discover StealthBridge Send"})).toHaveAttribute("href","/send");
 
  await business.click();
  await expect(business).toHaveAttribute("aria-pressed","true");

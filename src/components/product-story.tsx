@@ -143,7 +143,7 @@ export function ProductStory({product}:{product:Product}){
     <h1 className="story-enter">{data.word}<br/><em>{data.emph}</em></h1>
     <p className="story-enter">{data.description}</p>
     <StoryActionGroup/>
-    {product!=="platform"?<Link className="story-primary story-wallet-entry" href={"/wallet?flow="+product}>Open wallet workspace <ArrowUpRight size={16} aria-hidden/></Link>:null}
+    {product!=="platform"?<Link className="story-primary story-wallet-entry" href={"/login?next=/app/"+product}>Sign in to StealthBridge <ArrowUpRight size={16} aria-hidden/></Link>:null}
    </div>
    <div className="story-art" role="img" aria-label={"Conceptual illustration for "+data.label+", not a live transaction"}>
     <div className="story-halo"/>

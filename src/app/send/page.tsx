@@ -1,10 +1,9 @@
 import type {Metadata} from "next";
-import {CustomerPaymentWorkspace} from "@/components/customer-payment-workspace";
-export const dynamic="force-dynamic";
+import {ProductStory} from "@/components/product-story";
 export const metadata:Metadata={
- title:"StealthBridge Send — International transfers",
- description:"Connect your Stellar wallet, explore actual cross-border routes and prepare your transfer. Payments are not enabled.",
+ title:"StealthBridge Send — Personal cross-border transfers",
+ description:"Explore a more thoughtful international remittance experience, with clearer delivery steps, privacy boundaries and honest payment availability.",
  alternates:{canonical:"/send"},
- openGraph:{title:"StealthBridge Send — International transfers",description:"Your international transfer workspace.",url:"/send",type:"website"}
+ openGraph:{title:"StealthBridge Send — For people across borders",description:"Discover the personal side of StealthBridge.",url:"/send",type:"website"}
 };
-export default function Page(){return <CustomerPaymentWorkspace flow="send"/>;}
+export default function Page(){return <ProductStory product="send"/>;}

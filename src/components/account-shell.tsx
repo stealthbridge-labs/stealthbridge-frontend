@@ -1,0 +1,19 @@
+import Link from "next/link";
+import {ArrowUpRight,Building2,House,Send,ShieldCheck} from "lucide-react";
+import {Brand} from "@/components/brand";
+import {AccountLogout} from "@/components/account-logout";
+export function AccountShell({address,children}:{address:string;children:React.ReactNode}){
+ return <div className="account-page">
+  <header className="account-header"><Brand/>
+   <nav aria-label="Workspace navigation" className="account-links">
+    <Link href="/app"><House size={17} aria-hidden/> Overview</Link>
+    <Link href="/app/send"><Send size={17} aria-hidden/> Transfers</Link>
+    <Link href="/app/business"><Building2 size={17} aria-hidden/> Business</Link>
+   </nav>
+   <div className="account-identity"><span title={address}>{address.slice(0,6)}…{address.slice(-5)}</span><AccountLogout/></div>
+  </header>
+  <main id="main-content" className="account-main">{children}</main>
+  <footer className="account-footer"><span><ShieldCheck size={15} aria-hidden/> Testnet account access · Signing does not authorize payments</span>
+   <Link href="/">Explore StealthBridge <ArrowUpRight size={15} aria-hidden/></Link></footer>
+ </div>;
+}

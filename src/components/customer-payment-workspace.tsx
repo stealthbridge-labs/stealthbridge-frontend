@@ -30,7 +30,7 @@ async function inspectRecipient(address:string):Promise<ContractObservation>{
  if(!validContractObservation(result,address))throw new Error("The contract response could not be verified.");
  return result;
 }
-export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
+export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;identityAddress?:string}){
  const business=flow==="business";
  const [network,setNetwork]=useState<PublicWalletStatus|null>(null);
  const [networkState,setNetworkState]=useState<FetchState>("loading");
@@ -43,7 +43,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  const catalogGeneration=useRef(0);
  const [corridorRevision,setCorridorRevision]=useState(0);
  const [corridorId,setCorridorId]=useState("");
- const [connected,setConnected]=useState<string|null>(null);
+ const [connected,setConnected]=useState<string|null>(identityAddress??null);
  const [recipient,setRecipient]=useState("");
  const [amount,setAmount]=useState("");
  const [reference,setReference]=useState("");
@@ -171,19 +171,20 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
   // are not carried into a new payment intent.
   recipientRequest.current++;setRecipientEvidence(null);setRecipientPending(false);setRecipientError(null);
  };
- return <div className="workspace-page payment-product">
-  <header className="workspace-header payment-topbar">
+ const Content=identityAddress?"div":"main";
+ return <div className={identityAddress?"payment-product account-payment-view":"workspace-page payment-product"}>
+  {!identityAddress?<header className="workspace-header payment-topbar">
    <Brand/>
    <div className="payment-top-actions">
     <span className="network-chip"><i aria-hidden/> Testnet</span>
     <Link href="/" className="back-link"><ArrowLeft size={16} aria-hidden/> Home</Link>
    </div>
-  </header>
-  <main className="payment-main" id="main-content">
+  </header>:null}
+  <Content className="payment-main" id={identityAddress?undefined:"main-content"}>
    <nav className="payment-nav" aria-label="Product sections">
-    <Link href="/send" aria-current={!business?"page":undefined}>Personal transfers</Link>
-    <Link href="/business" aria-current={business?"page":undefined}>Business payments</Link>
-    <Link href="/platform">Platform <ArrowUpRight size={14} aria-hidden/></Link>
+    <Link href={identityAddress?"/app/send":"/send"} aria-current={!business?"page":undefined}>Personal transfers</Link>
+    <Link href={identityAddress?"/app/business":"/business"} aria-current={business?"page":undefined}>Business payments</Link>
+    <Link href={identityAddress?"/app":"/platform"}>{identityAddress?"Overview":"Platform"} <ArrowUpRight size={14} aria-hidden/></Link>
    </nav>
    <div className="payment-intro">
     <div>
@@ -306,8 +307,14 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
      <section className="payment-card payment-account-card">
       <div className="payment-card-heading"><div><span className="payment-eyebrow">Account</span>
        <h2>Your wallet</h2></div><Wallet2 size={23} aria-hidden/></div>
-      <WalletConnect compact expectedNetworkPassphrase={network?.passphrase}
-       backendNetworkVerified={networkFresh} onWalletChange={onWalletChange}/>
+      {identityAddress?<div className="account-payment-identity">
+       <div><CheckCircle2 size={19} aria-hidden/><strong>Signed in securely</strong></div>
+       <p>Your Stellar account identity was verified using a signed challenge.</p>
+       <code title={identityAddress}>{identityAddress}</code>
+       <p className="payment-hint">Your wallet signature gives account access only. This session cannot authorize a transfer or business approval.</p>
+       <Link href="/app" className="payment-inline-link">Account overview <ArrowUpRight size={14} aria-hidden/></Link>
+      </div>:<WalletConnect compact expectedNetworkPassphrase={network?.passphrase}
+       backendNetworkVerified={networkFresh} onWalletChange={onWalletChange}/>}
      </section>
      <section className="payment-card payment-summary-card">
       <div className="payment-card-heading"><div><span className="payment-eyebrow">Overview</span>
@@ -332,8 +339,8 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
    </div>
    <footer className="payment-footer">
     <span>Stellar Testnet · Real wallet and corridor reads · Payments disabled</span>
-    <Link href="/wallet">Advanced wallet &amp; smart-account tools <ArrowUpRight size={14} aria-hidden/></Link>
+    <Link href={identityAddress?"/app":"/login"}>{identityAddress?"Account overview":"Sign in"} <ArrowUpRight size={14} aria-hidden/></Link>
    </footer>
-  </main>
+  </Content>
  </div>;
 }
