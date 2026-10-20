@@ -32,3 +32,8 @@ export function validContractObservation(data:unknown,address:string):data is Co
  return typeof v.executable_wasm_hash==="string"&&/^[a-f0-9]{64}$/.test(v.executable_wasm_hash)&&
    Number.isSafeInteger(v.live_until_ledger)&&Number(v.live_until_ledger)>=Number(v.observed_ledger_sequence);
 }
+
+/** Public contract presence only, never a signer, recovery or payment authorization. */
+export function activePublicContractAtAddress(data:unknown,address:string):boolean {
+ return validContractObservation(data,address) && data.contract_instance_found;
+}
