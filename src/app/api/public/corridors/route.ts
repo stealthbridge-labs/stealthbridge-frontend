@@ -13,12 +13,20 @@ function verifiedBackend():URL|null {
  }catch{return null;}
 }
 /** Public metadata only: no session, customer identity, FX, payout, fee, or transaction records. */
-export async function GET(){
+export async function GET(request:Request){
+ const incoming=new URL(request.url);
+ const params=incoming.searchParams;
+ const after=params.get("after");
+ if([...params.keys()].some(key=>key!=="after"||params.getAll(key).length!==1)||
+    (after!==null&&!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(after)))
+  return NextResponse.json({code:"INVALID_CURSOR"},{status:400,
+   headers:{"cache-control":"no-store"}});
  const backend=verifiedBackend();
  if(!backend)return NextResponse.json({code:"CATALOG_NOT_CONFIGURED"},{status:503,
   headers:{"cache-control":"no-store"}});
  try {
   const url=new URL("/v1/corridors/page?limit=25",backend);
+  if(after)url.searchParams.set("after",after.toLowerCase());
   const response=await fetch(url,{method:"GET",headers:{accept:"application/json"},
    cache:"no-store",redirect:"error",signal:AbortSignal.timeout(9000)});
   const length=response.headers.get("content-length");
