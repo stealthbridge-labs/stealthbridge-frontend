@@ -68,7 +68,7 @@ test("product selector supports pointer and keyboard interaction",async({page})=
  await page.keyboard.press("Space");
  await expect(send).toHaveAttribute("aria-pressed","true");
  await expect(page.getByRole("heading",{level:3,name:"A quieter way to send money home."})).toBeVisible();
- await expect(page.getByRole("link",{name:"Discover StealthBridge Send"})).toHaveAttribute("href","/send");
+ await expect(page.locator("#products").getByRole("link",{name:"Discover StealthBridge Send"})).toHaveAttribute("href","/send");
 
  await business.click();
  await expect(business).toHaveAttribute("aria-pressed","true");
