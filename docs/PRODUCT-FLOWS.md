@@ -30,3 +30,37 @@ The new page presents independently classified live RPC freshness, persisted obs
 The `Refresh observations` control re-queries every source with a single abortable lifecycle. Browser safety tests exercise a successful read-only source state, stale/recovery states, missing dependencies, capability flag spoofing, wrong network, mobile overflow, and a five-GET-only outbound call inventory.
 
 Release policy remains unchanged: production marketing cannot serve this route, Vercel Preview must set `STEALTHBRIDGE_SITE_MODE=preview`, and neither environment is permitted to sign, submit or settle funds. All visual statuses refer to **public Testnet metadata only**, not private balances, provider eligibility or bank settlement.
+
+
+## Public customer workspaces (October 20, 2026)
+
+The marketing site's `/send` and `/business` routes now use a dedicated
+customer payment workspace rather than reusing the advanced smart-account
+inspection panel. This is a **real connected interface**, not a fictional
+transfer engine:
+
+- The customer selects a corridor returned by PostgreSQL through the live
+  backend `GET /v1/corridors/page`, proxied only by strict, bounded
+  `GET /api/public/corridors[?after=UUID]`. Empty results and 503 errors have
+  different UI states; additional pages are fetched only when requested.
+- The selected corridor determines both the declared asset and privacy rail.
+  The UI does not invent another asset, recipient payout currency, FX rate,
+  provider quote, issuer approval, or privacy capability.
+- Freighter remains the source of a connected public Testnet G-address. The
+  customer may explicitly inspect a C-address recipient's live public
+  contract instance, but an active contract is not proof of asset support,
+  wallet authorization, verified payments, or privacy.
+- Send collects the recipient and amount. Business additionally collects a
+  customer's own internal settlement reference and distinguishes approval,
+  reconciliation, and confidentiality prerequisites.
+- Details can be reviewed without network writes. The final send/settlement
+  button is intentionally disabled until actual independently reviewed
+  payment rails, compliance, quote-provider, and operator controls exist.
+- Technical watch-only accounts, passkey research, and contract debugging
+  remain available on the separate `/wallet` advanced route, not as the
+  main consumer journey.
+
+The backend's `GET /` is intentionally an unindexed 404 response. The API
+must stay deployed to serve the product; internal metrics require an operator
+bearer token, and tenant review data requires an authenticated session.
+The root 404 is not an outage or an operator dashboard.
