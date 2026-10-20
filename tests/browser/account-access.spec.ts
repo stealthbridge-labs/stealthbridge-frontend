@@ -39,7 +39,7 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
   await expect(page.getByRole("button",{name:/Continue with Freighter/})).toBeVisible();
  }
  await page.getByRole("button",{name:/Continue with Freighter/}).click();
- await expect(page.getByRole("alert")).toContainText(/Freighter isn't available/);
+ await expect(page.locator(".access-error")).toContainText(/Freighter isn't available/);
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
 });
 test("SEP-53 signed challenge creates real short-lived session; invalid proof and cross-origin fail",async({page})=>{
