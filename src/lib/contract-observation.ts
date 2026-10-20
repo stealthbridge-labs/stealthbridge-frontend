@@ -1,3 +1,4 @@
+import {isContractStrKey} from "./observer-activity";
 /** Exact public Testnet contract-instance observation, NOT smart-wallet ownership. */
 export interface ContractObservation {
  schema_version:1;
@@ -15,7 +16,7 @@ export interface ContractObservation {
  fee_collection_enabled:false;
 }
 export function validContractObservation(data:unknown,address:string):data is ContractObservation {
- if(!data||typeof data!=="object"||Array.isArray(data))return false;
+ if(!isContractStrKey(address)||!data||typeof data!=="object"||Array.isArray(data))return false;
  const v=data as Record<string,unknown>;
  const keys=["schema_version","network","source","contract_address","contract_instance_found",
   "observed_ledger_sequence","executable_wasm_hash","live_until_ledger",
