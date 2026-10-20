@@ -7,7 +7,7 @@ test("homepage navigation and calls to action use product destinations",async({p
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For business"})).toHaveAttribute("href","/business");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For people"})).toHaveAttribute("href","/send");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Our approach"})).toHaveAttribute("href","#principles");
- await expect(page.getByRole("link",{name:"Open StealthBridge Send"})).toHaveAttribute("href","/send");
+ await expect(page.getByRole("banner").getByRole("link",{name:"Sign in"})).toHaveAttribute("href","/login");
  await expect(page.getByRole("link",{name:"StealthBridge Business",exact:true})).toHaveAttribute("href","/business");
  await expect(page.getByRole("link",{name:"StealthBridge Send",exact:true})).toHaveAttribute("href","/send");
 
