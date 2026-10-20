@@ -74,7 +74,7 @@ export function WalletHub({flow}:{flow:Flow}){
   }finally{if(request===recipientGeneration.current)setRecipientPending(false);}
  };
  const [passkeyState,setPasskeyState]=useState<"unknown"|"checking"|"available"|"unavailable">("unknown");
- const onWalletChange=useCallback((address:string|null)=>setConnected(address),[]);
+ const onWalletChange=useCallback((address:string|null)=>{setConnected(address);setReviewed(false);},[]);
  const checkPasskeySupport=async()=>{
   setPasskeyState("checking");
   try{
