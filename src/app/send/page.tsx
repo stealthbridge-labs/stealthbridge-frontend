@@ -1,10 +1,10 @@
 import type {Metadata} from "next";
-import {WalletHub} from "@/components/wallet-hub";
+import {CustomerPaymentWorkspace} from "@/components/customer-payment-workspace";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={
- title:"StealthBridge Send — Connect your wallet",
- description:"Connect a Stellar Testnet wallet and prepare an international transfer locally. Private payments remain disabled.",
+ title:"StealthBridge Send — International transfers",
+ description:"Connect your Stellar wallet, explore actual cross-border routes and prepare your transfer. Payments are not enabled.",
  alternates:{canonical:"/send"},
- openGraph:{title:"StealthBridge Send — Connect your wallet",description:"Explore the real Stellar Testnet wallet experience.",url:"/send",type:"website"}
+ openGraph:{title:"StealthBridge Send — International transfers",description:"Your international transfer workspace.",url:"/send",type:"website"}
 };
-export default function Page(){return <WalletHub flow="send"/>;}
+export default function Page(){return <CustomerPaymentWorkspace flow="send"/>;}
