@@ -59,3 +59,12 @@ test("route service errors are not disguised as an empty catalog or successful q
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
  await expect(page.getByText("No payment corridors are available yet.")).toHaveCount(0);
 });
+
+test("invalid individual corridor IDs are rejected without contacting the backend",async({page})=>{
+ const paths:string[]=[];
+ page.on("request",request=>paths.push(new URL(request.url()).pathname));
+ const result=await page.request.get("/api/public/corridors/not-a-corridor");
+ expect(result.status()).toBe(400);
+ expect((await result.json()).code).toBe("INVALID_CORRIDOR_ID");
+ expect(paths.some(path=>path.startsWith("/v1/"))).toBe(false);
+});
