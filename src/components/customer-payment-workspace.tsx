@@ -11,7 +11,7 @@ import {isContractStrKey} from "@/lib/observer-activity";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
 import {activePublicContractAtAddress,validContractObservation,type ContractObservation} from "@/lib/contract-observation";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
-import {loadCustomerCorridors,type CustomerCorridor} from "@/lib/customer-corridors";
+import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
 
 type Flow="send"|"business";
 type FetchState="loading"|"ready"|"error";
@@ -51,10 +51,17 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  const [recipientPending,setRecipientPending]=useState(false);
  const [recipientError,setRecipientError]=useState<string|null>(null);
  const [reviewed,setReviewed]=useState(false);
+ const [reviewPending,setReviewPending]=useState(false);
+ const [reviewError,setReviewError]=useState<string|null>(null);
+ const reviewGeneration=useRef(0);
+ const invalidateReview=useCallback(()=>{
+  reviewGeneration.current++;
+  setReviewPending(false);setReviewError(null);setReviewed(false);
+ },[]);
  const recipientRequest=useRef(0);
- const onWalletChange=useCallback((value:string|null)=>{setConnected(value);setReviewed(false);},[]);
+ const onWalletChange=useCallback((value:string|null)=>{setConnected(value);invalidateReview();},[invalidateReview]);
  useEffect(()=>{
-  const ctl=new AbortController();setNetwork(null);setNetworkState("loading");setReviewed(false);
+  const ctl=new AbortController();setNetwork(null);setNetworkState("loading");invalidateReview();
   void (async()=>{
    try{
     const response=await fetch("/api/public/status",{method:"GET",cache:"no-store",credentials:"omit",signal:ctl.signal});
@@ -65,11 +72,11 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
    }catch{if(!ctl.signal.aborted)setNetworkState("error");}
   })();
   return ()=>ctl.abort();
- },[networkRevision]);
+ },[networkRevision,invalidateReview]);
  useEffect(()=>{
   const ctl=new AbortController();const generation=++catalogGeneration.current;
   setCorridorState("loading");setCorridors([]);setCorridorCursor(null);
-  setMoreError(false);setMoreLoading(false);setCorridorId("");setReviewed(false);
+  setMoreError(false);setMoreLoading(false);setCorridorId("");invalidateReview();
   void (async()=>{
    try{
     const page=await loadCustomerCorridors(ctl.signal);
@@ -79,7 +86,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
    }catch{if(!ctl.signal.aborted&&generation===catalogGeneration.current)setCorridorState("error");}
   })();
   return ()=>ctl.abort();
- },[corridorRevision]);
+ },[corridorRevision,invalidateReview]);
  const loadMoreRoutes=async()=>{
   const after=corridorCursor;
   if(!after||moreLoading)return;
@@ -110,17 +117,42 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  const canReview=formComplete&&networkFresh&&corridorState==="ready";
  const recipientKind=canonicalStellarAccountAddress(recipientAddress)?"classic":
   contractRecipient?"contract":"unknown";
- const review=()=>{
-  if(canReview&&network&&validPublicWalletStatus(network)){setReviewed(true);}else{
-   setReviewed(false);
-   if(!networkFresh)setNetworkRevision(current=>current+1);
+ const review=async()=>{
+  if(!canReview||!networkFresh||!corridor){invalidateReview();return;}
+  const generation=++reviewGeneration.current;
+  const selected=corridor;
+  setReviewed(false);setReviewError(null);setReviewPending(true);
+  try{
+   // Fetch new server-side operator configuration and RPC-derived network
+   // status; only the public corridor ID goes to StealthBridge's backend.
+   // The amount, recipient and business reference remain browser-local.
+   const [current,statusResponse]=await Promise.all([
+    loadVerifiedCustomerCorridor(selected.id,AbortSignal.timeout(9000)),
+    fetch("/api/public/status",{method:"GET",credentials:"omit",cache:"no-store",
+     signal:AbortSignal.timeout(9000)})
+   ]);
+   if(!statusResponse.ok)throw Error("The Testnet network observation is unavailable.");
+   const observed:unknown=await statusResponse.json();
+   if(!validPublicWalletStatus(observed))
+    throw Error("A fresh, valid Testnet observation is required before review.");
+   if(!sameCustomerCorridor(selected,current))
+    throw Error("This payment route changed. Refresh the corridor directory and review the new details.");
+   if(generation!==reviewGeneration.current)return;
+   setNetwork(observed);
+   setReviewed(true);
+  }catch(error){
+   if(generation===reviewGeneration.current){
+    setReviewError(error instanceof Error?error.message:"Unable to refresh this route.");
+   }
+  }finally{
+   if(generation===reviewGeneration.current)setReviewPending(false);
   }
  };
  const checkRecipient=async()=>{
   if(!contractRecipient)return;
   const address=recipientAddress;
   const request=++recipientRequest.current;
-  setRecipientPending(true);setRecipientError(null);setRecipientEvidence(null);setReviewed(false);
+  setRecipientPending(true);setRecipientError(null);setRecipientEvidence(null);invalidateReview();
   try{
    const observation=await inspectRecipient(address);
    if(request===recipientRequest.current)setRecipientEvidence(observation);
@@ -131,10 +163,10 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  };
  const clearRecipient=(value:string)=>{
   recipientRequest.current++;setRecipient(value);setRecipientEvidence(null);
-  setRecipientError(null);setRecipientPending(false);setReviewed(false);
+  setRecipientError(null);setRecipientPending(false);invalidateReview();
  };
  const changeCorridor=(value:string)=>{
-  setCorridorId(value);setReviewed(false);setAmount("");
+  setCorridorId(value);invalidateReview();setAmount("");
   // A corridor is specific to an asset and privacy rail. Old recipient checks
   // are not carried into a new payment intent.
   recipientRequest.current++;setRecipientEvidence(null);setRecipientPending(false);setRecipientError(null);
@@ -167,7 +199,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
       <strong>{networkFresh?"Stellar Testnet online":networkState==="loading"?"Checking network":"Live status unavailable"}</strong>
       <small>{networkFresh?"Ledger "+network.ledger_sequence.toLocaleString():"Transfers are not enabled"}</small>
      </div>
-     <button type="button" onClick={()=>setNetworkRevision(n=>n+1)} aria-label="Refresh network status"><RefreshCw size={16} aria-hidden/></button>
+     <button type="button" onClick={()=>{invalidateReview();setNetworkRevision(n=>n+1);}} aria-label="Refresh network status"><RefreshCw size={16} aria-hidden/></button>
     </div>
    </div>
    <div className="payment-layout">
@@ -229,7 +261,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
       <div className="payment-input-grid">
        <div><label className="payment-label" htmlFor="payment-amount">Amount</label>
         <input className="payment-input" id="payment-amount" inputMode="decimal" value={amount}
-         placeholder="0.00" maxLength={24} onChange={event=>{setAmount(event.target.value);setReviewed(false);}}/>
+         placeholder="0.00" maxLength={24} onChange={event=>{setAmount(event.target.value);invalidateReview();}}/>
        </div>
        <div><label className="payment-label" htmlFor="payment-asset">Asset</label>
         <input className="payment-input" id="payment-asset" readOnly value={corridor?.asset_code??"Not selected"}
@@ -239,18 +271,20 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
       <p id="asset-detail" className="payment-hint">Assets come from live corridor configuration, not a simulated quote. Exchange rates and provider fees are not available.</p>
       {business?<><label className="payment-label" htmlFor="payment-reference">Internal payment reference</label>
        <input className="payment-input" id="payment-reference" autoComplete="off" maxLength={64}
-        value={reference} onChange={event=>{setReference(event.target.value);setReviewed(false);}}
+        value={reference} onChange={event=>{setReference(event.target.value);invalidateReview();}}
         placeholder="Your invoice or purchase-order reference"/>
        <p className="payment-hint">Reference is kept in this browser tab; no invoice or approval request is submitted.</p>
       </>:null}
       <div className="payment-action-row">
-       <Button type="button" variant="primary" disabled={!canReview} onClick={review}>
-        Review payment details <ArrowRight size={16} aria-hidden/>
+       <Button type="button" variant="primary" disabled={!canReview||reviewPending}
+        onClick={()=>void review()}>
+        {reviewPending?"Rechecking route and network…":"Review payment details"} <ArrowRight size={16} aria-hidden/>
        </Button>
        <span><LockKeyhole size={14} aria-hidden/> No funds will move</span>
       </div>
-      {reviewed&&canReview?<div className="payment-review" role="status">
-       <CheckCircle2 size={20} aria-hidden/><div><strong>Details checked · payment not submitted</strong>
+      {reviewError?<p role="alert" className="payment-field-error">{reviewError}</p>:null}
+      {reviewed&&canReview&&!reviewPending?<div className="payment-review" role="status">
+       <CheckCircle2 size={20} aria-hidden/><div><strong>Current route and Testnet observation rechecked · payment not submitted</strong>
         <p>{amount} {corridor!.asset_code} · {labelForCorridor(corridor!)}. {business?"Your reference is included in this browser-only review. ":""}
          This corridor record does not confirm liquidity, issuer support, fees, privacy proofs or payout readiness.</p>
         <p>Transfer execution is not yet available. Nothing has been signed, charged or stored.</p>
