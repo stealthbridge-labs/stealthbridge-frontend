@@ -122,6 +122,15 @@ export const AUTH_COOKIE_OPTIONS={
 };
 export function validSameOrigin(request:Request){
  const supplied=request.headers.get("origin");
- if(!supplied)return false;
- try{return new URL(supplied).origin===new URL(request.url).origin;}catch{return false;}
+ const host=request.headers.get("host");
+ if(!supplied||!host)return false;
+ try{
+  const from=new URL(supplied),destination=new URL(request.url);
+  // Next/Vercel may normalize the internal Request URL to localhost while
+  // preserving the public Host. Never trust caller-controlled forwarded hosts.
+  if(from.protocol!=="http:"&&from.protocol!=="https:")return false;
+  if(from.host!==host)return false;
+  return destination.protocol===from.protocol||
+   destination.hostname==="localhost"||destination.hostname==="127.0.0.1";
+ }catch{return false;}
 }
