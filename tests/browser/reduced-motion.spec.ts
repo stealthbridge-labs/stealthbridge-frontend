@@ -12,7 +12,7 @@ test("reduced motion keeps content visible and interactions usable",async({page}
  const send=page.getByRole("group",{name:"Product preview"}).getByRole("button",{name:"Personal remittance"});
  await send.click();
  await expect(send).toHaveAttribute("aria-pressed","true");
- const sendLink=page.getByRole("link",{name:"Discover StealthBridge Send"});
+ const sendLink=page.locator("#products").getByRole("link",{name:"Discover StealthBridge Send"});
  await expect(sendLink).toBeVisible();
  await sendLink.click();
  await expect(page).toHaveURL(/\/send$/);
