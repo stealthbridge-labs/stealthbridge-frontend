@@ -61,7 +61,7 @@ test("a user consents to live public C-address lookup without granting signing",
    payment_execution_enabled:false,fee_collection_enabled:false
   }});
  });
- await page.goto("/send");
+ await page.goto("/wallet?flow=send");
  const address=page.getByLabel("Already have a Soroban contract-account address?");
  const inspect=page.getByRole("button",{name:"Inspect contract on Testnet"});
  await expect(inspect).toBeDisabled();
@@ -84,7 +84,7 @@ test("forged contract signer authority is rejected and cannot enable a transfer"
   signer_authority_verified:false,privacy_verified:false,
   payment_execution_enabled:false,fee_collection_enabled:false
  }}));
- await page.goto("/business");
+ await page.goto("/wallet?flow=business");
  await page.getByLabel("Already have a Soroban contract-account address?").fill(C);
  await page.getByRole("button",{name:"Inspect contract on Testnet"}).click();
  await expect(page.getByRole("alert").filter({hasText:"unverified contract evidence"})).toBeVisible();

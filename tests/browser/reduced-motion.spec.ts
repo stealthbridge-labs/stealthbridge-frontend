@@ -16,5 +16,5 @@ test("reduced motion keeps content visible and interactions usable",async({page}
  await expect(sendLink).toBeVisible();
  await sendLink.click();
  await expect(page).toHaveURL(/\/send$/);
- await expect(page.getByRole("heading",{level:1,name:"Send with StealthBridge."})).toBeVisible();
+ await expect(page.getByRole("heading",{level:1,name:"Send beyond borders."})).toBeVisible();
 });

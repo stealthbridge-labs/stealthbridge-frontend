@@ -13,7 +13,7 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
  * and Freighter access only reveals a public address on a deliberate click.
  * Neither path signs, submits, or saves account identifiers on our servers.
  */
-export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress,onWalletChange}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string;onWalletChange?:(address:string|null)=>void}){
+export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=false,expectedOperatorAddress,onWalletChange,compact=false}:{expectedNetworkPassphrase?:string;backendNetworkVerified?:boolean;expectedOperatorAddress?:string;onWalletChange?:(address:string|null)=>void;compact?:boolean}){
  const [address,setAddress]=useState<string|null>(null);
  const [network,setNetwork]=useState<string|null>(null);
  const [pending,setPending]=useState(false);
@@ -159,7 +159,7 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
  };
 
  return <section className="wallet-section" aria-label="Wallet connection or watch-only address">
-  <div className="wallet-top"><div><h3>Wallet connection</h3><p>Choose Freighter to connect, or watch a public Stellar address without connecting. No private keys or seeds are requested.</p></div><Wallet size={23} aria-hidden/></div>
+  <div className="wallet-top"><div><h3>{compact?"Stellar wallet":"Wallet connection"}</h3><p>{compact?"Connect Freighter to use your own Testnet account. No keys, seed phrases or signatures are requested.":"Choose Freighter to connect, or watch a public Stellar address without connecting. No private keys or seeds are requested."}</p></div><Wallet size={23} aria-hidden/></div>
   {address&&correct&&backendMatches?<div className="wallet-connected"><CheckCircle2 aria-hidden size={18}/><div><strong>Freighter connected on Testnet</strong><code title={address}>{address}</code></div></div>:null}
   {address&&correct&&!backendMatches?<p className="wallet-error" role="status">Freighter is on Testnet, but backend RPC readiness or ledger freshness cannot be verified. No signing is available.</p>:null}
   {operatorProvided?<div role="status" className="wallet-security-note" data-testid="freighter-operator-match">
@@ -173,7 +173,7 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    {address?<Button type="button" variant="outline" onClick={()=>{walletRun.current++;setAddress(null);setNetwork(null);setPending(false);setError(null);}}><Unplug size={15} aria-hidden/> Forget connection</Button>:null}
   </div>
   {error?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{error}</p>:null}
-  <div className="wallet-watch">
+  {!compact?<div className="wallet-watch">
    <label className="field" htmlFor="watch-stellar-address">Watch-only Stellar public address</label>
    <p id="watch-only-explanation">Paste a public G-address for local reference. This does not verify ownership, connect a wallet, look up balances, or transmit the address.</p>
    <input id="watch-stellar-address" className="tx-input" type="text" spellCheck={false}
@@ -187,8 +187,8 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
    </div>
    {watchError?<p className="wallet-error" role="alert"><AlertTriangle size={15} aria-hidden/>{watchError}</p>:null}
    {watchedAddress?<div className="wallet-connected" role="status"><Eye size={18} aria-hidden/><div><strong>Watch-only address · not connected</strong><code>{watchedAddress}</code><a className="wallet-explorer-link" href={"https://stellar.expert/explorer/testnet/account/"+watchedAddress} target="_blank" rel="noopener noreferrer">Open public Testnet explorer (shares address with explorer)</a></div></div>:null}
-  </div>
-  <div className="wallet-watch" aria-label="Consented public Testnet account lookup">
+  </div>:null}
+  {(!compact||address)?<div className="wallet-watch" aria-label="Consented public Testnet account lookup">
    <p>Optional public Testnet account lookup: Stellar Horizon will receive the selected public
    G-address directly from your browser only when you click the button. This does not access
    private keys, verify contract tokens, or make any payment.</p>
@@ -202,7 +202,7 @@ export function WalletConnect({expectedNetworkPassphrase,backendNetworkVerified=
      Ledger account sequence {observed.sequence}. This is not an available-to-spend amount.
     </p>:null}
    {balanceError?<p role="alert" className="wallet-error">{balanceError}</p>:null}
-  </div>
-  <p className="wallet-security-note">Connecting Freighter requests public-account access only. There is no transaction signing, payment submission, address upload, or wallet history indexing.</p>
+  </div>:null}
+  {!compact?<p className="wallet-security-note">Connecting Freighter requests public-account access only. There is no transaction signing, payment submission, address upload, or wallet history indexing.</p>:null}
  </section>;
 }

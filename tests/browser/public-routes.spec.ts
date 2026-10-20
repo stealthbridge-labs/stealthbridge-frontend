@@ -2,8 +2,8 @@ import {expect,test} from "@playwright/test";
 
 const publicRoutes=[
  {path:"/",title:/StealthBridge \| Confidential payments/,heading:"Move value. Not exposure."},
- {path:"/business",title:/StealthBridge Business/,heading:"StealthBridge Business workspace."},
- {path:"/send",title:/StealthBridge Send/,heading:"Send with StealthBridge."},
+ {path:"/business",title:/StealthBridge Business/,heading:"Your business, across borders."},
+ {path:"/send",title:/StealthBridge Send/,heading:"Send beyond borders."},
  {path:"/platform",title:/StealthBridge Platform/,heading:"More than a payment rail."},
  {path:"/discover/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
  {path:"/discover/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."}
