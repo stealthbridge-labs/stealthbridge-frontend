@@ -46,3 +46,26 @@ export async function loadCustomerCorridors(signal?:AbortSignal,after?:string):P
  if(!validCustomerCorridorPage(data))throw new Error("The corridor directory returned unverified records.");
  return data;
 }
+
+/** Revalidate an individual operator-enabled route before local customer review.
+ * A list snapshot cannot establish that a route is still configured.
+ */
+export function sameCustomerCorridor(a:CustomerCorridor,b:CustomerCorridor):boolean{
+ return a.id===b.id&&a.origin_country===b.origin_country&&
+  a.destination_country===b.destination_country&&a.asset_code===b.asset_code&&
+  a.asset_issuer===b.asset_issuer&&a.privacy_rail===b.privacy_rail;
+}
+export async function loadVerifiedCustomerCorridor(id:string,signal?:AbortSignal):Promise<CustomerCorridor>{
+ if(!UUID.test(id))throw new TypeError("Invalid corridor identifier.");
+ const response=await fetch("/api/public/corridors/"+encodeURIComponent(id),{
+  method:"GET",cache:"no-store",credentials:"omit",signal
+ });
+ if(!response.ok)throw new Error("The selected route could not be verified. Refresh the corridor directory.");
+ const data:unknown=await response.json();
+ if(!validCustomerCorridorPage({items:[data],next_cursor:null}))
+  throw new Error("The selected route returned invalid corridor metadata.");
+ const row=data as CustomerCorridor;
+ if(row.id.toLowerCase()!==id.toLowerCase())
+  throw new Error("The selected route response does not match its identifier.");
+ return row;
+}
