@@ -176,7 +176,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
        <div><strong>We couldn't load payment routes.</strong><p>Please retry. No destinations or prices have been guessed.</p>
        <Button size="sm" variant="outline" onClick={()=>setCorridorRevision(n=>n+1)}>Retry</Button></div>
       </div>:null}
-      {moreCorridors?<p className="payment-hint">Showing the first 25 operator-configured routes. <Link href="/preview/corridors">Browse the full directory in the technical preview</Link> when available.</p>:null}
+      {moreCorridors?<p className="payment-hint">Showing the first 25 published routes. More operator-configured routes are available; additional pagination is being integrated.</p>:null}
       {corridor?<div className="payment-route-summary" role="status">
        <div><span>From</span><strong>{country(corridor.origin_country)}</strong></div>
        <ArrowRight size={17} aria-hidden/>
