@@ -37,7 +37,10 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  const [networkRevision,setNetworkRevision]=useState(0);
  const [corridors,setCorridors]=useState<CustomerCorridor[]>([]);
  const [corridorState,setCorridorState]=useState<FetchState>("loading");
- const [moreCorridors,setMoreCorridors]=useState(false);
+ const [corridorCursor,setCorridorCursor]=useState<string|null>(null);
+ const [moreLoading,setMoreLoading]=useState(false);
+ const [moreError,setMoreError]=useState(false);
+ const catalogGeneration=useRef(0);
  const [corridorRevision,setCorridorRevision]=useState(0);
  const [corridorId,setCorridorId]=useState("");
  const [connected,setConnected]=useState<string|null>(null);
@@ -64,18 +67,34 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
   return ()=>ctl.abort();
  },[networkRevision]);
  useEffect(()=>{
-  const ctl=new AbortController();setCorridorState("loading");setCorridors([]);
-  setMoreCorridors(false);setCorridorId("");setReviewed(false);
+  const ctl=new AbortController();const generation=++catalogGeneration.current;
+  setCorridorState("loading");setCorridors([]);setCorridorCursor(null);
+  setMoreError(false);setMoreLoading(false);setCorridorId("");setReviewed(false);
   void (async()=>{
    try{
     const page=await loadCustomerCorridors(ctl.signal);
-    if(!ctl.signal.aborted){
-     setCorridors(page.items);setMoreCorridors(page.next_cursor!==null);setCorridorState("ready");
+    if(!ctl.signal.aborted&&generation===catalogGeneration.current){
+     setCorridors(page.items);setCorridorCursor(page.next_cursor);setCorridorState("ready");
     }
-   }catch{if(!ctl.signal.aborted)setCorridorState("error");}
+   }catch{if(!ctl.signal.aborted&&generation===catalogGeneration.current)setCorridorState("error");}
   })();
   return ()=>ctl.abort();
  },[corridorRevision]);
+ const loadMoreRoutes=async()=>{
+  const after=corridorCursor;
+  if(!after||moreLoading)return;
+  const generation=catalogGeneration.current;
+  setMoreLoading(true);setMoreError(false);
+  try{
+   const page=await loadCustomerCorridors(AbortSignal.timeout(9500),after);
+   if(generation!==catalogGeneration.current)return;
+   if(page.items.some(item=>corridors.some(existing=>existing.id===item.id)))
+    throw Error("Duplicated corridor records.");
+   setCorridors(current=>[...current,...page.items]);
+   setCorridorCursor(page.next_cursor);
+  }catch{if(generation===catalogGeneration.current)setMoreError(true);}
+  finally{if(generation===catalogGeneration.current)setMoreLoading(false);}
+ };
  const corridor=corridors.find(row=>row.id===corridorId)??null;
  const networkFresh=!!network&&validPublicWalletStatus(network);
  const recipientAddress=recipient.trim();
@@ -92,7 +111,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
  const recipientKind=canonicalStellarAccountAddress(recipientAddress)?"classic":
   contractRecipient?"contract":"unknown";
  const review=()=>{
-  if(canReview){setReviewed(true);}else{
+  if(canReview&&network&&validPublicWalletStatus(network)){setReviewed(true);}else{
    setReviewed(false);
    if(!networkFresh)setNetworkRevision(current=>current+1);
   }
@@ -176,12 +195,21 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
        <div><strong>We couldn't load payment routes.</strong><p>Please retry. No destinations or prices have been guessed.</p>
        <Button size="sm" variant="outline" onClick={()=>setCorridorRevision(n=>n+1)}>Retry</Button></div>
       </div>:null}
-      {moreCorridors?<p className="payment-hint">Showing the first 25 published routes. More operator-configured routes are available; additional pagination is being integrated.</p>:null}
+      {corridorCursor?<div className="payment-load-more">
+       <Button type="button" variant="outline" size="sm" disabled={moreLoading}
+        onClick={()=>void loadMoreRoutes()}>{moreLoading?"Loading routes…":"Load more routes"}</Button>
+       {moreError?<span role="alert">More routes could not be loaded. Retry to continue.</span>:null}
+      </div>:null}
       {corridor?<div className="payment-route-summary" role="status">
        <div><span>From</span><strong>{country(corridor.origin_country)}</strong></div>
        <ArrowRight size={17} aria-hidden/>
        <div><span>To</span><strong>{country(corridor.destination_country)}</strong></div>
        <div><span>Declared asset</span><strong>{corridor.asset_code}</strong></div>
+      </div>:null}
+      {corridor?<div className="payment-privacy-info"><ShieldCheck size={18} aria-hidden/>
+       <div><strong>{corridor.privacy_rail==="confidential-token"?"Amount confidentiality":"Sender-recipient relationship privacy"}</strong>
+        <p>This route declares a privacy mode. Its verifier, asset issuer and live payment integration are not yet approved; confidentiality is not currently available.</p>
+       </div>
       </div>:null}
       <div className="payment-step"><span>02</span><strong>{business?"Who are you paying?":"Who will receive it?"}</strong></div>
       <label className="payment-label" htmlFor="payment-recipient">Recipient Stellar wallet address</label>
@@ -254,6 +282,7 @@ export function CustomerPaymentWorkspace({flow}:{flow:Flow}){
        <div><dt>Destination</dt><dd>{corridor?country(corridor.destination_country):"Not selected"}</dd></div>
        <div><dt>Send amount</dt><dd>{amountValid(amount)&&corridor?amount+" "+corridor.asset_code:"—"}</dd></div>
        <div><dt>Recipient</dt><dd>{isRecipient(recipientAddress)?recipientAddress.slice(0,8)+"…"+recipientAddress.slice(-6):"Not entered"}</dd></div>
+       <div><dt>Privacy option</dt><dd>{corridor?(corridor.privacy_rail==="confidential-token"?"Amount privacy · pending":"Relationship privacy · pending"):"Not selected"}</dd></div>
        <div><dt>FX rate</dt><dd>Unavailable</dd></div>
        <div><dt>Platform & provider fees</dt><dd>Not quoted</dd></div>
        <div><dt>Recipient receives</dt><dd>Not quoted</dd></div>
