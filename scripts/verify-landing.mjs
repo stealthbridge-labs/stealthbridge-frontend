@@ -28,8 +28,9 @@ try{
  }
  assert.ok(ready,"Server failed to start: "+logs);
  await expectPage("/",["StealthBridge","Move value","Not exposure","/business","/send","/platform"]);
- await expectPage("/business",["Your business, across borders.","Connect Freighter","New business payment"]);
- await expectPage("/send",["Send beyond borders.","Connect Freighter","New transfer"]);
+ await expectPage("/business",["Confidentiality","means business","Sign in to StealthBridge","/login"]);
+ await expectPage("/send",["Close to home","Across borders","Sign in to StealthBridge","/login"]);
+ await expectPage("/login",["Sign in","Stellar","Continue with Freighter"]);
  await expectPage("/platform",["StealthBridge","More than","In development"]);
  await expectPage("/discover/send",["StealthBridge Send","Close to home","In development"]);
  await expectPage("/discover/business",["StealthBridge Business","Confidentiality","In development"]);
