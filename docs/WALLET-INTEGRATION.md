@@ -62,3 +62,15 @@ The Playwright technical-preview suite verifies checksum failures,
 watch-only local behavior, lack of wallet-connection claims, disabled
 transfers and the absence of POST requests. These are mock-API UI tests,
 not demonstrations of deployment, wallet signatures or private payments.
+
+## Checked contract recipients in Send and Business
+
+Visitors may enter a checksum-valid `C…` recipient, but **local draft review**
+remains blocked until they explicitly click **Inspect recipient contract on
+Testnet** and receive an active, exact-address public instance observation.
+Errors, absence, expired TTL and input changes clear the accepted evidence.
+Only the requested public contract address is sent for the check; amounts,
+selected rail and the connected wallet are not submitted. A positive result
+shows public presence, not control of the recipient, contract capability,
+settlement authorization or private-payment readiness. Payment execution and
+fee collection remain disabled.

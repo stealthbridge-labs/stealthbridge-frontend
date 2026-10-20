@@ -9,7 +9,7 @@ import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
-import {validContractObservation,type ContractObservation} from "@/lib/contract-observation";
+import {validContractObservation,activePublicContractAtAddress,type ContractObservation} from "@/lib/contract-observation";
 
 type Rail="confidential-token"|"private-payments";
 type Flow="send"|"business";
@@ -17,6 +17,17 @@ function addressType(input:string):"classic"|"contract"|null{
  const trimmed=input.trim();
  return canonicalStellarAccountAddress(trimmed)?"classic":
   isContractStrKey(trimmed)?"contract":null;
+}
+/** The browser reads only the public C-address requested by a visitor. No payment
+ * intent, sender, amount or connected-wallet details leave this workspace.
+ */
+async function readContractEvidence(address:string):Promise<ContractObservation>{
+ const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",credentials:"omit",
+  signal:AbortSignal.timeout(9500)});
+ if(!response.ok)throw Error("Testnet contract check is unavailable.");
+ const value:unknown=await response.json();
+ if(!validContractObservation(value,address))throw Error("Received unverified contract evidence.");
+ return value;
 }
 export function WalletHub({flow}:{flow:Flow}){
  const [status,setStatus]=useState<PublicWalletStatus|null>(null);
@@ -29,6 +40,10 @@ export function WalletHub({flow}:{flow:Flow}){
  const [reviewed,setReviewed]=useState(false);
  const [smartAccount,setSmartAccount]=useState("");
  const [contractEvidence,setContractEvidence]=useState<ContractObservation|null>(null);
+ const [recipientEvidence,setRecipientEvidence]=useState<ContractObservation|null>(null);
+ const [recipientPending,setRecipientPending]=useState(false);
+ const [recipientError,setRecipientError]=useState<string|null>(null);
+ const recipientGeneration=useRef(0);
  const [contractPending,setContractPending]=useState(false);
  const [contractError,setContractError]=useState<string|null>(null);
  const contractGeneration=useRef(0);
@@ -38,19 +53,28 @@ export function WalletHub({flow}:{flow:Flow}){
   const request=++contractGeneration.current;
   setContractPending(true);setContractError(null);setContractEvidence(null);
   try{
-   const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",
-    signal:AbortSignal.timeout(9500)});
-   if(!response.ok)throw Error("Testnet contract check is unavailable.");
-   const value:unknown=await response.json();
-   if(!validContractObservation(value,address))throw Error("Received unverified contract evidence.");
+   const value=await readContractEvidence(address);
    if(request===contractGeneration.current)setContractEvidence(value);
   }catch(error){
    if(request===contractGeneration.current)
     setContractError(error instanceof Error?error.message:"Testnet contract check failed.");
   }finally{if(request===contractGeneration.current)setContractPending(false);}
  };
+ const inspectRecipientContract=async()=>{
+  const address=recipient.trim();
+  if(!isContractStrKey(address))return;
+  const request=++recipientGeneration.current;
+  setRecipientPending(true);setRecipientError(null);setRecipientEvidence(null);setReviewed(false);
+  try{
+   const value=await readContractEvidence(address);
+   if(request===recipientGeneration.current)setRecipientEvidence(value);
+  }catch(error){
+   if(request===recipientGeneration.current)
+    setRecipientError(error instanceof Error?error.message:"Testnet contract check failed.");
+  }finally{if(request===recipientGeneration.current)setRecipientPending(false);}
+ };
  const [passkeyState,setPasskeyState]=useState<"unknown"|"checking"|"available"|"unavailable">("unknown");
- const onWalletChange=useCallback((address:string|null)=>setConnected(address),[]);
+ const onWalletChange=useCallback((address:string|null)=>{setConnected(address);setReviewed(false);},[]);
  const checkPasskeySupport=async()=>{
   setPasskeyState("checking");
   try{
@@ -79,8 +103,18 @@ export function WalletHub({flow}:{flow:Flow}){
  const preflight=preparePrivateTransfer({
   sender:connected,recipient,amount,rail,backendTestnetFresh:Boolean(status)
  });
- const canReview=preflight.validLocalDraft;
- const review=()=>setReviewed(true);
+ const recipientContractActive=target!=="contract" ||
+  activePublicContractAtAddress(recipientEvidence,recipient.trim());
+ const canReview=preflight.validLocalDraft&&recipientContractActive&&Boolean(status&&validPublicWalletStatus(status));
+ const review=()=>{
+  // A browser tab can stay open past the three-minute network evidence window.
+  // Recheck wall-clock freshness at the actual review action, not just render.
+  if(status&&validPublicWalletStatus(status)&&recipientContractActive&&preflight.validLocalDraft){
+   setReviewed(true);
+  }else{
+   setReviewed(false);setRevision(n=>n+1);
+  }
+ };
  const failReason=rail==="private-payments"?
   "Stellar Private Payments proof integration, pool policy and withdrawal safety are not verified.":
   "Confidential Token verifier, issuer permissions and asset deployment are not verified.";
@@ -130,10 +164,24 @@ export function WalletHub({flow}:{flow:Flow}){
      <label className="field" htmlFor="recipient">Recipient's Stellar address</label>
      <input id="recipient" className="tx-input" spellCheck={false} autoComplete="off" maxLength={56}
       placeholder="G… classic account or C… contract account" value={recipient}
-      onChange={e=>{setRecipient(e.target.value);setReviewed(false);}}/>
+      onChange={e=>{recipientGeneration.current++;setRecipient(e.target.value);setReviewed(false);
+       setRecipientEvidence(null);setRecipientPending(false);setRecipientError(null);}}/>
      {recipient&&!target?<p className="wallet-error" role="status">
       Enter a checksum-valid Stellar G-address or C-address.</p>:null}
      {target?<p className="state-muted">Recipient: {target==="classic"?"classic Stellar account":"Soroban contract account (public identity only)"}</p>:null}
+     {target==="contract"?<div className="wallet-passkey-check">
+      <Button type="button" variant="outline" disabled={recipientPending}
+       onClick={()=>void inspectRecipientContract()}>
+       {recipientPending?"Checking recipient…":"Inspect recipient contract on Testnet"}
+      </Button>
+      {recipientError?<p role="alert">{recipientError} Recipient presence is unverified.</p>:null}
+      {recipientEvidence?<p role="status">{recipientContractActive?
+       "Active public contract instance confirmed on Testnet. This is not proof of recipient control or payment support.":
+       "No active public contract instance was found at this address. Draft review is blocked."}
+       {" "}Observed ledger #{recipientEvidence.observed_ledger_sequence.toLocaleString()}.</p>:
+       <p className="state-muted">Inspect this C-address before local draft review.
+        A valid contract address alone does not prove a deployed or capable recipient.</p>}
+     </div>:null}
      <label className="field" htmlFor="amount">Intended amount · asset unspecified</label>
      <input id="amount" className="tx-input" inputMode="decimal" type="text" maxLength={24}
       placeholder="0.00" value={amount}
