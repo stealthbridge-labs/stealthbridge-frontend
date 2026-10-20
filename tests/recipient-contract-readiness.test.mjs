@@ -18,6 +18,7 @@ test("public recipient inspection is exact-address and fails closed",()=>{
  assert.equal(activePublicContractAtAddress({...observation(),smart_account_verified:true},address),false);
  assert.equal(activePublicContractAtAddress({...observation(),contract_instance_found:false,executable_wasm_hash:null,live_until_ledger:null},address),false);
  assert.equal(activePublicContractAtAddress({...observation(),live_until_ledger:5},address),false);
+ assert.equal(activePublicContractAtAddress({...observation(),contract_address:"C".repeat(56)},"C".repeat(56)),false);
  assert.equal(activePublicContractAtAddress(null,address),false);
 });
 test("wallet UI checks C-address only on consent, clears stale evidence and cannot submit funds",async()=>{
