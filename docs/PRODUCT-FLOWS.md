@@ -64,3 +64,23 @@ The backend's `GET /` is intentionally an unindexed 404 response. The API
 must stay deployed to serve the product; internal metrics require an operator
 bearer token, and tenant review data requires an authenticated session.
 The root 404 is not an outage or an operator dashboard.
+
+
+## Fresh route revalidation during customer review
+
+Before marking an entered Send/Business draft as locally reviewed, the product
+re-fetches the exact enabled corridor by UUID through
+`GET /api/public/corridors/{id}` (bounded, GET-only same-origin proxy to
+Rust `GET /v1/corridors/{id}`) **and** makes a new independent public
+Testnet status read. Failure, disabled or removed rows, changed country,
+asset, issuer or privacy rail, wrong network, stale ledger, invalid response,
+and timed-out reads cause review to fail closed with an actionable message.
+
+Only the public corridor identifier is sent for corridor revalidation.
+Recipient wallet address, intended amount, and business reference remain
+browser-local in this step. Edits to any of these fields, a wallet change, or
+a network refresh invalidate an outstanding review and prevent a late request
+from re-enabling it. Reviewing a draft is still **not** a provider quote,
+pre-funded payment, signature, compliance approval or transfer submission.
+All final send/settlement controls stay disabled. No mock corridor or price
+may be supplied to the production experience.
