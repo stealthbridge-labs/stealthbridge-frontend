@@ -1,10 +1,9 @@
 import type {Metadata} from "next";
-import {CustomerPaymentWorkspace} from "@/components/customer-payment-workspace";
-export const dynamic="force-dynamic";
+import {ProductStory} from "@/components/product-story";
 export const metadata:Metadata={
- title:"StealthBridge Business — Cross-border payments",
- description:"Organize business settlement instructions, real corridor availability and Stellar wallet access. Payment submission remains disabled.",
+ title:"StealthBridge Business — Confidential settlement solutions",
+ description:"Understand StealthBridge Business: controlled international settlements, institutional confidentiality, reconciliation and accountability.",
  alternates:{canonical:"/business"},
- openGraph:{title:"StealthBridge Business — Cross-border payments",description:"Your business payment workspace.",url:"/business",type:"website"}
+ openGraph:{title:"StealthBridge Business — Move value with purpose",description:"Explore confidentiality and clarity for cross-border business payments.",url:"/business",type:"website"}
 };
-export default function Page(){return <CustomerPaymentWorkspace flow="business"/>;}
+export default function Page(){return <ProductStory product="business"/>;}
