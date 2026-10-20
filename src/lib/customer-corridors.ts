@@ -37,8 +37,10 @@ export function validCustomerCorridorPage(data:unknown):data is CustomerCorridor
    (!value.items.length||value.next_cursor!==value.items[value.items.length-1].id))return false;
  return true;
 }
-export async function loadCustomerCorridors(signal?:AbortSignal):Promise<CustomerCorridorPage>{
- const response=await fetch("/api/public/corridors",{method:"GET",cache:"no-store",credentials:"omit",signal});
+export async function loadCustomerCorridors(signal?:AbortSignal,after?:string):Promise<CustomerCorridorPage>{
+ if(after!==undefined&&!UUID.test(after))throw new TypeError("Invalid corridor pagination cursor.");
+ const suffix=after?"?after="+encodeURIComponent(after):"";
+ const response=await fetch("/api/public/corridors"+suffix,{method:"GET",cache:"no-store",credentials:"omit",signal});
  if(!response.ok)throw new Error("The corridor directory is temporarily unavailable.");
  const data:unknown=await response.json();
  if(!validCustomerCorridorPage(data))throw new Error("The corridor directory returned unverified records.");
