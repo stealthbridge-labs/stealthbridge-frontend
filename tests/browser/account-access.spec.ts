@@ -92,7 +92,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
  // The browser fixture never writes Neon. It verifies the customer intent,
  // exact preference shape and server-guarded settings journey.
- let savedProfile=null;
+ let savedProfile:{display_name:string;use_case:string;residence_country:string|null}|null=null;
  await page.route("**/api/account/profile",async route=>{
   const req=route.request();
   if(req.method()==="PATCH"){
