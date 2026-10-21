@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import Link from "next/link";
 import {ArrowRight,ArrowUpRight,Building2,Clock3,LockKeyhole,Send,ShieldCheck} from "lucide-react";
 import {requireWalletIdentity} from "@/lib/auth-server";
+import {AccountOrganizations} from "@/components/account-organizations";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Account overview — StealthBridge"};
 export default async function Dashboard(){
@@ -23,6 +24,7 @@ export default async function Dashboard(){
     <span className="account-feature-link">Open business <ArrowRight size={17} aria-hidden/></span>
    </Link>
   </div>
+  <AccountOrganizations address={identity.address}/>
   <section className="account-status-section" aria-labelledby="account-security-heading">
    <div><span className="section-index">ACCOUNT & SECURITY</span><h2 id="account-security-heading">A clearer picture of your access.</h2></div>
    <div className="account-status-list">
