@@ -802,3 +802,24 @@
 @media(max-width:940px){.access-main{grid-template-columns:1fr;padding:55px 0 90px;gap:45px}.access-copy{position:static}.account-header{flex-wrap:wrap}.account-links{order:3;width:100%;justify-content:center}.account-status-section{grid-template-columns:1fr;gap:15px}}
 @media(max-width:640px){.access-header{padding:16px;min-height:75px;height:auto}.access-back{font-size:11px}.access-main{width:calc(100% - 32px);padding:38px 0 60px}.access-copy h1{font-size:44px}.access-copy>p{font-size:14px}.access-method{padding:22px;border-radius:17px}.account-header{padding:16px}.account-header .brand{font-size:18px}.account-identity{margin-left:auto}.account-links{justify-content:space-between}.account-links a{font-size:11px;padding:10px}.account-main{padding:35px 16px 70px}.account-overview-grid{grid-template-columns:1fr}.account-feature-card{min-height:285px;padding:24px}.account-status-section{margin-top:40px;padding-top:40px}.account-payment-view .payment-main{padding:0}}
 @media(prefers-reduced-motion:reduce){.account-feature-card{transition:none}.account-feature-card:hover{transform:none}}
+
+/* Read-only organization access grounded in actual Neon memberships. */
+.account-organizations{margin-top:60px;padding-top:50px;border-top:1px solid #345b53}
+.account-org-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:25px}
+.account-org-heading h2{font-size:clamp(28px,3.5vw,38px);letter-spacing:-.04em;margin:11px 0}
+.account-org-heading p{max-width:670px;font-size:13px;line-height:1.75;color:#b5d2c9}
+.account-org-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.account-org-card{border:1px solid #3c6960;background:#123934;padding:25px;border-radius:17px}
+.account-org-icon{height:45px;width:45px;border-radius:13px;display:grid;place-items:center;background:#9cf2cf;color:#0a352c}
+.account-org-verified{color:#aeefd5;font-size:11px;display:inline-flex;gap:6px;align-items:center;margin-top:24px}
+.account-org-card h3{font-size:21px;margin:10px 0 15px;overflow-wrap:anywhere}
+.account-org-card p{font-size:12px;color:#b5d0c4;overflow-wrap:anywhere;line-height:1.6}
+.account-org-card p strong{color:#edfff6}
+.account-org-card .account-org-id{font-family:ui-monospace,monospace;font-size:11px}
+.account-org-warning{font-size:11px;display:flex;align-items:center;gap:8px;line-height:1.5;color:#ebd0a6;border-top:1px solid #3d645a;padding-top:15px;margin-top:17px}
+.account-org-warning svg{flex-shrink:0}
+.account-directory-empty,.account-directory-notice{border:1px solid #3f6760;padding:24px;border-radius:16px;background:#123a36;font-size:13px;line-height:1.7;color:#d6e8df}
+.account-directory-empty{display:flex;gap:17px;align-items:flex-start}
+.account-directory-empty>svg{color:#a4e7ce;flex-shrink:0}
+.account-directory-empty strong{color:#f1fff9}
+.account-directory-empty p,.account-directory-notice p{color:#accac1;line-height:1.7;margin:8px 0 0}
