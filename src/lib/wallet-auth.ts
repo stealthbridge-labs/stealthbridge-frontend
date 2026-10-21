@@ -49,7 +49,7 @@ export function createChallenge(address:string,origin:string,now=Math.floor(Date
   "Account: "+canonical,
   "Nonce: "+nonce,
   "Expires: "+new Date(expires*1000).toISOString(),
-  "Purpose: Sign in to your read-only StealthBridge workspace.",
+  "Purpose: Access your StealthBridge workspace and manage non-financial preferences.",
   "No transaction, payment, approval or transfer is authorized."
  ].join("\n");
  const challenge:Challenge={type:"challenge",address:canonical,origin,nonce,expires,message};

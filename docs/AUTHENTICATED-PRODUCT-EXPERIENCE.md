@@ -120,3 +120,25 @@ a Stellar signing key, not identity, regulated business legitimacy, bank
 balance, organization signing policy or permission to pay.
 No organization is automatically created at sign-in. There are no
 customer-initiated permission changes, new settlement writes or fee claims.
+
+## Customer-chosen profile settings
+
+`/app/settings` is a guarded, accessible form for user-chosen display name,
+personal/business/both interest, and optional self-declared two-letter
+residence code. The form is never displayed as KYC clearance, verified
+residence, account recovery, business onboarding or transfer readiness.
+Signing in does not automatically create a profile. The **Save** action is
+explicit, the backend response must match the authenticated public G-address,
+and a failed write is never represented as saved. Missing migration or
+database access produces a clear unavailable state; no demo customer profile
+is inserted. Sign-in grants account navigation and these non-financial
+preferences only.
+
+Next.js `GET/PATCH /api/account/profile` reads the existing signed
+HttpOnly session. PATCH requires same-origin request, strict input shape and
+maximum request size; the BFF signs the exact HTTP method, path, public
+account, fresh timestamp, unique nonce and SHA-256 of the serialized body
+using the server-only secret shared with Rust. PostgreSQL atomically records
+a one-use receipt and changes only preference fields. SDK consumers call the
+same-origin BFF, not Rust with a forged account header. Final transfer and
+settlement commands are still disabled.

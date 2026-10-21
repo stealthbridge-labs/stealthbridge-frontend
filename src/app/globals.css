@@ -823,3 +823,30 @@
 .account-directory-empty>svg{color:#a4e7ce;flex-shrink:0}
 .account-directory-empty strong{color:#f1fff9}
 .account-directory-empty p,.account-directory-notice p{color:#accac1;line-height:1.7;margin:8px 0 0}
+
+/* Customer-saved preferences: separate from money movement and identity review. */
+.account-settings-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:30px 0 8px;padding:20px 24px;border:1px solid #3f7063;border-radius:16px;background:#123e38}
+.account-settings-cta>svg{color:#a4efd1;flex-shrink:0}
+.account-settings-cta span{flex:1;min-width:180px;font-size:13px;color:#d6f0e5}
+.account-settings-cta a{display:flex;gap:9px;align-items:center;color:#b5fbd9;font-weight:700;font-size:13px}
+.customer-profile-panel{max-width:850px;background:#113732;border-radius:22px;padding:36px;border:1px solid #42695d}
+.customer-profile-heading{display:flex;align-items:flex-start;gap:22px;padding-bottom:28px;border-bottom:1px solid #42665f}
+.customer-profile-symbol{height:53px;width:53px;flex-shrink:0;display:grid;place-items:center;background:#a6eccd;color:#153c32;border-radius:16px}
+.customer-profile-heading h2{font-size:clamp(26px,3.5vw,39px);letter-spacing:-.04em;line-height:1.2;margin:10px 0}
+.customer-profile-heading p{color:#bdd4c9;font-size:14px;line-height:1.7}
+.customer-profile-form{display:grid;gap:25px;padding:30px 0}
+.customer-profile-field{display:grid;gap:9px}
+.customer-profile-field label{font-size:14px;color:#f0f9f5;font-weight:700}
+.customer-profile-field input,.customer-profile-field select{width:100%;border:1px solid #577b72;border-radius:12px;background:#092c2a;color:#e5f8ec;padding:13px 15px;min-height:48px;font:inherit}
+.customer-profile-field input:focus-visible,.customer-profile-field select:focus-visible{outline:2px solid #b0eace;outline-offset:3px}
+.customer-profile-field p{color:#b0cabd;font-size:12px;line-height:1.7;margin:0}
+.customer-profile-actions{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.customer-profile-saved{color:#b6eed3;font-size:13px;display:inline-flex;gap:8px;align-items:center}
+.customer-profile-error{color:#ffb5ab;font-size:13px}
+.customer-profile-state{color:#dcefe4;background:#193d38;padding:22px;border:1px solid #55786d;border-radius:12px;margin:26px 0}
+.customer-profile-state p{font-size:13px;color:#b6d3c2;line-height:1.7}
+.customer-profile-state button{margin-top:12px}
+.customer-profile-assurance{display:flex;align-items:flex-start;gap:12px;border-top:1px solid #3a5d54;padding:20px 0 0;margin-top:18px}
+.customer-profile-assurance svg{flex-shrink:0;color:#b3eacb;margin-top:3px}
+.customer-profile-assurance p{font-size:12px;color:#b9d4c4;line-height:1.7;margin:0}
+@media(max-width:640px){.customer-profile-panel{padding:20px;border-radius:16px}.customer-profile-heading{gap:14px}.customer-profile-symbol{height:43px;width:43px}.account-settings-cta{padding:17px}}

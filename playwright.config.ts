@@ -49,6 +49,7 @@ export default defineConfig({
    STEALTHBRIDGE_SITE_MODE:process.env.STEALTHBRIDGE_TEST_PREVIEW==="1"?"preview":"landing",
    // Unique per-test-server secret; never reused for production sessions.
    STEALTHBRIDGE_WEB_SESSION_SECRET:randomBytes(48).toString("hex"),
+   STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED:previewTests?"false":"true",
    STEALTHBRIDGE_API_URL:""
   }
  }
