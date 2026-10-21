@@ -40,6 +40,8 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  }
  const withoutSession=await page.request.get("/api/account/directory");
  expect(withoutSession.status()).toBe(401);
+ const unauthorizedProfile=await page.request.get("/api/account/profile");
+ expect(unauthorizedProfile.status()).toBe(401);
  await page.getByRole("button",{name:/Continue with Freighter/}).click();
  await expect(page.locator(".access-error")).toContainText(/Freighter isn't available/);
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
@@ -88,6 +90,30 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await expect(page.getByText("Signed in securely")).toBeVisible();
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+ // The browser fixture never writes Neon. It verifies the customer intent,
+ // exact preference shape and server-guarded settings journey.
+ let savedProfile=null;
+ await page.route("**/api/account/profile",async route=>{
+  const req=route.request();
+  if(req.method()==="PATCH"){
+   savedProfile=JSON.parse(req.postData()??"{}");
+  }
+  const profile=savedProfile?{...savedProfile,updated_at_unix:1800000000}:null;
+  await route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"neon-customer-profiles",
+   account_address:address,profile,
+   payment_execution_enabled:false,organization_payment_authorized:false
+  }});
+ });
+ await page.goto("/app/settings");
+ await expect(page.getByRole("heading",{name:"Account settings."})).toBeVisible();
+ await page.getByLabel("Display name").fill("Customer Test Profile");
+ await page.getByLabel("What brings you to StealthBridge?").selectOption("both");
+ await page.getByLabel("Country of residence (optional)").fill("NG");
+ await page.getByRole("button",{name:"Save my preferences"}).click();
+ await expect(page.getByText("Saved in your account")).toBeVisible();
+ expect(savedProfile).toMatchObject({display_name:"Customer Test Profile",
+  use_case:"both",residence_country:"NG"});
  await page.goto("/app/business");
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
