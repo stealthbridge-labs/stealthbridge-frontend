@@ -94,3 +94,29 @@ verified across contracts, backend, SDK and the product.
 5. Ship accessible customer service, notifications, transfer history,
    disputes, multi-device security and status supported by actual provider
    evidence rather than simulated records.
+
+## Actual organization access from the signed-in account
+
+The account overview fetches `GET /api/account/directory` only after
+server-side wallet-session authentication. Next.js signs a 30-second
+server-to-server attestation for the current G-address and calls
+`GET /v1/account/directory` on the Rust backend. The shared bridge key is
+a sensitive `STEALTHBRIDGE_ACCOUNT_BRIDGE_SECRET` set independently in
+Vercel production and preview for both projects. It is not an SDK key,
+wallet key, browser cookie, or customer identity provider.
+
+Rust queries actual Neon `organizations` and `organization_members` rows
+while excluding revoked members and suspended tenants. The Next.js BFF
+validates the exact schema, logged-in address, valid role names and immutable
+`false` financial authorization before returning data. Public pages do not
+call this endpoint. A missing organization yields a truthful empty state;
+an unavailable database, missing backend bridge configuration, bad signature
+or corrupted response yields an explicit unavailable state, not a fabricated
+company or successful onboarding.
+
+This is a **membership directory**, not the future persistent customer
+profile/organization enrollment product. A G-address proves control of
+a Stellar signing key, not identity, regulated business legitimacy, bank
+balance, organization signing policy or permission to pay.
+No organization is automatically created at sign-in. There are no
+customer-initiated permission changes, new settlement writes or fee claims.
