@@ -1,6 +1,6 @@
 import type {Metadata} from "next";
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,Building2,Clock3,LockKeyhole,Send,ShieldCheck} from "lucide-react";
+import {ArrowRight,ArrowUpRight,Building2,Clock3,LockKeyhole,Send,ShieldCheck,UserRound} from "lucide-react";
 import {requireWalletIdentity} from "@/lib/auth-server";
 import {AccountOrganizations} from "@/components/account-organizations";
 export const dynamic="force-dynamic";
@@ -24,6 +24,7 @@ export default async function Dashboard(){
     <span className="account-feature-link">Open business <ArrowRight size={17} aria-hidden/></span>
    </Link>
   </div>
+  <div className="account-settings-cta"><UserRound size={20} aria-hidden/><span>Make your account feel like yours with saved preferences.</span><Link href="/app/settings">Set up your profile <ArrowRight size={17} aria-hidden/></Link></div>
   <AccountOrganizations address={identity.address}/>
   <section className="account-status-section" aria-labelledby="account-security-heading">
    <div><span className="section-index">ACCOUNT & SECURITY</span><h2 id="account-security-heading">A clearer picture of your access.</h2></div>
