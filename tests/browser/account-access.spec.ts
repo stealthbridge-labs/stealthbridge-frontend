@@ -38,6 +38,8 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
   await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
   await expect(page.getByRole("button",{name:/Continue with Freighter/})).toBeVisible();
  }
+ const withoutSession=await page.request.get("/api/account/directory");
+ expect(withoutSession.status()).toBe(401);
  await page.getByRole("button",{name:/Continue with Freighter/}).click();
  await expect(page.locator(".access-error")).toContainText(/Freighter isn't available/);
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
@@ -68,8 +70,19 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  });
  expect(verified.status()).toBe(200);
  expect(await (await page.request.get("/api/auth/session")).json()).toMatchObject({authenticated:true,address});
+ await page.route("**/api/account/directory",route=>route.fulfill({json:{
+  schema_version:1,network:"testnet",source:"neon-active-memberships",
+  account_address:address,organizations:[{
+   id:"9a1a395f-249c-4907-b657-d48df4b38d28",
+   display_name:"CI ONLY Organization",role:"viewer"
+  }],has_more:false,payment_execution_enabled:false,
+  organization_payment_authorized:false
+ }}));
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Business access, in one place."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
+ await expect(page.getByText("Current membership")).toBeVisible();
  await expect(page.getByRole("link",{name:/Send internationally/})).toHaveAttribute("href","/app/send");
  await page.goto("/app/send");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
