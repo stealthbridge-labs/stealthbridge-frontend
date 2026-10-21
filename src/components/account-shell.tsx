@@ -9,7 +9,7 @@ export function AccountShell({address,children}:{address:string;children:React.R
     <Link href="/app"><House size={17} aria-hidden/> Overview</Link>
     <Link href="/app/send"><Send size={17} aria-hidden/> Transfers</Link>
     <Link href="/app/business"><Building2 size={17} aria-hidden/> Business</Link>
-    <Link href="/app/settings"><Settings2 size={17} aria-hidden/> Settings</Link>
+    {process.env.STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED==="true"?<Link href="/app/settings"><Settings2 size={17} aria-hidden/> Settings</Link>:null}
    </nav>
    <div className="account-identity"><span title={address}>{address.slice(0,6)}…{address.slice(-5)}</span><AccountLogout/></div>
   </header>
