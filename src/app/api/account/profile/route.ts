@@ -22,6 +22,8 @@ function trustedBackend():URL|null{
 async function relay(request:Request,method:"GET"|"PATCH"){
  const identity=await currentWalletIdentity();
  if(!identity)return NextResponse.json({code:"SESSION_REQUIRED"},{status:401,headers});
+ if(process.env.STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED!=="true")
+  return NextResponse.json({code:"PROFILE_NOT_RELEASED"},{status:503,headers});
  if(new URL(request.url).search)return NextResponse.json({code:"INVALID_QUERY"},{status:400,headers});
  if(method==="PATCH"&&!validSameOrigin(request))
   return NextResponse.json({code:"ORIGIN_REJECTED"},{status:403,headers});
