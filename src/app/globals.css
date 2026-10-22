@@ -850,3 +850,43 @@
 .customer-profile-assurance svg{flex-shrink:0;color:#b3eacb;margin-top:3px}
 .customer-profile-assurance p{font-size:12px;color:#b9d4c4;line-height:1.7;margin:0}
 @media(max-width:640px){.customer-profile-panel{padding:20px;border-radius:16px}.customer-profile-heading{gap:14px}.customer-profile-symbol{height:43px;width:43px}.account-settings-cta{padding:17px}}
+
+/* Customer-facing business onboarding; financial tooling remains separate. */
+.business-onboarding{border:1px solid #3a685d;background:linear-gradient(155deg,#103e37,#102d33);border-radius:23px;padding:34px;color:#f0faf5}
+.business-onboarding-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:1px solid #406458;padding-bottom:28px}
+.business-onboarding-head h2{font-size:clamp(29px,4vw,45px);letter-spacing:-.052em;line-height:1.12;margin:15px 0}
+.business-onboarding-head p{font-size:14px;line-height:1.8;max-width:670px;color:#b9d6cb}
+.business-onboarding-symbol{display:grid;place-items:center;background:#a5efd2;color:#0d443c;width:58px;height:58px;border-radius:16px;flex-shrink:0}
+.business-onboarding-body{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:28px}
+.business-onboarding-form-wrap,.business-onboarding-list{min-width:0;border-radius:16px;background:#0d322f;border:1px solid #3b655d;padding:25px}
+.business-onboarding-step{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.business-onboarding-step>span{width:32px;height:32px;border-radius:999px;display:grid;place-items:center;font-weight:800;color:#092f2d;background:#b0e8ce}
+.business-onboarding-step strong{font-size:15px;letter-spacing:-.01em}
+.business-onboarding-form-wrap>p{font-size:13px;line-height:1.75;color:#b7d3c6}
+.business-onboarding-form{display:flex;flex-direction:column;gap:12px;margin-top:23px}
+.business-onboarding-form label{font-size:13px;font-weight:700}
+.business-onboarding-form input{border:1px solid #71998b;background:#082b2a;color:#f3fff8;border-radius:10px;min-height:48px;padding:12px;font:inherit;width:100%}
+.business-onboarding-form input:focus-visible{outline:2px solid #baf7da;outline-offset:3px}
+.business-onboarding-form>p{font-size:12px;line-height:1.65;color:#abcbbd}
+.business-onboarding-form button{align-self:flex-start;display:flex;align-items:center;gap:8px;margin-top:7px}
+.business-onboarding-notice{background:#254c43;border-radius:13px;padding:20px;color:#d9eee4;font-size:13px}
+.business-onboarding-empty{display:flex;align-items:flex-start;gap:15px;color:#b5d4c6;padding:24px 0;font-size:13px;line-height:1.8}
+.business-onboarding-empty svg{flex-shrink:0;color:#adf0d0}
+.business-onboarding-cards{display:grid;gap:13px}
+.business-onboarding-card{padding:19px;border-radius:13px;background:#194139;border:1px solid #48766a}
+.business-onboarding-card h3{font-size:19px;line-height:1.25;overflow-wrap:anywhere;margin:13px 0}
+.business-onboarding-card p{font-size:12px;color:#c1d9ca;line-height:1.7;overflow-wrap:anywhere}
+.business-onboarding-card code{font-family:ui-monospace,monospace;font-size:11px}
+.business-onboarding-status{color:#edd7a7;font-size:12px;display:inline-flex;align-items:center;gap:7px}
+.business-onboarding-error,.business-onboarding-warning{color:#ffbea9!important}
+.business-onboarding-confirmation{color:#b4f3d1!important;display:flex;gap:8px;align-items:center}
+.business-onboarding-muted{color:#b3cbbf;font-size:13px}
+.business-onboarding-disclosure{display:flex;gap:13px;border-top:1px solid #3e675d;padding-top:24px;margin-top:28px}
+.business-onboarding-disclosure svg{color:#b8f1d1;flex-shrink:0;margin-top:3px}
+.business-onboarding-disclosure p{font-size:12px;line-height:1.75;color:#bed7c9;margin:0}
+.business-technical-workspace{margin-top:45px;border:1px solid #3b605d;border-radius:17px;padding:19px 23px}
+.business-technical-workspace>summary{cursor:pointer;font-size:14px;font-weight:750;color:#bde8d4;list-style-position:inside}
+.business-technical-workspace>summary:focus-visible{outline:2px solid #baf7da;outline-offset:4px}
+.business-technical-workspace>div{margin-top:26px;padding-top:20px;border-top:1px solid #3b605d}
+@media(max-width:800px){.business-onboarding-body{grid-template-columns:1fr}.business-onboarding{padding:22px}}
+@media(max-width:530px){.business-onboarding-head{gap:12px}.business-onboarding-head h2{font-size:29px}.business-onboarding-symbol{height:45px;width:45px}.business-onboarding-form-wrap,.business-onboarding-list{padding:18px}.business-onboarding-form button{width:100%}}

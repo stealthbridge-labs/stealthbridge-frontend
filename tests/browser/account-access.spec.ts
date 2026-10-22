@@ -42,6 +42,8 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  expect(withoutSession.status()).toBe(401);
  const unauthorizedProfile=await page.request.get("/api/account/profile");
  expect(unauthorizedProfile.status()).toBe(401);
+ const unauthorizedBusiness=await page.request.get("/api/account/business-onboarding");
+ expect(unauthorizedBusiness.status()).toBe(401);
  await page.getByRole("button",{name:/Continue with Freighter/}).click();
  await expect(page.locator(".access-error")).toContainText(/Freighter isn't available/);
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
@@ -114,7 +116,32 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByText("Saved in your account")).toBeVisible();
  expect(savedProfile).toMatchObject({display_name:"Customer Test Profile",
   use_case:"both",residence_country:"NG"});
+ // A browser test can exercise UX with isolated API fixtures; it must never
+ // create a real organization in Neon or claim a fictitious customer in prod.
+ let application:{id:string;display_name:string;status:"pending";role:"owner"}|null=null;
+ await page.route("**/api/account/business-onboarding",async route=>{
+  const request=route.request();
+  if(request.method()==="POST"){
+   const posted=request.postDataJSON() as {display_name:string};
+   application={id:"9a1a395f-249c-4907-b657-d48df4b38d28",
+    display_name:posted.display_name,status:"pending",role:"owner"};
+  }
+  await route.fulfill({status:request.method()==="POST"?201:200,json:{
+   schema_version:1,network:"testnet",source:"neon-pending-business-applications",
+   account_address:address,applications:application?[application]:[],
+   has_more:false,organization_verified:false,payment_execution_enabled:false,
+   organization_payment_authorized:false
+  }});
+ });
  await page.goto("/app/business");
+ await expect(page.getByRole("heading",{name:"Where your business goes further."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Build your business space."})).toBeVisible();
+ await page.getByLabel("Business or organization name").fill("Browser Test Only Ltd");
+ await page.getByRole("button",{name:"Register business application"}).click();
+ await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toBeVisible();
+ await expect(page.getByText("Pending onboarding")).toBeVisible();
+ await expect(page.getByText(/do not establish legal identity/)).toBeVisible();
+ await page.getByText("Explore Testnet payment preparation (not yet enabled)").click();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
  const logout=await page.request.post("/api/auth/logout",{headers:{origin}});
