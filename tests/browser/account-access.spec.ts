@@ -140,7 +140,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.getByRole("button",{name:"Register business application"}).click();
  await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toBeVisible();
  await expect(page.getByText("Pending onboarding")).toBeVisible();
- await expect(page.getByText(/does not establish legal identity/)).toBeVisible();
+ await expect(page.getByText(/do not establish legal identity/)).toBeVisible();
  await page.getByText("Explore Testnet payment preparation (not yet enabled)").click();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
