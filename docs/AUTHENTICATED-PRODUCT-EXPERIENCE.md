@@ -142,3 +142,25 @@ using the server-only secret shared with Rust. PostgreSQL atomically records
 a one-use receipt and changes only preference fields. SDK consumers call the
 same-origin BFF, not Rust with a forged account header. Final transfer and
 settlement commands are still disabled.
+
+
+## Business applications, not dApp onboarding
+
+The authenticated `/app/business` experience now puts a customer-readable
+organization application first. The old Testnet payment preparation tools
+remain in a clearly labelled, initially collapsed advanced section.
+
+The customer may explicitly register a business display name. The
+server-side authenticated BFF signs a fresh request and Rust writes a
+`pending` organization and an owner member atomically using **existing**
+Neon organization tables. The UI displays only returned real records;
+it differentiates no applications, backend errors, too-many-application
+limits, and successful pending applications. It must never imply legal
+verification, regulatory approval, payment enablement, provider
+compatibility, custodial accounts, or settlement authority.
+
+This feature does not depend on the still-gated profile settings
+migration. Registering a business is not the same as activating one:
+only operator-led, independently verified controls can promote a tenant.
+No amount/recipient/private transfer content is collected in the
+business registration API.
