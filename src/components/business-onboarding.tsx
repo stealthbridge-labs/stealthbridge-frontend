@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
+import Link from "next/link";
 import {ArrowRight,Building2,CheckCircle2,Clock3,RefreshCw,ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {loadBusinessOnboarding,registerBusinessOnboarding,
@@ -89,6 +90,9 @@ export function BusinessOnboarding({address}:{address:string}){
       <h3>{application.display_name}</h3>
       <p>Application reference: <code>{application.id}</code></p>
       <p>Your recorded role: {application.role} (pending business only)</p>
+      <Link className="team-open-link" href={"/app/business/"+application.id}>
+       Review application and team <ArrowRight size={16} aria-hidden/>
+      </Link>
      </article>)}
      {data.has_more?<p>Additional applications are not included in this first page.</p>:null}
     </div>:null}

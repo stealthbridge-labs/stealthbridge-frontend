@@ -164,3 +164,16 @@ migration. Registering a business is not the same as activating one:
 only operator-led, independently verified controls can promote a tenant.
 No amount/recipient/private transfer content is collected in the
 business registration API.
+
+
+## Private organization teams
+
+Signed-in organization owners can inspect their **real recorded member roster** at `/app/business/<organization-id>`. The page is linked from saved pending applications and active owner/admin organization cards.
+
+The server-side BFF verifies the HttpOnly session and signs an exact, short-lived HMAC attestation to `GET /v1/account/organizations/{id}/team`. An arbitrary client cannot choose another account by supplying a query field. Rust authorizes the verified account against Neon membership rows. A pending applicant can view **only their own membership**, even if another member row is accidentally present. Active owners/admins may inspect valid, non-revoked team rows; other roles receive no roster. Up to 25 team members are shown per page.
+
+The response validator checks the exact organization ID and signer, StrKey checksums, roles, sorted/unique addresses, cursor consistency, all false payment and verification flags, and pending-owner isolation. A backend failure shows an explicit error without fictional team members.
+
+This is *not* a feature for sending invitations, managing roles or approving payments. It is **private membership and status visibility**. The workspace calls out that an internally active tenant is not a legally verified business.
+
+The backend endpoint uses the existing Neon organization tables: no migrations, seeded records, financial writes or private keys. All demo organizational identities in Playwright remain **test fixtures only**, never database seed data.

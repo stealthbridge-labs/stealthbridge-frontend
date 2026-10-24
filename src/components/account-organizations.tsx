@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
-import {Building2,CheckCircle2,RefreshCw,ShieldCheck} from "lucide-react";
+import Link from "next/link";
+import {ArrowRight,Building2,CheckCircle2,RefreshCw,ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {getAccountDirectory,type AccountDirectory} from "@/lib/account-directory";
 
@@ -45,6 +46,10 @@ export function AccountOrganizations({address}:{address:string}){
      <p className="account-org-id">Organization ID: {org.id}</p>
      <span className="account-org-warning"><ShieldCheck size={14} aria-hidden/>
       Membership does not authorize financial execution</span>
+     {["owner","admin"].includes(org.role)?
+      <Link href={"/app/business/"+org.id} className="team-open-link">
+       View team and status <ArrowRight size={16} aria-hidden/>
+      </Link>:null}
     </article>)}
     {directory.has_more?<p className="account-directory-notice">Showing the first 25 active memberships. Additional organization paging is not yet enabled.</p>:null}
    </div>:null}
