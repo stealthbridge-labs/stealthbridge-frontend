@@ -144,6 +144,9 @@ export function ProductStory({product}:{product:Product}){
     <p className="story-enter">{data.description}</p>
     <StoryActionGroup/>
     {product!=="platform"?<Link className="story-primary story-wallet-entry" href={"/login?next=/app/"+product}>Sign in to StealthBridge <ArrowUpRight size={16} aria-hidden/></Link>:null}
+    {product!=="platform"?<Link className="story-route-entry" href="/routes">
+     Explore configured corridors <ArrowRight size={16} aria-hidden/>
+    </Link>:null}
    </div>
    <div className="story-art" role="img" aria-label={"Conceptual illustration for "+data.label+", not a live transaction"}>
     <div className="story-halo"/>

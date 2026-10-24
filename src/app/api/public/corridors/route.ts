@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {validCustomerCorridorPage} from "@/lib/customer-corridors";
+import {validCustomerCorridorPage,validCustomerCorridorFilters} from "@/lib/customer-corridors";
 export const dynamic="force-dynamic";
 const MAX_BYTES=32768;
 function verifiedBackend():URL|null {
@@ -17,9 +17,17 @@ export async function GET(request:Request){
  const incoming=new URL(request.url);
  const params=incoming.searchParams;
  const after=params.get("after");
- if([...params.keys()].some(key=>key!=="after"||params.getAll(key).length!==1)||
-    (after!==null&&!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(after)))
-  return NextResponse.json({code:"INVALID_CURSOR"},{status:400,
+ const fields=["after","origin_country","destination_country","privacy_rail"] as const;
+ const filters=Object.fromEntries(
+  ["origin_country","destination_country","privacy_rail"]
+   .filter(key=>params.has(key))
+   .map(key=>[key,params.get(key)])
+ );
+ if([...params.keys()].some(key=>!fields.includes(key as typeof fields[number])||
+      params.getAll(key).length!==1)||
+    (after!==null&&!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(after))||
+    !validCustomerCorridorFilters(filters))
+  return NextResponse.json({code:"INVALID_CORRIDOR_FILTERS"},{status:400,
    headers:{"cache-control":"no-store"}});
  const backend=verifiedBackend();
  if(!backend)return NextResponse.json({code:"CATALOG_NOT_CONFIGURED"},{status:503,
@@ -27,6 +35,9 @@ export async function GET(request:Request){
  try {
   const url=new URL("/v1/corridors/page?limit=25",backend);
   if(after)url.searchParams.set("after",after.toLowerCase());
+  for(const name of ["origin_country","destination_country","privacy_rail"] as const){
+   if(filters[name])url.searchParams.set(name,filters[name]);
+  }
   const response=await fetch(url,{method:"GET",headers:{accept:"application/json"},
    cache:"no-store",redirect:"error",signal:AbortSignal.timeout(9000)});
   const length=response.headers.get("content-length");

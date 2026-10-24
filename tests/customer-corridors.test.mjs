@@ -1,7 +1,7 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-import {validCustomerCorridorPage,loadVerifiedCustomerCorridor,sameCustomerCorridor} from "../src/lib/customer-corridors.ts";
+import {validCustomerCorridorPage,loadVerifiedCustomerCorridor,sameCustomerCorridor,customerCorridorSearch,validCustomerCorridorFilters,loadCustomerCorridors} from "../src/lib/customer-corridors.ts";
 
 const a={
  id:"9a1a395f-249c-4907-b657-d48df4b38d28",
@@ -27,6 +27,8 @@ test("production corridor proxy admits GET-only, bounded input and no finance co
  const route=await readFile("src/app/api/public/corridors/route.ts","utf8");
  assert.match(route,/export async function GET/);
  assert.match(route,/getAll\(key\).length!==1/);
+ assert.match(route,/validCustomerCorridorFilters/);
+ assert.match(route,/url.searchParams.set\(name,filters\[name\]\)/);
  assert.match(route,/new URL\("\/v1\/corridors\/page\?limit=25"/);
  assert.match(route,/redirect:"error"/);
  assert.match(route,/cache:"no-store"/);
@@ -69,4 +71,38 @@ test("single route proxy is GET-only, response bounded and fails closed",async()
  assert.match(route,/redirect:"error"/);
  assert.match(route,/validCustomerCorridorPage/);
  assert.doesNotMatch(route,/export async function POST|submitTransaction|walletSecret/);
+});
+
+test("public corridor search uses exact filters and never accepts unexpected input",()=>{
+ const filters={origin_country:"NG",destination_country:"GH",privacy_rail:"private-payments"};
+ assert.equal(validCustomerCorridorFilters(filters),true);
+ assert.equal(customerCorridorSearch(filters),"?"+"origin_country=NG&destination_country=GH&privacy_rail=private-payments");
+ assert.equal(customerCorridorSearch({},a.id),"?after="+a.id);
+ assert.equal(customerCorridorSearch(filters,a.id),
+  "?origin_country=NG&destination_country=GH&privacy_rail=private-payments&after="+a.id);
+ for(const invalid of [
+  {origin_country:"nga"},{origin_country:"NGA"},{destination_country:"G H"},
+  {privacy_rail:"verified"},{origin_country:"NG",destination_country:null},
+  {origin_country:"NG",amount:"100"},{after:"000"},{asset_code:"USD"}
+ ]){
+  assert.equal(validCustomerCorridorFilters(invalid),false);
+  assert.throws(()=>customerCorridorSearch(invalid),TypeError);
+ }
+ assert.throws(()=>customerCorridorSearch({}, "../../admin"),TypeError);
+});
+test("filtered public read sends no wallet details and rejects invented exchange rates",async()=>{
+ const original=globalThis.fetch,requests=[];
+ try{
+  globalThis.fetch=async (url,options)=>{
+   requests.push({url,method:options.method,credentials:options.credentials});
+   return new Response(JSON.stringify({items:[a],next_cursor:null}),{status:200});
+  };
+  const page=await loadCustomerCorridors(undefined,undefined,{origin_country:"NG"});
+  assert.equal(page.items.length,1);
+  assert.deepEqual(requests,[{url:"/api/public/corridors?origin_country=NG",method:"GET",credentials:"omit"}]);
+  globalThis.fetch=async()=>new Response(JSON.stringify({items:[{...a,fx_rate:"1.4"}],next_cursor:null}),{status:200});
+  await assert.rejects(()=>loadCustomerCorridors(undefined,undefined,{origin_country:"NG"}),/unverified records/);
+  globalThis.fetch=async()=>new Response(JSON.stringify({items:[{...a,origin_country:"GB"}],next_cursor:null}),{status:200});
+  await assert.rejects(()=>loadCustomerCorridors(undefined,undefined,{origin_country:"NG"}),/outside the selected filters/);
+ }finally{globalThis.fetch=original;}
 });
