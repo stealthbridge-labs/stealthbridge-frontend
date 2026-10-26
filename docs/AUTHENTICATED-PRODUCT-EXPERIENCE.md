@@ -177,3 +177,11 @@ The response validator checks the exact organization ID and signer, StrKey check
 This is *not* a feature for sending invitations, managing roles or approving payments. It is **private membership and status visibility**. The workspace calls out that an internally active tenant is not a legally verified business.
 
 The backend endpoint uses the existing Neon organization tables: no migrations, seeded records, financial writes or private keys. All demo organizational identities in Playwright remain **test fixtures only**, never database seed data.
+
+## Pending application correction and withdrawal
+
+After authenticating with Freighter, a customer can correct the name on their *pending* business application without losing its ID, or withdraw an unused application by typing its exact name as explicit confirmation. These controls live inside the authenticated Business workspace, never on the public product story.
+
+The browser forwards strict JSON to a same-origin Node.js handler. The server enforces an existing signed-session and CSRF origin, signs a short-lived method- and body-bound backend request, validates the Rust response and reloads the actual Neon application list rather than manufacturing success. User-visible conflicts explain that an application may have changed or become protected.
+
+Withdrawing is permanent and is blocked when an application is active, reviewed, shared, or has financial/provider records. There is no operator verification, role promotion, wallet transaction, or payout enabled by these controls. See backend `docs/BUSINESS-APPLICATION-LIFECYCLE.md` for safety and future audit-retention requirements.

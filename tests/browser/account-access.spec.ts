@@ -44,6 +44,16 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  expect(unauthorizedProfile.status()).toBe(401);
  const unauthorizedBusiness=await page.request.get("/api/account/business-onboarding");
  expect(unauthorizedBusiness.status()).toBe(401);
+ const unauthorizedAmend=await page.request.patch("/api/account/business-onboarding",{
+  data:{organization_id:"9a1a395f-249c-4907-b657-d48df4b38d28",
+   expected_display_name:"Old",display_name:"New"}
+ });
+ expect(unauthorizedAmend.status()).toBe(401);
+ const unauthorizedWithdraw=await page.request.delete("/api/account/business-onboarding",{
+  data:{organization_id:"9a1a395f-249c-4907-b657-d48df4b38d28",
+   confirm_display_name:"Old"}
+ });
+ expect(unauthorizedWithdraw.status()).toBe(401);
  const unauthorizedTeam=await page.request.get("/api/account/organizations/9a1a395f-249c-4907-b657-d48df4b38d28/team");
  expect(unauthorizedTeam.status()).toBe(401);
  await page.goto("/app/business/9a1a395f-249c-4907-b657-d48df4b38d28");
@@ -130,6 +140,18 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
    application={id:"9a1a395f-249c-4907-b657-d48df4b38d28",
     display_name:posted.display_name,status:"pending",role:"owner"};
   }
+  if(request.method()==="PATCH"){
+   const posted=request.postDataJSON() as {organization_id:string;expected_display_name:string;display_name:string};
+   expect(posted.organization_id).toBe("9a1a395f-249c-4907-b657-d48df4b38d28");
+   expect(posted.expected_display_name).toBe(application?.display_name);
+   if(application)application={...application,display_name:posted.display_name};
+  }
+  if(request.method()==="DELETE"){
+   const posted=request.postDataJSON() as {organization_id:string;confirm_display_name:string};
+   expect(posted.organization_id).toBe("9a1a395f-249c-4907-b657-d48df4b38d28");
+   expect(posted.confirm_display_name).toBe(application?.display_name);
+   application=null;
+  }
   await route.fulfill({status:request.method()==="POST"?201:200,json:{
    schema_version:1,network:"testnet",source:"neon-pending-business-applications",
    account_address:address,applications:application?[application]:[],
@@ -145,25 +167,37 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toBeVisible();
  await expect(page.getByText("Pending onboarding")).toBeVisible();
  await expect(page.getByText(/do not establish legal identity/)).toBeVisible();
+ await page.getByRole("button",{name:"Correct application name"}).click();
+ await page.getByLabel("Correct organization name").fill("Browser Corrected Ltd");
+ await page.getByRole("button",{name:"Save corrected name"}).click();
+ await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toHaveCount(0);
 
  await page.route("**/api/account/organizations/*/team",route=>route.fulfill({json:{
   schema_version:1,network:"testnet",source:"neon-organization-team",
   account_address:address,
   organization:{id:"9a1a395f-249c-4907-b657-d48df4b38d28",
-   display_name:"Browser Test Only Ltd",status:"pending",your_role:"owner"},
+   display_name:"Browser Corrected Ltd",status:"pending",your_role:"owner"},
   members:[{account_address:address,role:"owner",joined_at_unix:1800000000}],
   next_cursor:null,business_verified:false,invitation_issuance_enabled:false,
   payment_execution_enabled:false,organization_payment_authorized:false
  }}));
  await page.getByRole("link",{name:"Review application and team"}).click();
  await expect(page.getByRole("heading",{name:"People, roles, and progress."})).toBeVisible();
- await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toBeVisible();
  await expect(page.getByText("Application pending")).toBeVisible();
  await expect(page.getByText("Team invitations",{exact:true})).toBeVisible();
  await expect(page.getByText(/Transfers, settlement, fiat payouts and platform fee claims remain disabled/)).toBeVisible();
  await expect(page.getByRole("button",{name:/Invite|Submit settlement|Approve payment/})).toHaveCount(0);
  await page.goto("/app/business");
  await expect(page.getByRole("heading",{name:"Where your business goes further."})).toBeVisible();
+ await page.getByRole("button",{name:"Withdraw",exact:true}).click();
+ await expect(page.getByText(/Permanent withdrawal/)).toBeVisible();
+ await expect(page.getByRole("button",{name:"Permanently withdraw application"})).toBeDisabled();
+ await page.getByLabel("Type the exact application name to confirm").fill("Browser Corrected Ltd");
+ await page.getByRole("button",{name:"Permanently withdraw application"}).click();
+ await expect(page.getByText(/haven't registered a business workspace yet/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toHaveCount(0);
  await page.getByText("Explore Testnet payment preparation (not yet enabled)").click();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();

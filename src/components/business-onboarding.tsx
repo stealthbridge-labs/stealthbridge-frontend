@@ -3,6 +3,7 @@ import {useEffect,useState} from "react";
 import Link from "next/link";
 import {ArrowRight,Building2,CheckCircle2,Clock3,RefreshCw,ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import {PendingBusinessActions} from "@/components/pending-business-actions";
 import {loadBusinessOnboarding,registerBusinessOnboarding,
  validBusinessApplicationName,type BusinessOnboardingEnvelope} from "@/lib/business-onboarding";
 type ReadState="loading"|"ready"|"unavailable";
@@ -14,6 +15,7 @@ export function BusinessOnboarding({address}:{address:string}){
  const [saving,setSaving]=useState(false);
  const [formError,setFormError]=useState("");
  const [confirmation,setConfirmation]=useState("");
+ const [actionNotice,setActionNotice]=useState("");
  useEffect(()=>{
   const controller=new AbortController();
   setStatus("loading");setData(null);
@@ -84,6 +86,7 @@ export function BusinessOnboarding({address}:{address:string}){
      <div className="business-onboarding-empty"><Building2 size={26} aria-hidden/>
       <p>You haven't registered a business workspace yet. When you do, its actual pending status will appear here.</p>
      </div>:null}
+    {actionNotice?<p className="business-onboarding-confirmation" role="status">{actionNotice}</p>:null}
     {status==="ready"&&data&&data.applications.length>0?<div className="business-onboarding-cards">
      {data.applications.map(application=><article key={application.id} className="business-onboarding-card">
       <span className="business-onboarding-status"><Clock3 size={14} aria-hidden/> Pending onboarding</span>
@@ -93,6 +96,8 @@ export function BusinessOnboarding({address}:{address:string}){
       <Link className="team-open-link" href={"/app/business/"+application.id}>
        Review application and team <ArrowRight size={16} aria-hidden/>
       </Link>
+      <PendingBusinessActions address={address} application={application}
+       onChanged={message=>{setActionNotice(message);setRevision(value=>value+1);}}/>
      </article>)}
      {data.has_more?<p>Additional applications are not included in this first page.</p>:null}
     </div>:null}

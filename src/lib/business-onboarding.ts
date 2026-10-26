@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalStellarAccountAddress} from "./stellar-address.ts";
 export type PendingBusinessApplication={
  id:string;display_name:string;status:"pending";role:"owner"
 };
@@ -66,5 +66,48 @@ export async function registerBusinessOnboarding(
  const result:unknown=await response.json();
  if(!validBusinessOnboarding(result,address)||result.applications.length!==1)
   throw Error("The registered application could not be verified.");
+ return result;
+}
+
+const businessId=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
+export async function amendPendingBusiness(
+ address:string,organizationId:string,expectedName:string,newName:string
+):Promise<BusinessOnboardingEnvelope>{
+ if(!businessId.test(organizationId)||!validBusinessApplicationName(expectedName)||
+  !validBusinessApplicationName(newName)||expectedName===newName)
+  throw new TypeError("Enter a different valid application name.");
+ const response=await fetch("/api/account/business-onboarding",{
+  method:"PATCH",credentials:"same-origin",cache:"no-store",
+  headers:{"content-type":"application/json"},
+  body:JSON.stringify({organization_id:organizationId,
+   expected_display_name:expectedName,display_name:newName})
+ });
+ if(!response.ok)throw Error(response.status===409?
+  "The application changed or now has protected records. Refresh before editing.":
+  response.status===404?"This pending application is no longer available to you.":
+  "Couldn't update the application. Please retry.");
+ const result:unknown=await response.json();
+ if(!validBusinessOnboarding(result,address)||result.applications.length!==1||
+  result.applications[0].id!==organizationId||result.applications[0].display_name!==newName)
+  throw Error("The updated application could not be verified.");
+ return result;
+}
+export async function withdrawPendingBusiness(
+ address:string,organizationId:string,confirmationName:string
+):Promise<BusinessOnboardingEnvelope>{
+ if(!businessId.test(organizationId)||!validBusinessApplicationName(confirmationName))
+  throw new TypeError("Invalid pending application.");
+ const response=await fetch("/api/account/business-onboarding",{
+  method:"DELETE",credentials:"same-origin",cache:"no-store",
+  headers:{"content-type":"application/json"},
+  body:JSON.stringify({organization_id:organizationId,confirm_display_name:confirmationName})
+ });
+ if(!response.ok)throw Error(response.status===409?
+  "This application has changed or contains protected history and cannot be withdrawn.":
+  response.status===404?"The pending application is no longer available to you.":
+  "Couldn't withdraw the application. Please retry.");
+ const result:unknown=await response.json();
+ if(!validBusinessOnboarding(result,address)||result.applications.length!==0)
+  throw Error("The withdrawal could not be verified.");
  return result;
 }

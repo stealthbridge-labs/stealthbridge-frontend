@@ -20,18 +20,18 @@ function serviceOrigin():URL|null{
   return url;
  }catch{return null;}
 }
-async function invoke(request:Request,method:"GET"|"POST"){
+async function invoke(request:Request,method:"GET"|"POST"|"PATCH"|"DELETE"){
  const session=await currentWalletIdentity();
  if(!session)return NextResponse.json({code:"SESSION_REQUIRED"},{status:401,headers:safeHeaders});
  if(new URL(request.url).search)return NextResponse.json({code:"INVALID_QUERY"},{status:400,headers:safeHeaders});
- if(method==="POST"&&!validSameOrigin(request))
+ if(method!=="GET"&&!validSameOrigin(request))
   return NextResponse.json({code:"ORIGIN_REJECTED"},{status:403,headers:safeHeaders});
  const secret=process.env.STEALTHBRIDGE_ACCOUNT_BRIDGE_SECRET;
  const origin=serviceOrigin();
  if(!secret||Buffer.byteLength(secret,"utf8")<32||!origin)
   return NextResponse.json({code:"ONBOARDING_UNAVAILABLE"},{status:503,headers:safeHeaders});
  let body="";
- if(method==="POST"){
+ if(method!=="GET"){
   if(!request.headers.get("content-type")?.startsWith("application/json")||
    Number(request.headers.get("content-length")??0)>512)
    return NextResponse.json({code:"INVALID_BUSINESS_NAME"},{status:400,headers:safeHeaders});
@@ -39,15 +39,28 @@ async function invoke(request:Request,method:"GET"|"POST"){
    const text=await request.text();
    if(!text||Buffer.byteLength(text,"utf8")>512)throw Error("invalid length");
    const parsed:unknown=JSON.parse(text);
-   if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)||
-    Object.keys(parsed).length!==1||!("display_name" in parsed)||
-    !validBusinessApplicationName((parsed as {display_name:unknown}).display_name))
+   if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))
+    throw Error("Invalid data");
+   const data=parsed as Record<string,unknown>;
+   const actual=Object.keys(data).sort().join(",");
+   const validId=(id:unknown)=>typeof id==="string"&&
+    /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id)&&
+    id!=="00000000-0000-0000-0000-000000000000";
+   if(method==="POST"&&(actual!=="display_name"||
+     !validBusinessApplicationName(data.display_name))||
+    method==="PATCH"&&(actual!=="display_name,expected_display_name,organization_id"||
+     !validId(data.organization_id)||
+     !validBusinessApplicationName(data.expected_display_name)||
+     !validBusinessApplicationName(data.display_name)||
+     data.display_name===data.expected_display_name)||
+    method==="DELETE"&&(actual!=="confirm_display_name,organization_id"||
+     !validId(data.organization_id)||!validBusinessApplicationName(data.confirm_display_name)))
     throw Error("Invalid data");
    body=JSON.stringify(parsed);
   }catch{return NextResponse.json({code:"INVALID_BUSINESS_NAME"},{status:400,headers:safeHeaders});}
  }
- const id=method==="POST"?randomUUID():"";
- const digest=method==="POST"?createHash("sha256").update(body,"utf8").digest("hex"):"";
+ const id=method!=="GET"?randomUUID():"";
+ const digest=method!=="GET"?createHash("sha256").update(body,"utf8").digest("hex"):"";
  const timestamp=String(Math.floor(Date.now()/1000));
  const mac=createHmac("sha256",secret).update(
   "stealthbridge-business-onboarding-v1\n"+method+"\n"+PATH+"\n"+
@@ -59,19 +72,22 @@ async function invoke(request:Request,method:"GET"|"POST"){
   "x-stealthbridge-issued-at":timestamp,
   "x-stealthbridge-signature":mac
  };
- if(method==="POST"){
+ if(method!=="GET"){
   outgoing["content-type"]="application/json";
   outgoing["x-stealthbridge-request-id"]=id;
  }
  try{
   const response=await fetch(new URL(PATH,origin),{
    method,headers:outgoing,redirect:"error",cache:"no-store",
-   signal:AbortSignal.timeout(9000),...(method==="POST"?{body}:{})
+   signal:AbortSignal.timeout(9000),...(method!=="GET"?{body}:{})
   });
   if(response.status===429)return NextResponse.json({code:"PENDING_APPLICATION_LIMIT"},
    {status:429,headers:safeHeaders});
-  if(response.status===409)return NextResponse.json({code:"REPEATED_APPLICATION"},
+  if(response.status===409)return NextResponse.json({code:
+   method==="POST"?"REPEATED_APPLICATION":"APPLICATION_CHANGED_OR_PROTECTED"},
    {status:409,headers:safeHeaders});
+  if(response.status===404)return NextResponse.json({code:"APPLICATION_NOT_FOUND"},
+   {status:404,headers:safeHeaders});
   if(!response.ok||!response.headers.get("content-type")?.includes("application/json"))
    throw Error("Backend unavailable");
   const declared=response.headers.get("content-length");
@@ -88,9 +104,14 @@ async function invoke(request:Request,method:"GET"|"POST"){
   const bytes=new Uint8Array(size);let offset=0;
   for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
   const data:unknown=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
-  if(!validBusinessOnboarding(data,session.address)||
-   method==="POST"&&(data as {applications:unknown[]}).applications.length!==1)
-   throw Error("Invalid private backend response");
+  if(!validBusinessOnboarding(data,session.address))throw Error("Invalid private backend response");
+  const result=data as import("@/lib/business-onboarding").BusinessOnboardingEnvelope;
+  if(method==="POST"&&result.applications.length!==1||
+     method==="PATCH"&&(result.applications.length!==1||
+       result.applications[0].id!==(JSON.parse(body) as {organization_id:string}).organization_id||
+       result.applications[0].display_name!==(JSON.parse(body) as {display_name:string}).display_name)||
+     method==="DELETE"&&result.applications.length!==0)
+    throw Error("Inconsistent private backend response");
   return NextResponse.json(data,{status:method==="POST"?201:200,headers:safeHeaders});
  }catch{
   return NextResponse.json({code:"ONBOARDING_UNAVAILABLE"},{status:503,headers:safeHeaders});
@@ -98,3 +119,6 @@ async function invoke(request:Request,method:"GET"|"POST"){
 }
 export async function GET(request:Request){return invoke(request,"GET");}
 export async function POST(request:Request){return invoke(request,"POST");}
+
+export async function PATCH(request:Request){return invoke(request,"PATCH");}
+export async function DELETE(request:Request){return invoke(request,"DELETE");}
