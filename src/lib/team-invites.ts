@@ -32,8 +32,8 @@ export function validTeamInvitationDirectory(value:unknown,address:string):value
   typeof directory.sent_more!=="boolean"||
   !Array.isArray(directory.received)||!Array.isArray(directory.sent)||
   directory.received.length>20||directory.sent.length>20)return false;
+ const ids=new Set<string>();
  for(const list of [directory.received,directory.sent] as unknown[][]){
-  const ids=new Set<string>();
   for(const value of list){
    if(!value||typeof value!=="object"||Array.isArray(value))return false;
    const row=value as Record<string,unknown>;
@@ -59,13 +59,23 @@ export function validTeamInvitationDirectory(value:unknown,address:string):value
  }
  return true;
 }
-export async function loadTeamInvitations(address:string,signal?:AbortSignal):Promise<TeamInvitationDirectory>{
- const response=await fetch("/api/account/team-invites",{
+/** Narrow business invitation reads to an authenticated organization. The scope is
+ * signed by the server proxy; an unscoped read is used for incoming invites. */
+export async function loadTeamInvitations(address:string,signal?:AbortSignal,organizationId?:string):Promise<TeamInvitationDirectory>{
+ if(!canonicalStellarAccountAddress(address)||
+   (organizationId!==undefined&&(!UUID.test(organizationId)||organizationId==="00000000-0000-0000-0000-000000000000")))
+  throw new TypeError("Invalid invitation account or organization.");
+ const url="/api/account/team-invites"+(organizationId?"?organization_id="+organizationId:"");
+ const response=await fetch(url,{
   method:"GET",cache:"no-store",credentials:"same-origin",signal
  });
  if(!response.ok)throw Error("Team invitations are not available.");
  const value:unknown=await response.json();
- if(!validTeamInvitationDirectory(value,address))throw Error("Team invitations could not be verified.");
+ if(!validTeamInvitationDirectory(value,address)||
+  (organizationId!==undefined&&(
+   value.received.length!==0||value.received_more||
+   value.sent.some(row=>row.organization_id!==organizationId))))
+  throw Error("Team invitations could not be verified.");
  return value;
 }
 export type TeamInviteAction=

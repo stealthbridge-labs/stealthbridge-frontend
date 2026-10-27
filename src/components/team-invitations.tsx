@@ -21,11 +21,11 @@ export function TeamInvitations({
  useEffect(()=>{
   const controller=new AbortController();
   setStatus("loading");setValue(null);
-  void loadTeamInvitations(address,controller.signal)
+  void loadTeamInvitations(address,controller.signal,organizationId)
    .then(data=>{if(!controller.signal.aborted){setValue(data);setStatus("ready");}})
    .catch(()=>{if(!controller.signal.aborted)setStatus("error");});
   return ()=>controller.abort();
- },[address,revision]);
+ },[address,revision,organizationId]);
  function refresh(){setRevision(v=>v+1);}
  async function perform(action:Parameters<typeof submitTeamInviteAction>[0]){
   if(working||!validTeamInviteAction(action))return;

@@ -75,3 +75,25 @@ test("server proxy gates invitation actions with signed session, CSRF and releas
  ])assert.ok(content.includes(part),part);
  assert.doesNotMatch(content,/NEXT_PUBLIC_TEAM_INVITES|export async function PATCH|payment_execution_enabled:true/);
 });
+
+test("business invitation pages are scoped and reject leaked cross-organization records",async()=>{
+ const original=globalThis.fetch;const calls=[];
+ const scoped={...data,account_address:owner,received:[],sent:[{...item,peer_address:invited}]};
+ let payload=scoped;
+ try{
+  globalThis.fetch=async(url,options)=>{
+   calls.push({url,credentials:options.credentials});
+   return new Response(JSON.stringify(payload),{status:200});
+  };
+  await assert.rejects(()=>loadTeamInvitations(owner,undefined,"not-a-uuid"),TypeError);
+  await assert.rejects(()=>loadTeamInvitations("invalid-address",undefined,org),TypeError);
+  assert.equal(calls.length,0);
+  const result=await loadTeamInvitations(owner,undefined,org);
+  assert.equal(result.sent[0].organization_id,org);
+  assert.deepEqual(calls,[{url:"/api/account/team-invites?organization_id="+org,credentials:"same-origin"}]);
+  payload={...scoped,sent:[{...item,organization_id:id}]};
+  await assert.rejects(()=>loadTeamInvitations(owner,undefined,org),/could not be verified/);
+  payload={...scoped,received:[item]};
+  await assert.rejects(()=>loadTeamInvitations(owner,undefined,org),/could not be verified/);
+ }finally{globalThis.fetch=original;}
+});

@@ -8,6 +8,8 @@ export const dynamic="force-dynamic";
 export const runtime="nodejs";
 const ENDPOINT="/v1/account/team-invites";
 const MAX_RESPONSE=24000;
+const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+const NIL="00000000-0000-0000-0000-000000000000";
 const noStore={"cache-control":"private, no-store","x-content-type-options":"nosniff"};
 
 function backendOrigin():URL|null{
@@ -27,15 +29,22 @@ async function proxy(request:Request,method:"GET"|"POST"){
  if(!identity)return NextResponse.json({code:"SESSION_REQUIRED"},{status:401,headers:noStore});
  if(process.env.STEALTHBRIDGE_TEAM_INVITES_ENABLED!=="true")
   return NextResponse.json({code:"INVITATIONS_NOT_RELEASED"},{status:503,headers:noStore});
- if(new URL(request.url).search)
+ // An exact, canonical query is bound to the HMAC request-id field so one
+ // business cannot receive a misleading first page of another business's invites.
+ const query=new URL(request.url).search;
+ const candidate=query.startsWith("?organization_id=")?query.slice("?organization_id=".length):"";
+ if((method==="POST"&&query)||
+   (method==="GET"&&query&&(!UUID.test(candidate)||candidate===NIL||
+     query!=="?organization_id="+candidate)))
   return NextResponse.json({code:"INVALID_QUERY"},{status:400,headers:noStore});
+ const organizationId=method==="GET"?candidate:"";
  if(method==="POST"&&!validSameOrigin(request))
   return NextResponse.json({code:"ORIGIN_REJECTED"},{status:403,headers:noStore});
  const key=process.env.STEALTHBRIDGE_ACCOUNT_BRIDGE_SECRET;
  const upstream=backendOrigin();
  if(!key||Buffer.byteLength(key,"utf8")<32||!upstream)
   return NextResponse.json({code:"INVITATIONS_NOT_CONFIGURED"},{status:503,headers:noStore});
- let body="";let nonce="";
+ let body="";let nonce=organizationId;
  if(method==="POST"){
   if(!request.headers.get("content-type")?.startsWith("application/json")||
     Number(request.headers.get("content-length")??0)>400)
@@ -67,7 +76,9 @@ async function proxy(request:Request,method:"GET"|"POST"){
   headers["x-stealthbridge-request-id"]=nonce;
  }
  try{
-  const response=await fetch(new URL(ENDPOINT,upstream),{
+  const upstreamUrl=new URL(ENDPOINT,upstream);
+  if(organizationId)upstreamUrl.searchParams.set("organization_id",organizationId);
+  const response=await fetch(upstreamUrl,{
    method,headers,cache:"no-store",redirect:"error",
    signal:AbortSignal.timeout(9000),
    ...(body?{body}:{})
@@ -94,7 +105,11 @@ async function proxy(request:Request,method:"GET"|"POST"){
   const bytes=new Uint8Array(size);let offset=0;
   for(const piece of pieces){bytes.set(piece,offset);offset+=piece.byteLength;}
   const data:unknown=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
-  if(!validTeamInvitationDirectory(data,identity.address))throw Error("unverified");
+  if(!validTeamInvitationDirectory(data,identity.address)||
+    (organizationId&&(
+      data.received.length!==0||data.received_more||
+      data.sent.some(row=>row.organization_id!==organizationId))))
+   throw Error("unverified");
   return NextResponse.json(data,{headers:noStore});
  }catch{
   return NextResponse.json({code:"INVITATIONS_UNAVAILABLE"},{status:503,headers:noStore});
