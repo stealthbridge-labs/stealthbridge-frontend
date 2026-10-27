@@ -50,6 +50,8 @@ export default defineConfig({
    // Unique per-test-server secret; never reused for production sessions.
    STEALTHBRIDGE_WEB_SESSION_SECRET:randomBytes(48).toString("hex"),
    STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED:previewTests?"false":"true",
+   // Browser-only fixtures: not enabled in Vercel until SQLx approval.
+   STEALTHBRIDGE_TEAM_INVITES_ENABLED:previewTests?"false":"true",
    STEALTHBRIDGE_API_URL:""
   }
  }

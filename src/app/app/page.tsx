@@ -3,6 +3,7 @@ import Link from "next/link";
 import {ArrowRight,ArrowUpRight,Building2,Clock3,LockKeyhole,Send,ShieldCheck,UserRound} from "lucide-react";
 import {requireWalletIdentity} from "@/lib/auth-server";
 import {AccountOrganizations} from "@/components/account-organizations";
+import {TeamInvitations} from "@/components/team-invitations";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Account overview — StealthBridge"};
 export default async function Dashboard(){
@@ -26,6 +27,8 @@ export default async function Dashboard(){
   </div>
   {process.env.STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED==="true"?<div className="account-settings-cta"><UserRound size={20} aria-hidden/><span>Make your account feel like yours with saved preferences.</span><Link href="/app/settings">Set up your profile <ArrowRight size={17} aria-hidden/></Link></div>:null}
   <AccountOrganizations address={identity.address}/>
+  {process.env.STEALTHBRIDGE_TEAM_INVITES_ENABLED==="true"?
+   <TeamInvitations address={identity.address}/>:null}
   <section className="account-status-section" aria-labelledby="account-security-heading">
    <div><span className="section-index">ACCOUNT & SECURITY</span><h2 id="account-security-heading">A clearer picture of your access.</h2></div>
    <div className="account-status-list">

@@ -32,6 +32,7 @@ test("organization team is private metadata, never legal verification or financi
  const active={...pending,organization:{...pending.organization,status:"active"},
   members:[member(other,"viewer"),member(owner)]};
  assert.equal(validOrganizationTeam(active,id,owner),true);
+ assert.equal(validOrganizationTeam({...active,invitation_issuance_enabled:true},id,owner),true);
  assert.equal(validOrganizationTeam({...active,members:active.members.toReversed()},id,owner),false);
  assert.equal(validOrganizationTeam({...active,next_cursor:owner},id,owner),false);
 });

@@ -44,6 +44,12 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  expect(unauthorizedProfile.status()).toBe(401);
  const unauthorizedBusiness=await page.request.get("/api/account/business-onboarding");
  expect(unauthorizedBusiness.status()).toBe(401);
+ const unauthorizedInvites=await page.request.get("/api/account/team-invites");
+ expect(unauthorizedInvites.status()).toBe(401);
+ const unauthorizedInviteWrite=await page.request.post("/api/account/team-invites",{
+  data:{action:"accept",invitation_id:"9a1a395f-249c-4907-b657-d48df4b38d28"}
+ });
+ expect(unauthorizedInviteWrite.status()).toBe(401);
  const unauthorizedAmend=await page.request.patch("/api/account/business-onboarding",{
   data:{organization_id:"9a1a395f-249c-4907-b657-d48df4b38d28",
    expected_display_name:"Old",display_name:"New"}
@@ -96,8 +102,36 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   }],has_more:false,payment_execution_enabled:false,
   organization_payment_authorized:false
  }}));
+ let acceptedInvite=false;
+ const inviteId="b3a295f4-0a37-4da4-94c2-38f2f0ee5729";
+ await page.route("**/api/account/team-invites",async route=>{
+  const method=route.request().method();
+  if(method==="POST"){
+   expect(route.request().postDataJSON()).toEqual({action:"accept",invitation_id:inviteId});
+   acceptedInvite=true;
+   await route.fulfill({status:204,body:""});
+   return;
+  }
+  await route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"neon-team-invitations",
+   account_address:address,
+   received:acceptedInvite?[]:[{
+    id:inviteId,organization_id:"781bbea7-19bf-410b-ad7b-95357d8bbd13",
+    organization_name:"Invitation Test Only",
+    peer_address:"GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX",
+    role:"viewer",status:"pending",created_at_unix:1800000000,expires_at_unix:1800604800
+   }],sent:[],received_more:false,sent_more:false,
+   business_verified:false,payment_execution_enabled:false,
+   organization_payment_authorized:false
+  }});
+ });
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Invitations for you"})).toBeVisible();
+ await expect(page.getByText("Invitation Test Only")).toBeVisible();
+ await page.getByRole("button",{name:"Accept viewer invitation"}).click();
+ await expect(page.getByText("You have no pending invitations for this account.")).toBeVisible();
+ expect(acceptedInvite).toBe(true);
  await expect(page.getByRole("heading",{name:"Business access, in one place."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
  await expect(page.getByText("Current membership")).toBeVisible();
@@ -206,4 +240,67 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.goto("/app");
  await expect(page).toHaveURL(/\/login$/);
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
+});
+
+test("active owner can invite and revoke a viewer, without finance permissions",async({page})=>{
+ const {publicKey,privateKey}=generateKeyPairSync("ed25519");
+ const jwk=publicKey.export({format:"jwk"});
+ if(typeof jwk.x!=="string")throw Error("Missing Ed25519 public key");
+ const signer=stellarAddress(Buffer.from(jwk.x,"base64url"));
+ const invited="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX";
+ const org="9a1a395f-249c-4907-b657-d48df4b38d28";
+ const invite="b3a295f4-0a37-4da4-94c2-38f2f0ee5729";
+ await page.goto("/login");
+ const origin=new URL(page.url()).origin;
+ const challenge=await page.request.post("/api/auth/challenge",{data:{address:signer},headers:{origin}});
+ expect(challenge.status()).toBe(200);
+ const payload=await challenge.json() as {message:string};
+ const verified=await page.request.post("/api/auth/verify",{
+  data:{address:signer,signature:signature(payload.message,privateKey)},headers:{origin}
+ });
+ expect(verified.status()).toBe(200);
+ await page.route("**/api/account/organizations/*/team",route=>route.fulfill({json:{
+  schema_version:1,network:"testnet",source:"neon-organization-team",
+  account_address:signer,organization:{id:org,display_name:"Test Merchant Only",
+   status:"active",your_role:"owner"},
+  members:[{account_address:signer,role:"owner",joined_at_unix:1800000000}],
+  next_cursor:null,business_verified:false,invitation_issuance_enabled:false,
+  payment_execution_enabled:false,organization_payment_authorized:false
+ }}));
+ let issued=false;
+ let revoked=false;
+ const actions:unknown[]=[];
+ await page.route("**/api/account/team-invites",async route=>{
+  const method=route.request().method();
+  if(method==="POST"){
+   const action=route.request().postDataJSON() as {action:string};
+   actions.push(action);
+   if(action.action==="create")issued=true;
+   if(action.action==="revoke")revoked=true;
+   await route.fulfill({status:204,body:""});
+   return;
+  }
+  await route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"neon-team-invitations",
+   account_address:signer,received:[],
+   sent:issued?[{id:invite,organization_id:org,organization_name:"Test Merchant Only",
+    peer_address:invited,role:"viewer",status:revoked?"revoked":"pending",
+    created_at_unix:1800000000,expires_at_unix:1800604800}]:[],
+   received_more:false,sent_more:false,business_verified:false,
+   payment_execution_enabled:false,organization_payment_authorized:false
+  }});
+ });
+ await page.goto("/app/business/"+org);
+ await expect(page.getByRole("heading",{name:"People, roles, and progress."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Invite a viewer"})).toBeVisible();
+ await page.getByLabel("Recipient's Stellar G-address").fill(invited);
+ await page.getByRole("button",{name:"Invite viewer"}).click();
+ await expect(page.getByRole("button",{name:"Revoke invitation"})).toBeVisible();
+ await page.getByRole("button",{name:"Revoke invitation"}).click();
+ await expect(page.getByText(/Viewer · revoked/)).toBeVisible();
+ expect(actions).toEqual([
+  {action:"create",organization_id:org,invited_account:invited,role:"viewer"},
+  {action:"revoke",invitation_id:invite}
+ ]);
+ await expect(page.getByRole("button",{name:/Submit settlement|Authorize payment|Claim fees/})).toHaveCount(0);
 });

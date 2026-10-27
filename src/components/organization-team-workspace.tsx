@@ -5,6 +5,7 @@ import Link from "next/link";
 import {ArrowLeft,ArrowRight,Clock3,RefreshCw,ShieldCheck,UsersRound} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {loadOrganizationTeam,type OrganizationTeam} from "@/lib/organization-team";
+import {TeamInvitations} from "@/components/team-invitations";
 
 type View={
  state:"loading"|"ready"|"error";
@@ -18,8 +19,8 @@ const registeredOn=(seconds:number)=>
 const abbreviated=(address:string)=>address.slice(0,8)+"…"+address.slice(-6);
 
 export function OrganizationTeamWorkspace({
- organizationId,address
-}:{organizationId:string;address:string}){
+ organizationId,address,invitationsEnabled
+}:{organizationId:string;address:string;invitationsEnabled:boolean}){
  const [view,setView]=useState<View>(empty);
  const [revision,setRevision]=useState(0);
  const nextController=useRef<AbortController|null>(null);
@@ -161,6 +162,9 @@ export function OrganizationTeamWorkspace({
      </div>
     </section>
    </div>
+   {invitationsEnabled&&view.data.organization.status==="active"&&
+    ["owner","admin"].includes(view.data.organization.your_role)?
+     <TeamInvitations organizationId={organizationId} address={address}/>:null}
    <div className="team-security-note">
     <ShieldCheck size={18} aria-hidden/><p>Organization roles describe recorded membership only. Even an owner of an active workspace is not automatically a verified business, authorized payment operator, or Stellar contract administrator. This screen never requests transaction signatures.</p>
    </div>

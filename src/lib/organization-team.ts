@@ -11,7 +11,7 @@ export type OrganizationTeam={
  schema_version:1;network:"testnet";source:"neon-organization-team";
  account_address:string;organization:OrganizationTeamRecord;
  members:OrganizationTeamMember[];next_cursor:string|null;
- business_verified:false;invitation_issuance_enabled:false;
+ business_verified:false;invitation_issuance_enabled:boolean;
  payment_execution_enabled:false;organization_payment_authorized:false
 };
 const uuid=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
@@ -32,7 +32,7 @@ export function validOrganizationTeam(
   "payment_execution_enabled","organization_payment_authorized"])||
   v.schema_version!==1||v.network!=="testnet"||v.source!=="neon-organization-team"||
   v.account_address!==account||v.business_verified!==false||
-  v.invitation_issuance_enabled!==false||v.payment_execution_enabled!==false||
+  typeof v.invitation_issuance_enabled!=="boolean"||v.payment_execution_enabled!==false||
   v.organization_payment_authorized!==false||!Array.isArray(v.members)||
   v.members.length>25||!v.organization||typeof v.organization!=="object"||
   Array.isArray(v.organization))return false;
@@ -43,6 +43,7 @@ export function validOrganizationTeam(
   org.display_name.length>120||!["pending","active"].includes(String(org.status))||
   !["owner","admin"].includes(String(org.your_role))||
   org.status==="pending"&&org.your_role!=="owner")return false;
+ if(org.status==="pending"&&v.invitation_issuance_enabled!==false)return false;
  const seen=new Set<string>();
  let last="";
  for(const item of v.members){

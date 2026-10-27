@@ -185,3 +185,11 @@ After authenticating with Freighter, a customer can correct the name on their *p
 The browser forwards strict JSON to a same-origin Node.js handler. The server enforces an existing signed-session and CSRF origin, signs a short-lived method- and body-bound backend request, validates the Rust response and reloads the actual Neon application list rather than manufacturing success. User-visible conflicts explain that an application may have changed or become protected.
 
 Withdrawing is permanent and is blocked when an application is active, reviewed, shared, or has financial/provider records. There is no operator verification, role promotion, wallet transaction, or payout enabled by these controls. See backend `docs/BUSINESS-APPLICATION-LIFECYCLE.md` for safety and future audit-retention requirements.
+
+## Gated organization invitations
+
+The signed-in overview can show offers sent **to the current Stellar public account**. An owner/admin of an internally active business can offer `viewer` access to a recipient's classic G-address; the recipient must expressly accept. A manager may revoke an unaccepted offer. The UI never calls this feature an active financial service, a legal-business verification, a payment authorization or a passwordless login.
+
+All screens and the server route `/api/account/team-invites` are protected by `STEALTHBRIDGE_TEAM_INVITES_ENABLED=true`, which is **not configured in production** until the protected `202610270001` SQLx migration is applied and approved. The BFF binds a verified session to HMAC method, canonical URL, fresh timestamp, one-time UUID and SHA-256 request body, with same-origin validation and no-store bounded JSON response. The browser and SDK accept only precise Testnet invitation shapes and false financial authority flags.
+
+An invitation grants no role until explicitly accepted; future membership revocation, invitation pagination and onboarding/compliance reviews require separate authorization work. Playwright enables the flag only on its isolated mocked local test server, never on the deployed site.

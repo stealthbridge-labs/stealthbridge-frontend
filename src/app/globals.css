@@ -1029,3 +1029,26 @@
 .pending-business-warning svg{flex-shrink:0;color:#ffe3a0;margin-top:2px}
 .pending-business-warning p{color:#ffe6cc}
 .pending-business-error{font-size:12px;color:#ffd0bb;line-height:1.75;padding:10px;border:1px solid #c07969;border-radius:9px}
+
+/* Gated, Testnet-only, consent-based viewer invitations. */
+.team-invite-panel{border:1px solid #437468;border-radius:19px;background:linear-gradient(135deg,#123c33,#13352f);padding:clamp(19px,3vw,29px);margin:24px 0;color:#f2fff6}
+.team-invite-header{display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap}
+.team-invite-header h2{font-size:clamp(22px,2.7vw,29px);letter-spacing:-.035em;margin:12px 0}
+.team-invite-header p,.team-invite-subtle,.team-invite-form p,.team-invite-list>p{font-size:13px;line-height:1.75;color:#bed7c9;max-width:680px}
+.team-invite-header button,.team-invite-item button,.team-invite-form button{display:inline-flex;align-items:center;gap:8px}
+.team-invite-form{margin-top:24px;border-top:1px solid #3d675c;padding-top:19px;display:grid;justify-items:start;gap:12px}
+.team-invite-form label{font-weight:700;font-size:13px}
+.team-invite-form input{width:100%;min-height:46px;background:#092922;color:#f4fff7;border:1px solid #6b9a83;border-radius:10px;padding:11px;font:inherit}
+.team-invite-form input:focus-visible,.team-invite-panel :is(a,button):focus-visible{outline:2px solid #a5f2c6;outline-offset:3px}
+.team-invite-list{margin-top:22px;border-top:1px solid #3d675c;padding-top:18px;display:grid;gap:11px}
+.team-invite-list h3{font-size:16px;letter-spacing:-.02em;font-weight:800}
+.team-invite-item{background:#1a493b;border:1px solid #416e60;border-radius:13px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:17px;flex-wrap:wrap}
+.team-invite-item strong{font-size:14px;overflow-wrap:anywhere}
+.team-invite-item p{font-size:12px;color:#c7ddcb;line-height:1.6;margin:5px 0 0;overflow-wrap:anywhere}
+.team-invite-item p svg{vertical-align:middle}
+.team-invite-empty{padding:12px 0;display:flex;gap:12px;align-items:center;color:#bdd7c8;font-size:13px}
+.team-invite-success{padding:12px 15px;color:#bbf6d1;background:#194e37;border:1px solid #5b9676;border-radius:11px;font-size:13px;margin-top:15px}
+.team-invite-alert{padding:12px 15px;color:#ffdfcd;background:#4d3029;border:1px solid #966e60;border-radius:11px;font-size:13px;margin-top:15px}
+.team-invite-safety{display:flex;align-items:flex-start;gap:10px;border-top:1px solid #3d675c;margin-top:20px;padding-top:17px;font-size:12px;color:#c8decd;line-height:1.8}
+.team-invite-safety svg{flex-shrink:0;color:#b6f5d2;margin-top:2px}
+@media(max-width:540px){.team-invite-panel{padding:18px}.team-invite-item button,.team-invite-form button{width:100%;justify-content:center}}

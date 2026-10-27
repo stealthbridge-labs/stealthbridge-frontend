@@ -12,5 +12,6 @@ export default async function BusinessTeamPage({
  const identity=await requireWalletIdentity();
  const {id}=await params;
  if(!uuid.test(id)||id==="00000000-0000-0000-0000-000000000000")notFound();
- return <OrganizationTeamWorkspace organizationId={id} address={identity.address}/>;
+ return <OrganizationTeamWorkspace organizationId={id} address={identity.address}
+  invitationsEnabled={process.env.STEALTHBRIDGE_TEAM_INVITES_ENABLED==="true"}/>;
 }
