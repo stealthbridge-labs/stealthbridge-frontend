@@ -32,7 +32,7 @@ test("public stories build confidence before wallet permissions",async({page})=>
  await expect(page.getByRole("button",{name:"Connect Freighter"})).toHaveCount(0);
 });
 test("unauthenticated dashboard and payment pages are redirected to sign-in",async({page})=>{
- for(const path of ["/app","/app/send","/app/business"]){
+ for(const path of ["/app","/app/send","/app/business","/app/business/batch"]){
   await page.goto(path);
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
   await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
@@ -140,6 +140,38 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await expect(page.getByText("Signed in securely")).toBeVisible();
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+ // Signed-in business batches are local drafts; only public route UUIDs
+ // can appear in the source-backed read request. No recipient/amount can leak.
+ const batchId="9a1a395f-249c-4907-b657-d48df4b38d28";
+ const batchRecipient="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX";
+ const calls:string[]=[];
+ await page.route("**/api/public/corridors/batch*",route=>{
+  calls.push(route.request().url());
+  expect(route.request().method()).toBe("GET");
+  return route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"operator-corridor-batch",
+   requested_ids:[batchId],items:[{id:batchId,
+    origin_country:"NG",destination_country:"GH",asset_code:"USDC",
+    asset_issuer:null,privacy_rail:"private-payments"}],
+   missing_ids:[],all_configured:true,payment_execution_enabled:false,
+   privacy_verified:false,fiat_payouts_enabled:false
+  }});
+ });
+ await page.goto("/app/business/batch");
+ await expect(page.getByRole("heading",{name:"One workspace. Many payments to plan."})).toBeVisible();
+ await page.getByLabel(/CSV instructions/).fill(
+  "corridor_id,recipient,amount,reference\n"+batchId+","+batchRecipient+",25.75,BATCH-REFERENCE"
+ );
+ await page.getByRole("button",{name:/Check configured corridors/}).click();
+ await expect(page.getByText("Draft instruction review")).toBeVisible();
+ await expect(page.getByRole("cell").filter({hasText:"25.75"})).toBeVisible();
+ expect(calls).toHaveLength(1);
+ expect(calls[0]).toContain(batchId);
+ expect(calls[0]).not.toContain(batchRecipient);
+ expect(calls[0]).not.toContain("25.75");
+ await expect(page.getByText("Financial execution unavailable")).toBeVisible();
+ await page.getByRole("button",{name:/Clear drafts/}).click();
+ await expect(page.getByText("Draft instruction review")).toHaveCount(0);
  // The browser fixture never writes Neon. It verifies the customer intent,
  // exact preference shape and server-guarded settings journey.
  let savedProfile:{display_name:string;use_case:string;residence_country:string|null}|null=null;
