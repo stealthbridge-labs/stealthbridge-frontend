@@ -6,9 +6,10 @@ import {getAddress,getNetwork,isConnected,requestAccess,signMessage} from "@stel
 import {ArrowRight,CheckCircle2,KeyRound,LockKeyhole,ShieldCheck,Wallet} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
+import {validAccountDestination,type AccountDestination} from "@/lib/account-destination";
 
 const PASSPHRASE="Test SDF Network ; September 2015";
-export function WalletSignIn({destination}:{destination:"/app"|"/app/send"|"/app/business"}){
+export function WalletSignIn({destination}:{destination:AccountDestination}){
  const router=useRouter();
  const [pending,setPending]=useState(false);
  const [error,setError]=useState("");
@@ -53,6 +54,7 @@ export function WalletSignIn({destination}:{destination:"/app"|"/app/send"|"/app
     body:JSON.stringify({address,signature:signed.signedMessage})
    });
    if(!verified.ok)throw Error("The sign-in proof could not be verified. Please try again.");
+   if(!validAccountDestination(destination))throw Error("Unsafe destination rejected.");
    router.replace(destination);router.refresh();
   }catch(e){setError(e instanceof Error?e.message:"Unable to complete sign-in.");}
   finally{setPending(false);setStep("");}

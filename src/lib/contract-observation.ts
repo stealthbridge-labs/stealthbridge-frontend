@@ -1,4 +1,4 @@
-import {isContractStrKey} from "./observer-activity";
+import {isContractStrKey} from "./observer-activity.ts";
 /** Exact public Testnet contract-instance observation, NOT smart-wallet ownership. */
 export interface ContractObservation {
  schema_version:1;

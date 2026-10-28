@@ -5,11 +5,12 @@ import {ArrowLeft,LockKeyhole} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {WalletSignIn} from "@/components/wallet-sign-in";
 import {currentWalletIdentity} from "@/lib/auth-server";
+import {validAccountDestination} from "@/lib/account-destination";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Sign in — StealthBridge",description:"Sign in to your Stellar Testnet StealthBridge workspace securely.",robots:{index:false,follow:false}};
 export default async function Login({searchParams}:{searchParams:Promise<{next?:string}>}){
  const params=await searchParams;
- const destination=params.next==="/app/send"||params.next==="/app/business"?params.next:"/app";
+ const destination=validAccountDestination(params.next)?params.next:"/app";
  const identity=await currentWalletIdentity();
  if(identity)redirect(destination);
  return <div className="access-page">

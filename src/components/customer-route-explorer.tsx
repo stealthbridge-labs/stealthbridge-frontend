@@ -209,6 +209,9 @@ export function CustomerRouteExplorer(){
       <div className="route-card-availability"><LockKeyhole size={16} aria-hidden/>
        <span>Transfers, quotes and payouts are not enabled.</span></div>
       <p className="route-card-reference">Record ID: <code>{row.id}</code></p>
+      <Link className="route-card-prepare" href={"/login?"+new URLSearchParams({
+       next:"/app/send?corridor="+row.id
+      }).toString()}>Review this route in your account <ArrowRight size={15} aria-hidden/></Link>
      </article>)}
     </div>:null}
     {state.status==="ready"&&state.pageError?<p role="alert" className="route-filter-error">

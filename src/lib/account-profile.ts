@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalStellarAccountAddress} from "./stellar-address.ts";
 export type ProfileUseCase="personal"|"business"|"both";
 export type ProfileInput={display_name:string;use_case:ProfileUseCase;residence_country:string|null};
 export type CustomerProfile=ProfileInput&{updated_at_unix:number};

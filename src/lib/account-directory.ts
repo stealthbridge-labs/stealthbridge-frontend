@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalStellarAccountAddress} from "./stellar-address.ts";
 export type OrganizationRole="owner"|"admin"|"operator"|"approver"|"viewer";
 export type AccountOrganization={id:string;display_name:string;role:OrganizationRole};
 export type AccountDirectory={

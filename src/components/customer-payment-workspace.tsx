@@ -12,6 +12,7 @@ import {preparePrivateTransfer} from "@/lib/private-transfer";
 import {activePublicContractAtAddress,validContractObservation,type ContractObservation} from "@/lib/contract-observation";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
+import {loadCustomerCorridorPreflight,type CustomerCorridorPreflight} from "@/lib/corridor-preflight";
 
 type Flow="send"|"business";
 type FetchState="loading"|"ready"|"error";
@@ -41,6 +42,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [moreLoading,setMoreLoading]=useState(false);
  const [moreError,setMoreError]=useState(false);
  const catalogGeneration=useRef(0);
+ const linkedRouteId=useRef<string|null>(null);
  const [corridorRevision,setCorridorRevision]=useState(0);
  const [corridorId,setCorridorId]=useState("");
  const [connected,setConnected]=useState<string|null>(identityAddress??null);
@@ -53,10 +55,11 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [reviewed,setReviewed]=useState(false);
  const [reviewPending,setReviewPending]=useState(false);
  const [reviewError,setReviewError]=useState<string|null>(null);
+ const [corridorPreflight,setCorridorPreflight]=useState<CustomerCorridorPreflight|null>(null);
  const reviewGeneration=useRef(0);
  const invalidateReview=useCallback(()=>{
   reviewGeneration.current++;
-  setReviewPending(false);setReviewError(null);setReviewed(false);
+  setReviewPending(false);setReviewError(null);setReviewed(false);setCorridorPreflight(null);
  },[]);
  const recipientRequest=useRef(0);
  const onWalletChange=useCallback((value:string|null)=>{setConnected(value);invalidateReview();},[invalidateReview]);
@@ -80,8 +83,21 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
   void (async()=>{
    try{
     const page=await loadCustomerCorridors(ctl.signal);
+    const url=new URL(window.location.href);
+    const selected=url.searchParams.getAll("corridor");
+    const requested=url.searchParams.size===1&&selected.length===1&&
+     /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(selected[0]??"")
+      ?selected[0]?.toLowerCase():null;
+    let linked=requested?page.items.find(item=>item.id.toLowerCase()===requested):null;
+    if(requested&&!linked){
+     try{linked=await loadVerifiedCustomerCorridor(requested,ctl.signal);}
+     catch{linked=null;}
+    }
     if(!ctl.signal.aborted&&generation===catalogGeneration.current){
-     setCorridors(page.items);setCorridorCursor(page.next_cursor);setCorridorState("ready");
+     linkedRouteId.current=linked&&!page.items.some(item=>item.id===linked.id)?linked.id:null;
+     setCorridors(linked&&linkedRouteId.current?[linked,...page.items]:page.items);
+     setCorridorId(linked?.id??"");
+     setCorridorCursor(page.next_cursor);setCorridorState("ready");
     }
    }catch{if(!ctl.signal.aborted&&generation===catalogGeneration.current)setCorridorState("error");}
   })();
@@ -95,9 +111,12 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
   try{
    const page=await loadCustomerCorridors(AbortSignal.timeout(9500),after);
    if(generation!==catalogGeneration.current)return;
-   if(page.items.some(item=>corridors.some(existing=>existing.id===item.id)))
-    throw Error("Duplicated corridor records.");
-   setCorridors(current=>[...current,...page.items]);
+   if(page.items.some(item=>corridors.some(existing=>existing.id===item.id&&
+      (item.id!==linkedRouteId.current||!sameCustomerCorridor(item,existing)))))
+    throw Error("Duplicated or changed corridor records.");
+   const additions=page.items.filter(item=>!corridors.some(existing=>existing.id===item.id));
+   if(page.items.some(item=>item.id===linkedRouteId.current))linkedRouteId.current=null;
+   setCorridors(current=>[...current,...additions]);
    setCorridorCursor(page.next_cursor);
   }catch{if(generation===catalogGeneration.current)setMoreError(true);}
   finally{if(generation===catalogGeneration.current)setMoreLoading(false);}
@@ -126,8 +145,9 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    // Fetch new server-side operator configuration and RPC-derived network
    // status; only the public corridor ID goes to StealthBridge's backend.
    // The amount, recipient and business reference remain browser-local.
-   const [current,statusResponse]=await Promise.all([
+   const [current,preflight,statusResponse]=await Promise.all([
     loadVerifiedCustomerCorridor(selected.id,AbortSignal.timeout(9000)),
+    loadCustomerCorridorPreflight(selected.id,AbortSignal.timeout(9000)),
     fetch("/api/public/status",{method:"GET",credentials:"omit",cache:"no-store",
      signal:AbortSignal.timeout(9000)})
    ]);
@@ -137,8 +157,14 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
     throw Error("A fresh, valid Testnet observation is required before review.");
    if(!sameCustomerCorridor(selected,current))
     throw Error("This payment route changed. Refresh the corridor directory and review the new details.");
+   if(!sameCustomerCorridor(current,preflight.corridor))
+    throw Error("The route changed between live checks. Refresh and try again.");
+   if(!preflight.network_fresh||preflight.ledger_sequence===null||
+      Math.abs(preflight.ledger_sequence-observed.ledger_sequence)>2)
+    throw Error("Testnet ledger observations are inconsistent. Refresh the network before reviewing.");
    if(generation!==reviewGeneration.current)return;
    setNetwork(observed);
+   setCorridorPreflight(preflight);
    setReviewed(true);
   }catch(error){
    if(generation===reviewGeneration.current){
@@ -288,6 +314,10 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <CheckCircle2 size={20} aria-hidden/><div><strong>Current route and Testnet observation rechecked · payment not submitted</strong>
         <p>{amount} {corridor!.asset_code} · {labelForCorridor(corridor!)}. {business?"Your reference is included in this browser-only review. ":""}
          This corridor record does not confirm liquidity, issuer support, fees, privacy proofs or payout readiness.</p>
+        <p>{corridorPreflight?.database_schema_ready?
+         "Core database schema verified for read-only operations. This is not financial readiness.":
+         "Platform database migration checks are incomplete. Account and payment services remain unavailable."}</p>
+        <p>Live Testnet ledger {corridorPreflight?.ledger_sequence?.toLocaleString()??"unavailable"} was checked for this route. Liquidity, issuer eligibility, privacy proofs, exchange rates and fees remain unverified.</p>
         <p>Transfer execution is not yet available. Nothing has been signed, charged or stored.</p>
        </div>
       </div>:null}

@@ -1052,3 +1052,10 @@
 .team-invite-safety{display:flex;align-items:flex-start;gap:10px;border-top:1px solid #3d675c;margin-top:20px;padding-top:17px;font-size:12px;color:#c8decd;line-height:1.8}
 .team-invite-safety svg{flex-shrink:0;color:#b6f5d2;margin-top:2px}
 @media(max-width:540px){.team-invite-panel{padding:18px}.team-invite-item button,.team-invite-form button{width:100%;justify-content:center}}
+
+/* Source-backed route preparation is a navigation action, never a Send button. */
+.route-card-prepare{display:inline-flex;align-items:center;gap:.5rem;margin-top:.7rem;
+ font-weight:650;font-size:.85rem;color:var(--foreground);text-decoration:underline;
+ text-underline-offset:4px;cursor:pointer}
+.route-card-prepare:hover{text-decoration-thickness:2px}
+.route-card-prepare:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:3px}
