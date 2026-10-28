@@ -270,7 +270,8 @@ test("active owner can invite and revoke a viewer, without finance permissions",
  let issued=false;
  let revoked=false;
  const actions:unknown[]=[];
- await page.route("**/api/account/team-invites",async route=>{
+ // Organization-scoped GETs include a query; match exact path and query.
+ await page.route("**/api/account/team-invites*",async route=>{
   const method=route.request().method();
   if(method==="POST"){
    const action=route.request().postDataJSON() as {action:string};

@@ -76,6 +76,24 @@ test("public route explorer requests server-filtered real rows and paginates wit
  expect(urls.some(query=>query.includes("after="))).toBe(true);
  await expect(page.getByRole("button",{name:/Submit settlement|Confirm and send/})).toHaveCount(0);
 });
+test("a real public corridor links into signed-in Send without leaking payment details",async({page})=>{
+ const id="9a1a395f-249c-4907-b657-d48df4b38d28";
+ await page.route("**/api/public/corridors*",route=>route.fulfill({
+  json:{items:[{id,origin_country:"NG",destination_country:"GH",
+   asset_code:"USDC",asset_issuer:null,privacy_rail:"private-payments"}],next_cursor:null}
+ }));
+ await page.goto("/routes");
+ const link=page.getByRole("link",{name:"Review this route in your account"});
+ await expect(link).toBeVisible();
+ const href=await link.getAttribute("href");
+ expect(href).not.toContain("amount");
+ expect(href).not.toContain("recipient");
+ expect(new URL(href!,"http://localhost").searchParams.get("next"))
+  .toBe("/app/send?corridor="+id);
+ await link.click();
+ await expect(page).toHaveURL(/\/login\?next=/);
+ await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
+});
 test("public filtered catalog rejects unknown, duplicated, or malformed query fields",async({request})=>{
  for(const value of ["?origin_country=ng","?origin_country=NGA",
   "?origin_country=NG&origin_country=GH","?privacy_rail=already-verified",
