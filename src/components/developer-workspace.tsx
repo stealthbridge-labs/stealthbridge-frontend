@@ -4,10 +4,11 @@ import Link from "next/link";
 import {Activity,ArrowLeft,BookOpen,Code2,RefreshCw,ShieldAlert} from "lucide-react";
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
-import {readBridge,readPlatformModules} from "@/lib/bridge-api";
+import {readBridge,readPlatformModules,readDependencyDiagnostics} from "@/lib/bridge-api";
 import type {Capabilities,ContractDiscovery,NetworkStatus,ServiceReadiness} from "@/lib/bridge-api";
 import type {PlatformCatalog} from "@/lib/platform-modules";
 import {assessDeveloperReadiness,type DeveloperReadiness} from "@/lib/developer-readiness";
+import type {DependencyDiagnostics} from "@/lib/dependency-diagnostics";
 
 const example=[
  'import { StealthBridgeClient } from "@stealthbridge/sdk";',
@@ -42,6 +43,14 @@ const businessExample=[
 
 export function DeveloperWorkspace(){
  const [revision,setRevision]=useState(0);
+ const [diagnostics,setDiagnostics]=useState<{loading:boolean;data:DependencyDiagnostics|null}>({loading:true,data:null});
+ useEffect(()=>{
+  const ctl=new AbortController();
+  void readDependencyDiagnostics(ctl.signal)
+   .then(data=>{if(!ctl.signal.aborted)setDiagnostics({loading:false,data});})
+   .catch(()=>{if(!ctl.signal.aborted)setDiagnostics({loading:false,data:null});});
+  return ()=>ctl.abort();
+ },[revision]);
  const [view,setView]=useState<{loading:boolean;assessment:DeveloperReadiness|null}>({
   loading:true,assessment:null,
  });
@@ -87,7 +96,7 @@ export function DeveloperWorkspace(){
       "One or more Testnet dependencies are unverified or unavailable."}
     </p>
     <Button type="button" variant="outline" size="sm" disabled={view.loading}
-      onClick={()=>{setView({loading:true,assessment:null});setRevision(x=>x+1);}}>
+      onClick={()=>{setView({loading:true,assessment:null});setDiagnostics({loading:true,data:null});setRevision(x=>x+1);}}>
       <RefreshCw size={16} aria-hidden/> Rerun checks
     </Button>
    </div>
@@ -107,6 +116,28 @@ export function DeveloperWorkspace(){
      </article>)}
     </div>
     {!state&&<p>Integration checks have not completed. No service readiness is assumed.</p>}
+   </section>
+   <section className="registry-panel" aria-label="Live Testnet dependency diagnostics"
+    style={{padding:"1.25rem",marginTop:"1.25rem"}} aria-live="polite">
+    <h2>Live infrastructure preflight</h2>
+    <p>Independent, short-lived Testnet observations from the backend. These checks reveal
+     missing migrations versus unreachable storage without exposing database credentials.</p>
+    {diagnostics.loading?<p role="status">Checking live dependencies…</p>:
+     diagnostics.data?<div>
+      <p>Stellar RPC: <strong>{diagnostics.data.rpc}</strong> · Database: <strong>{diagnostics.data.database}</strong>.</p>
+      <p role="status">{diagnostics.data.database==="schema-incomplete"?
+       "PostgreSQL responded, but the required SQLx migration/schema checks did not pass. Review protected migration records before enabling business features.":
+       diagnostics.data.database==="unreachable"?
+       "PostgreSQL is configured but unreachable. Check database connectivity and managed-instance availability.":
+       diagnostics.data.database==="not-configured"?
+       "The backend has no database configured. Database-backed business features remain unavailable.":
+       diagnostics.data.read_only_ready?
+       "API dependency probes passed; this does not enable payment execution.":
+       "The Stellar network is unavailable or stale. Read-only service readiness is degraded."}</p>
+      <p>Observed {new Date(diagnostics.data.observed_at_unix*1000).toLocaleString()}.
+       Privacy verified: <strong>No</strong>. Payment execution: <strong>Disabled</strong>.
+       Fiat payouts: <strong>Disabled</strong>.</p>
+     </div>:<p role="alert">Dependency diagnostics are unavailable or invalid. No readiness is assumed.</p>}
    </section>
    <div className="registry-boundary">
     <ShieldAlert size={19} aria-hidden/>

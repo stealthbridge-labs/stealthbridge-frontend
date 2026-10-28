@@ -7,6 +7,7 @@ import {validGovernanceRelease,type GovernanceRelease} from "./governance-releas
 import {validGovernanceCode,type GovernanceCodeObservation} from "./governance-code";
 import {validGovernanceAdministrator,type GovernanceAdministratorObservation} from "./governance-administrator";
 import {validGovernanceSnapshot,type GovernanceSnapshot} from "./governance-snapshot";
+import {validDependencyDiagnostics,type DependencyDiagnostics} from "./dependency-diagnostics";
 import type {
  ApiNetworkStatus,ApiCapabilities,ApiCorridor,ApiCorridorPage,
  ApiTransactionObservation,ApiLedgerCheckpoint,ApiReadiness,ApiContractDiscovery
@@ -126,6 +127,13 @@ function contractDiscoveryResponse(value:unknown):value is ContractDiscovery{
  // against an audited source snapshot. No invented or partial ABI accepted.
  if(!sameCanonicalJson(i,canonicalSorobanInterface))return false;
  return true;
+}
+/** Non-financial public diagnostics are validated before entering the UI. */
+export async function readDependencyDiagnostics(signal?:AbortSignal):Promise<DependencyDiagnostics>{
+ const data=await read<unknown>("v1/diagnostics",signal);
+ if(!validDependencyDiagnostics(data,Math.floor(Date.now()/1000)))
+  throw new Error("The Testnet dependency diagnostic was stale or inconsistent.");
+ return data;
 }
 export async function readBridge<T>(endpoint:"network"|"corridors"|"capabilities"|"observer"|"contracts"|"ready",signal?:AbortSignal){
  const value=await read<unknown>((endpoint==="ready"?"":"v1/")+endpoint,signal);
