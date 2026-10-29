@@ -8,6 +8,7 @@ import {
  parseBusinessBatchCsv,loadBusinessCorridorBatch,assessBusinessBatch,
  type BusinessBatchDraft,type CorridorBatch
 } from "@/lib/business-batch";
+import {loadBusinessCorridorBatchPreflight,matchingCorridorBatches,type CorridorBatchPreflight} from "@/lib/business-batch-preflight";
 
 const HEADER="corridor_id,recipient,amount,reference";
 type State="idle"|"loading"|"reviewed"|"unavailable";
@@ -15,6 +16,7 @@ export function BusinessBatchPlanner(){
  const [input,setInput]=useState(HEADER);
  const [draft,setDraft]=useState<BusinessBatchDraft|null>(null);
  const [coverage,setCoverage]=useState<CorridorBatch|null>(null);
+ const [preflight,setPreflight]=useState<CorridorBatchPreflight|null>(null);
  const [state,setState]=useState<State>("idle");
  const [error,setError]=useState<string|null>(null);
  const controller=useRef<AbortController|null>(null);
@@ -22,13 +24,32 @@ export function BusinessBatchPlanner(){
  useEffect(()=>()=>{controller.current?.abort();revision.current++;},[]);
  const update=(value:string)=>{
   controller.current?.abort();revision.current++;
-  setInput(value);setDraft(null);setCoverage(null);setState("idle");setError(null);
+  setInput(value);setDraft(null);setCoverage(null);setPreflight(null);setState("idle");setError(null);
+ };
+ const importCsv=async(file:File|undefined)=>{
+  if(!file)return;
+  const ticket=++revision.current;
+  controller.current?.abort();
+  setDraft(null);setCoverage(null);setPreflight(null);setState("idle");setError(null);
+  if(file.size===0||file.size>32768||!file.name.toLowerCase().endsWith(".csv")){
+   setError("Choose a .csv file no larger than 32 KB. Nothing was imported.");return;
+  }
+  try{
+   // Read in this tab only. File contents are never posted or stored.
+   const text=await file.text();
+   if(ticket!==revision.current)return;
+   parseBusinessBatchCsv(text);
+   update(text);
+  }catch(error){
+   if(ticket===revision.current)setError(error instanceof Error?
+    error.message:"The selected file could not be read.");
+  }
  };
  const review=async()=>{
   controller.current?.abort();
   const current=++revision.current;
   const ctl=new AbortController();controller.current=ctl;
-  setDraft(null);setCoverage(null);setState("loading");setError(null);
+  setDraft(null);setCoverage(null);setPreflight(null);setState("loading");setError(null);
   let parsed:BusinessBatchDraft;
   try{
    parsed=parseBusinessBatchCsv(input);
@@ -39,13 +60,21 @@ export function BusinessBatchPlanner(){
   // No CSV contents, recipient, reference, amount or wallet identity is sent.
   setDraft(parsed);
   try{
-   const verified=await loadBusinessCorridorBatch(parsed.routeIds,ctl.signal);
+   const [verified,live]=await Promise.all([
+    loadBusinessCorridorBatch(parsed.routeIds,ctl.signal),
+    loadBusinessCorridorBatchPreflight(parsed.routeIds,ctl.signal)
+   ]);
+   if(!matchingCorridorBatches(verified,live.batch))
+    throw Error("The public route configuration changed between live checks.");
    if(ctl.signal.aborted||revision.current!==current)return;
-   setCoverage(verified);setState("reviewed");
-  }catch{
+   setCoverage(verified);setPreflight(live);setState("reviewed");
+  }catch(error){
    if(ctl.signal.aborted||revision.current!==current)return;
    setState("unavailable");
-   setError("The live operator catalog could not be verified. Review has not succeeded.");
+   const known=error instanceof Error&&
+    /^(The public route configuration changed|Live batch preflight |The public corridor batch )/.test(error.message);
+   setError(known?error.message:
+    "The live operator catalog could not be verified. Review has not succeeded.");
   }
  };
  const assessment=draft&&coverage?assessBusinessBatch(draft,coverage):null;
@@ -75,6 +104,14 @@ export function BusinessBatchPlanner(){
      placeholder={HEADER}
      aria-describedby="batch-csv-help" className="batch-textarea"/>
     <p id="batch-csv-help" className="batch-help">Use canonical lowercase corridor IDs from the public catalog, Stellar G-address recipients, plain decimal amounts (up to 7 fractional digits), and unique references (3–64 characters). Maximum 50 rows, eight corridors and 32 KB. Do not include bank details or sensitive notes.</p>
+    <label htmlFor="batch-import" className="batch-label">Or import a CSV from this device</label>
+    <input id="batch-import" type="file" accept=".csv,text/csv"
+     className="batch-file-input" onChange={event=>{
+      const file=event.currentTarget.files?.[0];
+      event.currentTarget.value="";
+      void importCsv(file);
+     }}/>
+    <p className="batch-help">Files are read locally in this browser tab. Only the public corridor IDs are used for later server checks.</p>
     <div className="batch-actions">
      <Button type="button" disabled={state==="loading"||input===HEADER}
       onClick={()=>void review()}><RefreshCw size={16} aria-hidden/> Check configured corridors</Button>
@@ -99,6 +136,19 @@ export function BusinessBatchPlanner(){
       <div><strong>{assessment.configuredRows}</strong><span>Rows with catalog records</span></div>
       <div><strong>{assessment.unconfiguredRows}</strong><span>Rows without catalog records</span></div>
      </div>
+     {preflight?<div className="batch-system-readiness" role="status">
+      <strong>Independent live infrastructure checks</strong>
+      <dl>
+       <div><dt>Stellar Testnet observation</dt><dd>{preflight.network_fresh?
+        "Fresh · ledger "+preflight.ledger_sequence?.toLocaleString():"Stale or unavailable"}</dd></div>
+       <div><dt>Platform database schema</dt><dd>{preflight.database_schema_ready?
+        "Required migrations present":"Incomplete or unavailable"}</dd></div>
+       <div><dt>Read-only dependencies</dt><dd>{preflight.read_only_dependencies_ready?
+        "Operational for metadata reads":"Degraded — not ready"}</dd></div>
+      </dl>
+      <p>Observed {new Date(preflight.observed_at_unix*1000).toLocaleString()}.
+       These are informational checks, not permission to move money.</p>
+     </div>:null}
      <p className="batch-honesty"><ShieldCheck size={18} aria-hidden/>
       Route records are only public metadata. Liquidity, asset precision, provider support, FX rates, compliance, privacy proofs and actual settlement remain unverified.</p>
     </div>:null}

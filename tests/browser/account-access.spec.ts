@@ -145,17 +145,25 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  const batchId="9a1a395f-249c-4907-b657-d48df4b38d28";
  const batchRecipient="GAAACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB7JZX";
  const calls:string[]=[];
- await page.route("**/api/public/corridors/batch*",route=>{
+ await page.route("**/api/public/corridors/batch**",route=>{
   calls.push(route.request().url());
   expect(route.request().method()).toBe("GET");
-  return route.fulfill({json:{
+  const catalog={
    schema_version:1,network:"testnet",source:"operator-corridor-batch",
    requested_ids:[batchId],items:[{id:batchId,
     origin_country:"NG",destination_country:"GH",asset_code:"USDC",
     asset_issuer:null,privacy_rail:"private-payments"}],
    missing_ids:[],all_configured:true,payment_execution_enabled:false,
    privacy_verified:false,fiat_payouts_enabled:false
-  }});
+  };
+  return route.fulfill({json:route.request().url().includes("/preflight")?{
+   schema_version:1,network:"testnet",source:"live-batch-metadata-preflight",
+   observed_at_unix:Math.floor(Date.now()/1000),batch:catalog,
+   network_fresh:true,ledger_sequence:12345,database_schema_ready:false,
+   read_only_dependencies_ready:false,payment_execution_enabled:false,
+   fee_quote_available:false,liquidity_verified:false,issuer_verified:false,
+   privacy_verified:false,fiat_payouts_enabled:false
+  }:catalog});
  });
  await page.goto("/app/business/batch");
  await expect(page.getByRole("heading",{name:"One workspace. Many payments to plan."})).toBeVisible();
@@ -165,11 +173,20 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.getByRole("button",{name:/Check configured corridors/}).click();
  await expect(page.getByText("Draft instruction review")).toBeVisible();
  await expect(page.getByRole("cell").filter({hasText:"25.75"})).toBeVisible();
- expect(calls).toHaveLength(1);
+ expect(calls).toHaveLength(2);
  expect(calls[0]).toContain(batchId);
  expect(calls[0]).not.toContain(batchRecipient);
  expect(calls[0]).not.toContain("25.75");
+ await expect(page.getByText("Independent live infrastructure checks")).toBeVisible();
+ await expect(page.getByText("Incomplete or unavailable")).toBeVisible();
  await expect(page.getByText("Financial execution unavailable")).toBeVisible();
+ // Import a real in-memory CSV attachment, without sending its bytes to APIs.
+ await page.locator('input[type="file"]').setInputFiles({
+  name:"batch.csv",mimeType:"text/csv",
+  buffer:Buffer.from("corridor_id,recipient,amount,reference\n"+
+   batchId+","+batchRecipient+",1.25,FILE-IMPORT")
+ });
+ await expect(page.getByLabel(/CSV instructions/)).toHaveValue(/FILE-IMPORT/);
  await page.getByRole("button",{name:/Clear drafts/}).click();
  await expect(page.getByText("Draft instruction review")).toHaveCount(0);
  // The browser fixture never writes Neon. It verifies the customer intent,
