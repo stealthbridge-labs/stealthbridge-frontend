@@ -9,7 +9,7 @@ import {WalletConnect} from "@/components/wallet-connect";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
-import {activePublicContractAtAddress,validContractObservation,type ContractObservation} from "@/lib/contract-observation";
+import {currentRecipientContract,validRecipientPresence,type RecipientPresence} from "@/lib/recipient-presence";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
 import {loadCustomerCorridorPreflight,type CustomerCorridorPreflight} from "@/lib/corridor-preflight";
@@ -23,12 +23,12 @@ function isRecipient(value:string){return !!canonicalStellarAccountAddress(value
 function labelForCorridor(item:CustomerCorridor){
  return country(item.origin_country)+" → "+country(item.destination_country)+" · "+item.asset_code;
 }
-async function inspectRecipient(address:string):Promise<ContractObservation>{
- const response=await fetch("/api/public/contract/"+address,{method:"GET",cache:"no-store",credentials:"omit",
+async function inspectRecipient(address:string):Promise<RecipientPresence>{
+ const response=await fetch("/api/public/recipient/"+address,{method:"GET",cache:"no-store",credentials:"omit",
   signal:AbortSignal.timeout(9500)});
  if(!response.ok)throw new Error("We couldn't confirm this contract on Testnet.");
  const result:unknown=await response.json();
- if(!validContractObservation(result,address))throw new Error("The contract response could not be verified.");
+ if(!validRecipientPresence(result,address))throw new Error("The contract response could not be verified.");
  return result;
 }
 export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;identityAddress?:string}){
@@ -49,7 +49,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [recipient,setRecipient]=useState("");
  const [amount,setAmount]=useState("");
  const [reference,setReference]=useState("");
- const [recipientEvidence,setRecipientEvidence]=useState<ContractObservation|null>(null);
+ const [recipientEvidence,setRecipientEvidence]=useState<RecipientPresence|null>(null);
  const [recipientPending,setRecipientPending]=useState(false);
  const [recipientError,setRecipientError]=useState<string|null>(null);
  const [reviewed,setReviewed]=useState(false);
@@ -125,7 +125,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const networkFresh=!!network&&validPublicWalletStatus(network);
  const recipientAddress=recipient.trim();
  const contractRecipient=isContractStrKey(recipientAddress);
- const contractPresent=!contractRecipient||activePublicContractAtAddress(recipientEvidence,recipientAddress);
+ const contractPresent=!contractRecipient||currentRecipientContract(recipientEvidence,recipientAddress);
  const rail=corridor?.privacy_rail??(business?"confidential-token":"private-payments");
  const prepared=preparePrivateTransfer({
   sender:connected,recipient:recipientAddress,amount,rail,backendTestnetFresh:networkFresh
@@ -145,12 +145,15 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    // Fetch new server-side operator configuration and RPC-derived network
    // status; only the public corridor ID goes to StealthBridge's backend.
    // The amount, recipient and business reference remain browser-local.
-   const [current,preflight,statusResponse]=await Promise.all([
+   const [current,preflight,statusResponse,recipientStatus]=await Promise.all([
     loadVerifiedCustomerCorridor(selected.id,AbortSignal.timeout(9000)),
     loadCustomerCorridorPreflight(selected.id,AbortSignal.timeout(9000)),
     fetch("/api/public/status",{method:"GET",credentials:"omit",cache:"no-store",
-     signal:AbortSignal.timeout(9000)})
+     signal:AbortSignal.timeout(9000)}),
+    contractRecipient?inspectRecipient(recipientAddress):Promise.resolve(null)
    ]);
+   if(contractRecipient&&(!recipientStatus||!currentRecipientContract(recipientStatus,recipientAddress)))
+    throw Error("We could not verify the recipient contract right now.");
    if(!statusResponse.ok)throw Error("The Testnet network observation is unavailable.");
    const observed:unknown=await statusResponse.json();
    if(!validPublicWalletStatus(observed))
@@ -317,7 +320,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
         <p>{corridorPreflight?.database_schema_ready?
          "Core database schema verified for read-only operations. This is not financial readiness.":
          "Platform database migration checks are incomplete. Account and payment services remain unavailable."}</p>
-        <p>Live Testnet ledger {corridorPreflight?.ledger_sequence?.toLocaleString()??"unavailable"} was checked for this route. Liquidity, issuer eligibility, privacy proofs, exchange rates and fees remain unverified.</p>
+        <p>Route and network checks were refreshed. Liquidity, recipient asset support, privacy verification, exchange rates and fees remain unverified.</p>
         <p>Transfer execution is not yet available. Nothing has been signed, charged or stored.</p>
        </div>
       </div>:null}
@@ -330,7 +333,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <div><strong>Settlement tracking</strong><span>Awaiting independently reconciled payment and payout records</span></div>
        <div><strong>Confidential amounts</strong><span>Requires verified token issuers and zero-knowledge proof integration</span></div>
       </div>
-      <Link href="/platform" className="payment-inline-link">Explore business infrastructure <ArrowUpRight size={15} aria-hidden/></Link>
+      <Link href="/platform" className="payment-inline-link">Learn about privacy & trust <ArrowUpRight size={15} aria-hidden/></Link>
      </section>:null}
     </div>
     <aside className="payment-stack" aria-label="Payment account and summary">
@@ -340,7 +343,10 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       {identityAddress?<div className="account-payment-identity">
        <div><CheckCircle2 size={19} aria-hidden/><strong>Signed in securely</strong></div>
        <p>Your Stellar account identity was verified using a signed challenge.</p>
-       <code title={identityAddress}>{identityAddress}</code>
+       <details className="account-identity-detail">
+        <summary>View my public wallet address</summary>
+        <code>{identityAddress}</code>
+       </details>
        <p className="payment-hint">Your wallet signature gives account access only. This session cannot authorize a transfer or business approval.</p>
        <Link href="/app" className="payment-inline-link">Account overview <ArrowUpRight size={14} aria-hidden/></Link>
       </div>:<WalletConnect compact expectedNetworkPassphrase={network?.passphrase}
@@ -368,7 +374,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
     </aside>
    </div>
    <footer className="payment-footer">
-    <span>Stellar Testnet · Real wallet and corridor reads · Payments disabled</span>
+    <span>Secure planning · No funding or transfer available yet</span>
     <Link href={identityAddress?"/app":"/login"}>{identityAddress?"Account overview":"Sign in"} <ArrowUpRight size={14} aria-hidden/></Link>
    </footer>
   </Content>

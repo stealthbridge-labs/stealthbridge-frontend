@@ -12,10 +12,10 @@ export function AccountShell({address,children}:{address:string;children:React.R
     <Link href="/app/business/batch"><FileSpreadsheet size={17} aria-hidden/> Batch planner</Link>
     {process.env.STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED==="true"?<Link href="/app/settings"><Settings2 size={17} aria-hidden/> Settings</Link>:null}
    </nav>
-   <div className="account-identity"><span title={address}>{address.slice(0,6)}…{address.slice(-5)}</span><AccountLogout/></div>
+   <div className="account-identity"><span aria-label="Signed-in customer account">My account</span><AccountLogout/></div>
   </header>
   <main id="main-content" className="account-main">{children}</main>
-  <footer className="account-footer"><span><ShieldCheck size={15} aria-hidden/> Testnet account access · Signing does not authorize payments</span>
+  <footer className="account-footer"><span><ShieldCheck size={15} aria-hidden/> Your account, your control · No transfers available yet</span>
    <Link href="/">Explore StealthBridge <ArrowUpRight size={15} aria-hidden/></Link></footer>
  </div>;
 }

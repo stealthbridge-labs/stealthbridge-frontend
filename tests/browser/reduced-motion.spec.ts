@@ -4,7 +4,7 @@ test("reduced motion keeps content visible and interactions usable",async({page}
  await page.goto("/");
 
  expect(await page.evaluate(()=>matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
- await expect(page.getByRole("heading",{level:1,name:"Move value. Not exposure."})).toBeVisible();
+ await expect(page.getByRole("heading",{level:1,name:"Money moves. Life stays yours."})).toBeVisible();
  const products=page.locator("#products");
  await expect(products).toBeVisible();
  await expect(products).toHaveCSS("opacity","1");

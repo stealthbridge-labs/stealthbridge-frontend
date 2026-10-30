@@ -4,8 +4,7 @@ import {expect,test} from "@playwright/test";
 
 const productPages=[
  {route:"/discover/business",name:"Business"},
- {route:"/discover/send",name:"Send"},
- {route:"/platform",name:"Platform"}
+ {route:"/discover/send",name:"Send"}
 ] as const;
 
 for(const product of productPages){

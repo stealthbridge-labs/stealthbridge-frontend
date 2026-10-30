@@ -15,6 +15,8 @@ function backend():URL|null{
 }
 /** Inspect a public C-address only after the visitor explicitly requests it. */
 export async function GET(_request:Request,context:{params:Promise<{address:string}>}){
+ if(process.env.STEALTHBRIDGE_SITE_MODE!=="preview")
+  return NextResponse.json({code:"NOT_FOUND"},{status:404,headers:{"cache-control":"no-store"}});
  const {address}=await context.params;
  if(!isContractStrKey(address))return NextResponse.json({code:"INVALID_CONTRACT_ADDRESS"},{status:400});
  const origin=backend();

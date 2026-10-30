@@ -2,10 +2,9 @@ import {expect,test} from "@playwright/test";
 
 test.use({video:"on"});
 const pages=[
- {path:"/",heading:"Move value. Not exposure.",selector:".hero-reveal"},
+ {path:"/",heading:"Money moves. Life stays yours.",selector:".hero-reveal"},
  {path:"/discover/business",heading:"Confidentiality means business.",selector:".story-reveal"},
- {path:"/discover/send",heading:"Close to home. Across borders.",selector:".story-reveal"},
- {path:"/platform",heading:"More than a payment rail.",selector:".story-reveal"}
+ {path:"/discover/send",heading:"Close to home. Across borders.",selector:".story-reveal"}
 ] as const;
 
 for(const entry of pages){

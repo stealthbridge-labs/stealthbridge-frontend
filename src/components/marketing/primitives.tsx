@@ -9,7 +9,7 @@ export function ProductNavigation({current,menuOpen,onNavigate}:{
 }){
  return <nav data-slot="product-navigation" aria-label="Product navigation"
   className={menuOpen?"story-links story-links-open":"story-links"}>
-  <Link onClick={onNavigate} href="/platform" aria-current={current==="platform"?"page":undefined}>Platform</Link>
+  <Link onClick={onNavigate} href="/platform" aria-current={current==="platform"?"page":undefined}>Privacy & trust</Link>
   <Link onClick={onNavigate} href="/business" aria-current={current==="business"?"page":undefined}>Business</Link>
   <Link onClick={onNavigate} href="/send" aria-current={current==="send"?"page":undefined}>Send</Link>
  </nav>;

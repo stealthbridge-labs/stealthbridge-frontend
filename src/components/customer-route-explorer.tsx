@@ -4,6 +4,7 @@ import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import Link from "next/link";
 import {ArrowRight,Check,Clock3,Globe2,LockKeyhole,RefreshCw,Search,ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import {COUNTRIES,countryName} from "@/lib/customer-countries";
 import {
  loadCustomerCorridors,validCustomerCorridorFilters,
  type CustomerCorridor,type CustomerCorridorFilters
@@ -22,8 +23,8 @@ const initial:ResultState={
  status:"loading",rows:[],next:null,paging:false,error:null,pageError:null,checkedAt:null
 };
 const countryCode=(value:string)=>value.trim().toUpperCase();
-const railLabel=(rail:CustomerCorridor["privacy_rail"])=>
- rail==="private-payments"?"Private payments (research)":"Confidential tokens (research)";
+const privacyText=(rail:CustomerCorridor["privacy_rail"])=>
+ rail==="private-payments"?"Payment relationship protection under review":"Amount protection under review";
 const formattedTime=()=>new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
 function urlFilters():CustomerCorridorFilters|null{
  const params=new URLSearchParams(window.location.search);
@@ -86,7 +87,7 @@ export function CustomerRouteExplorer(){
    ...(rail?{privacy_rail:rail as CustomerCorridorFilters["privacy_rail"]}:{})
   };
   if(!validCustomerCorridorFilters(next)){
-   setValidation("Enter two-letter country codes and select a supported research rail.");
+   setValidation("Choose valid sending and receiving countries.");
    return;
   }
   setValidation(null);
@@ -139,40 +140,36 @@ export function CustomerRouteExplorer(){
  return <div className="route-explorer">
   <div className="route-explorer-grid">
    <section className="route-filter-panel" aria-labelledby="routes-filter-title">
-    <div className="route-mini-label"><Search size={16} aria-hidden/> YOUR SEARCH</div>
-    <h2 id="routes-filter-title">Find a route worth exploring.</h2>
-    <p className="route-filter-description">Browse real operator-configured corridors. A route being listed does not mean payments are open.</p>
+    <div className="route-mini-label"><Search size={16} aria-hidden/> FIND YOUR WAY</div>
+    <h2 id="routes-filter-title">Where are you sending money?</h2>
+    <p className="route-filter-description">Choose where money starts and where it needs to go. We only show routes we can verify—never invented prices or availability.</p>
     <form onSubmit={apply} className="route-filter-form">
      <label htmlFor="route-origin">Sending from</label>
-     <input id="route-origin" value={origin} onChange={e=>setOrigin(e.target.value.toUpperCase())}
-      placeholder="Country code, e.g. NG" autoComplete="off" autoCapitalize="characters"
-      maxLength={2} pattern="[A-Za-z]{2}" title="Two-letter country code"/>
-     <label htmlFor="route-destination">Receiving in</label>
-     <input id="route-destination" value={destination}
-      onChange={e=>setDestination(e.target.value.toUpperCase())}
-      placeholder="Country code, e.g. GH" autoComplete="off" autoCapitalize="characters"
-      maxLength={2} pattern="[A-Za-z]{2}" title="Two-letter country code"/>
-     <label htmlFor="route-privacy">Payment technology</label>
-     <select id="route-privacy" value={rail} onChange={e=>setRail(e.target.value)}>
-      <option value="">All researched technologies</option>
-      <option value="private-payments">Private payments</option>
-      <option value="confidential-token">Confidential tokens</option>
+     <select id="route-origin" value={origin} onChange={e=>setOrigin(e.target.value)}>
+      <option value="">Any sending country</option>
+      {COUNTRIES.map(([code,name])=><option key={code} value={code}>{name}</option>)}
      </select>
+     <label htmlFor="route-destination">Receiving in</label>
+     <select id="route-destination" value={destination} onChange={e=>setDestination(e.target.value)}>
+      <option value="">Any receiving country</option>
+      {COUNTRIES.map(([code,name])=><option key={code} value={code}>{name}</option>)}
+     </select>
+
      {validation?<p role="alert" className="route-filter-error">{validation}</p>:null}
      <div className="route-filter-actions">
-      <Button type="submit">Explore routes <ArrowRight size={16} aria-hidden/></Button>
+      <Button type="submit">Check this route <ArrowRight size={16} aria-hidden/></Button>
       <Button type="button" variant="outline" onClick={reset}>Clear</Button>
      </div>
     </form>
     <div className="route-filter-footnote"><ShieldCheck size={17} aria-hidden/>
-     <span>Searches only public corridor metadata. No wallet, recipient details, or funds required.</span>
+     <span>No account needed to explore. Your recipient and amount stay private.</span>
     </div>
    </section>
    <section className="route-results" aria-labelledby="routes-results-title">
     <div className="route-results-heading">
-     <div><div className="route-mini-label"><Globe2 size={16} aria-hidden/> STELLAR TESTNET</div>
-      <h2 id="routes-results-title">Corridors in the catalog</h2>
-      <p>Real backend records, not live payment offers or a guarantee of delivery.</p>
+     <div><div className="route-mini-label"><Globe2 size={16} aria-hidden/> PAYMENT ROUTES</div>
+      <h2 id="routes-results-title">Your route information</h2>
+      <p>We show only configurations we can verify. A listed route is not yet an open payment service.</p>
      </div>
      <Button type="button" variant="outline" size="sm"
       disabled={state.status==="loading"||state.paging} onClick={refresh}>
@@ -186,29 +183,31 @@ export function CustomerRouteExplorer(){
      {state.checkedAt?<span>Last checked at {state.checkedAt}</span>:null}
     </div>
     {state.status==="loading"?<div className="route-state" role="status">
-     <Clock3 size={26} aria-hidden/><p>Checking actual corridor records. No routes are preloaded.</p>
+     <Clock3 size={26} aria-hidden/><p>Checking current route configurations.</p>
     </div>:null}
     {state.status==="error"?<div className="route-state route-state-error" role="alert">
      <Globe2 size={28} aria-hidden/>
      <h3>We can't verify routes right now.</h3>
-     <p>{state.error} We won't replace live data with sample corridors.</p>
+     <p>{state.error} We won't show made-up availability or rates.</p>
      <Button type="button" variant="outline" onClick={refresh}>Try again</Button>
     </div>:null}
     {state.status==="ready"&&state.rows.length===0?<div className="route-state" role="status">
      <Globe2 size={29} aria-hidden/>
-     <h3>{narrowed?"No configured routes match these filters.":"No configured routes are listed yet."}</h3>
-     <p>{narrowed?"Try clearing a filter. This is the result of the actual catalog search, not a claim that no financial route exists worldwide.":"Operators haven't enabled a corridor in the public catalog. StealthBridge cannot quote or send funds through these routes."}</p>
+     <h3>{narrowed?"We aren’t ready to offer this route yet.":"We’re preparing our first payment routes."}</h3>
+     <p>{narrowed?"Try another sending or receiving country. We do not show routes that have not been configured.":"As we verify partners and routes, they will appear here. We are not accepting transfers yet."}</p>
     </div>:null}
     {state.status==="ready"&&state.rows.length>0?<div className="route-results-list">
      {state.rows.map(row=><article className="route-card" key={row.id}>
-      <div className="route-card-top"><span className="route-record-tag"><Check size={14} aria-hidden/> Catalog record</span>
-       <span className="route-record-network">Testnet only</span></div>
-      <h3 aria-label={row.origin_country+" to "+row.destination_country}>{row.origin_country} <span aria-hidden>→</span> {row.destination_country}</h3>
-      <p className="route-card-detail">Declared asset: <strong>{row.asset_code}</strong></p>
-      <p className="route-card-detail">{railLabel(row.privacy_rail)}</p>
-      <div className="route-card-availability"><LockKeyhole size={16} aria-hidden/>
-       <span>Transfers, quotes and payouts are not enabled.</span></div>
-      <p className="route-card-reference">Record ID: <code>{row.id}</code></p>
+      <div className="route-card-top"><span className="route-record-tag"><Check size={14} aria-hidden/> Configured for review</span>
+       <span className="route-record-network">Transfers not open yet</span></div>
+      <h3 aria-label={row.origin_country+" to "+row.destination_country}>
+       <span className="route-city">{countryName(row.origin_country)}</span>
+       <span aria-hidden className="route-city-arrow">→</span>
+       <span className="route-city">{countryName(row.destination_country)}</span></h3>
+      <p className="route-card-detail">Sending asset: <strong>{row.asset_code}</strong></p>
+      <p className="route-card-detail"><LockKeyhole size={14} aria-hidden/> {privacyText(row.privacy_rail)}</p>
+      <div className="route-card-availability"><Clock3 size={16} aria-hidden/>
+       <span>Pricing and transfers are not open on this route yet.</span></div>
       <Link className="route-card-prepare" href={"/login?"+new URLSearchParams({
        next:"/app/send?corridor="+row.id
       }).toString()}>Review this route in your account <ArrowRight size={15} aria-hidden/></Link>
@@ -228,8 +227,8 @@ export function CustomerRouteExplorer(){
   </div>
   <aside className="route-explorer-note" aria-label="Route availability and pricing">
    <LockKeyhole size={23} aria-hidden/><div>
-    <h2>What about exchange rates and fees?</h2>
-    <p>No executable quote, exchange rate, fee breakdown or delivery estimate is available. Catalog entries are not a promise of liquidity, regulated provider support, cryptographic privacy, or an actual payout.</p>
+    <h2>What will my recipient actually receive?</h2>
+    <p>You deserve to see the exact receiving amount, exchange rate, fees and delivery estimate before paying. We are not issuing quotes or accepting transfers until those can be confirmed with real providers.</p>
     <div className="route-note-links"><Link href="/send">About personal transfers <ArrowRight size={14} aria-hidden/></Link>
      <Link href="/business">For businesses <ArrowRight size={14} aria-hidden/></Link></div>
    </div>

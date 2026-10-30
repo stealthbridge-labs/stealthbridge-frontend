@@ -1,10 +1,10 @@
 import {expect,test} from "@playwright/test";
 
 const publicRoutes=[
- {path:"/",title:/StealthBridge \| Confidential payments/,heading:"Move value. Not exposure."},
+ {path:"/",title:/StealthBridge \| Confidential payments/,heading:"Money moves. Life stays yours."},
  {path:"/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
  {path:"/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."},
- {path:"/platform",title:/StealthBridge Platform/,heading:"More than a payment rail."},
+ {path:"/platform",title:/Privacy & trust/,heading:"Your money is personal. It should feel that way."},
  {path:"/discover/business",title:/StealthBridge Business/,heading:"Confidentiality means business."},
  {path:"/discover/send",title:/StealthBridge Send/,heading:"Close to home. Across borders."}
 ] as const;
@@ -42,10 +42,10 @@ test("public route explorer stays wallet-free, shows actual empty state and no m
  }));
  const response=await page.goto("/routes");
  expect(response?.status()).toBe(200);
- await expect(page.getByRole("heading",{level:1,name:/Explore corridors/})).toBeVisible();
- await expect(page.getByRole("heading",{name:"No configured routes are listed yet."})).toBeVisible();
- await expect(page.getByRole("heading",{name:"What about exchange rates and fees?"})).toBeVisible();
- await expect(page.getByRole("button",{name:/Explore routes/})).toBeVisible();
+ await expect(page.getByRole("heading",{level:1,name:/Where should your money go next/})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"We’re preparing our first payment routes."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"What will my recipient actually receive?"})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Check this route/})).toBeVisible();
  await expect(page.getByRole("button",{name:/Connect Freighter|Submit settlement|Confirm and send/})).toHaveCount(0);
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
  expect(overflow).toBeLessThanOrEqual(1);
@@ -64,10 +64,10 @@ test("public route explorer requests server-filtered real rows and paginates wit
  });
  await page.goto("/routes");
  await expect(page.getByRole("heading",{name:"NG to GH"})).toBeVisible();
- await expect(page.getByText("Transfers, quotes and payouts are not enabled.")).toBeVisible();
- await page.getByLabel("Sending from").fill("ng");
- await page.getByLabel("Receiving in").fill("gh");
- await page.getByRole("button",{name:/Explore routes/}).click();
+ await expect(page.getByText("Pricing and transfers are not open on this route yet.")).toBeVisible();
+ await page.getByLabel("Sending from").selectOption("NG");
+ await page.getByLabel("Receiving in").selectOption("GH");
+ await page.getByRole("button",{name:/Check this route/}).click();
  await expect(page).toHaveURL(/origin_country=NG.*destination_country=GH/);
  await expect(page.getByRole("heading",{name:"NG to GH"})).toBeVisible();
  await page.getByRole("button",{name:/Load more routes/}).click();
@@ -108,8 +108,8 @@ test("route explorer transparently distinguishes backend failure from no configu
  }));
  await page.goto("/routes?origin_country=NG");
  await expect(page.getByRole("heading",{name:"We can't verify routes right now."})).toBeVisible();
- await expect(page.getByText(/We won't replace live data with sample corridors/)).toBeVisible();
- await expect(page.getByRole("heading",{name:/No configured routes/})).toHaveCount(0);
+ await expect(page.getByText(/We won't show made-up availability or rates/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:/We’re preparing our first payment routes/})).toHaveCount(0);
 });
 test("protocol release record is not a public product page",async({request})=>{
  const response=await request.get("/protocol");
@@ -127,7 +127,7 @@ test("unknown routes use the branded recovery page",async({page})=>{
 });
 
 test("production marketing hides every technical preview and its read-only proxy",async({request})=>{
- for(const route of ["/preview","/preview/business","/preview/send","/preview/contracts"]){
+ for(const route of ["/preview","/preview/business","/preview/send","/preview/contracts","/preview/governance","/preview/upgrades","/wallet","/explorer"]){
   const result=await request.get(route);
   expect(result.status(),route+" must be unavailable on marketing").toBe(404);
  }

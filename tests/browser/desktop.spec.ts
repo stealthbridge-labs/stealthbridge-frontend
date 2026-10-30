@@ -3,7 +3,7 @@ import {expect,test} from "@playwright/test";
 test("homepage navigation and calls to action use product destinations",async({page})=>{
  await page.goto("/");
 
- await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"The platform"})).toHaveAttribute("href","/platform");
+ await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Privacy & trust"})).toHaveAttribute("href","/platform");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For business"})).toHaveAttribute("href","/business");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"For people"})).toHaveAttribute("href","/send");
  await expect(page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Our approach"})).toHaveAttribute("href","#principles");
@@ -17,8 +17,7 @@ test("homepage navigation and calls to action use product destinations",async({p
 
 for(const route of [
  {path:"/discover/business",current:"Business",next:"Explore our approach",destination:"/platform"},
- {path:"/discover/send",current:"Send",next:"Discover StealthBridge Business",destination:"/business"},
- {path:"/platform",current:"Platform",next:"Explore StealthBridge Business",destination:"/business"}
+ {path:"/discover/send",current:"Send",next:"Discover StealthBridge Business",destination:"/business"}
 ] as const){
  test(`${route.path} exposes its real product navigation`,async({page})=>{
   await page.goto(route.path);
@@ -42,7 +41,7 @@ test("keyboard focus is visible and activates navigation",async({page})=>{
  await page.keyboard.press("Tab");
  await expect(page.getByRole("banner").getByRole("link",{name:"StealthBridge home"})).toBeFocused();
  await page.keyboard.press("Tab");
- const platformLink=page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"The platform"});
+ const platformLink=page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Privacy & trust"});
  await expect(platformLink).toBeFocused();
  const focusStyle=await platformLink.evaluate(element=>{
   const style=getComputedStyle(element);
@@ -73,4 +72,12 @@ test("product selector supports pointer and keyboard interaction",async({page})=
  await business.click();
  await expect(business).toHaveAttribute("aria-pressed","true");
  await expect(page.getByRole("heading",{level:3,name:"Confidentiality for business-critical payments."})).toBeVisible();
+});
+
+test("privacy and trust page explains real-world boundaries without developer infrastructure",async({page})=>{
+ await page.goto("/platform");
+ await expect(page.getByRole("heading",{level:1,name:/Your money is personal/})).toBeVisible();
+ await expect(page.getByRole("link",{name:/Explore sending countries/})).toHaveAttribute("href","/routes");
+ await expect(page.getByRole("heading",{name:/No hidden steps/})).toBeVisible();
+ await expect(page.locator("main")).not.toContainText(/operator_local|WASM SHA|Contract ID|administrator at deployment|Testnet ledger/i);
 });

@@ -1,3 +1,4 @@
+import {notFound} from "next/navigation";
 import type {Metadata} from "next";
 import {WalletHub} from "@/components/wallet-hub";
 export const dynamic="force-dynamic";
@@ -7,6 +8,7 @@ export const metadata:Metadata={
  robots:{index:false,follow:false}
 };
 export default async function Page({searchParams}:{searchParams:Promise<{flow?:string}>}){
+ if(process.env.STEALTHBRIDGE_SITE_MODE!=="preview")notFound();
  const {flow}=await searchParams;
  return <WalletHub flow={flow==="business"?"business":"send"}/>;
 }

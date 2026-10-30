@@ -32,11 +32,11 @@ export default async function Dashboard(){
   <section className="account-status-section" aria-labelledby="account-security-heading">
    <div><span className="section-index">ACCOUNT & SECURITY</span><h2 id="account-security-heading">A clearer picture of your access.</h2></div>
    <div className="account-status-list">
-    <div><ShieldCheck size={21} aria-hidden/><div><strong>Wallet identity verified</strong><p>Your sign-in challenge was verified against this Stellar public account.</p><code>{identity.address}</code></div></div>
+    <div><ShieldCheck size={21} aria-hidden/><div><strong>Wallet identity verified</strong><p>Your sign-in challenge was verified against this Stellar public account.</p><details className="account-identity-detail"><summary>View my account ID</summary><code>{identity.address}</code><p>Only share this public ID when you choose to. It is not your recovery phrase or signing key.</p></details></div></div>
     <div><LockKeyhole size={21} aria-hidden/><div><strong>Funds stay under your control</strong><p>Signing in is not permission to move funds, create approvals or initiate a private payment.</p></div></div>
     <div><Clock3 size={21} aria-hidden/><div><strong>Payment services</strong><p>Transfer execution, confidential settlement and external payouts remain unavailable while independent verification continues.</p></div></div>
    </div>
   </section>
-  <div className="account-footnote">Looking for the bigger picture? <Link href="/platform">Learn about the StealthBridge platform <ArrowUpRight size={14} aria-hidden/></Link></div>
+  <div className="account-footnote">Looking for the bigger picture? <Link href="/platform">Learn how we handle privacy <ArrowUpRight size={14} aria-hidden/></Link></div>
  </>;
 }
