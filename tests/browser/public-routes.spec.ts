@@ -83,7 +83,7 @@ test("a real public corridor links into signed-in Send without leaking payment d
    asset_code:"USDC",asset_issuer:null,privacy_rail:"private-payments"}],next_cursor:null}
  }));
  await page.goto("/routes");
- const link=page.getByRole("link",{name:"Review this route in your account"});
+ const link=page.getByRole("link",{name:"Review personal transfer"});
  await expect(link).toBeVisible();
  const href=await link.getAttribute("href");
  expect(href).not.toContain("amount");
@@ -93,6 +93,23 @@ test("a real public corridor links into signed-in Send without leaking payment d
  await link.click();
  await expect(page).toHaveURL(/\/login\?next=/);
  await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
+});
+test("business payment intent survives sign-in as a public corridor ID only",async({page})=>{
+ const id="9a1a395f-249c-4907-b657-d48df4b38d28";
+ await page.route("**/api/public/corridors*",route=>route.fulfill({
+  json:{items:[{id,origin_country:"NG",destination_country:"GH",asset_code:"USDC",
+   asset_issuer:null,privacy_rail:"confidential-token"}],next_cursor:null}
+ }));
+ await page.goto("/routes");
+ await page.getByRole("button",{name:"For my business"}).click();
+ await expect(page.getByRole("button",{name:"For my business"})).toHaveAttribute("aria-pressed","true");
+ const link=page.getByRole("link",{name:"Review for my business"});
+ const href=await link.getAttribute("href");
+ const dest=new URL(href!,"https://stealthbridge.example").searchParams.get("next");
+ expect(dest).toBe("/app/business?corridor="+id);
+ expect(href).not.toMatch(/recipient|amount|name|reference|privacy_rail/i);
+ await link.click();
+ await expect(page).toHaveURL(/\/login\?next=/);
 });
 test("public filtered catalog rejects unknown, duplicated, or malformed query fields",async({request})=>{
  for(const value of ["?origin_country=ng","?origin_country=NGA",

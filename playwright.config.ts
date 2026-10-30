@@ -24,7 +24,7 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/account-access\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
+   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/account-access\.spec\.ts/,/customer-payment-workspace\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {

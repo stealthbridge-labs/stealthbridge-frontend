@@ -34,6 +34,7 @@ function urlFilters():CustomerCorridorFilters|null{
  return validCustomerCorridorFilters(filter)?filter:null;
 }
 export function CustomerRouteExplorer(){
+ const [intent,setIntent]=useState<"personal"|"business">("personal");
  const [origin,setOrigin]=useState("");
  const [destination,setDestination]=useState("");
  const [rail,setRail]=useState("");
@@ -143,6 +144,12 @@ export function CustomerRouteExplorer(){
     <div className="route-mini-label"><Search size={16} aria-hidden/> FIND YOUR WAY</div>
     <h2 id="routes-filter-title">Where are you sending money?</h2>
     <p className="route-filter-description">Choose where money starts and where it needs to go. We only show routes we can verify—never invented prices or availability.</p>
+    <div className="route-intent" role="group" aria-label="What are you planning?">
+     <button type="button" aria-pressed={intent==="personal"}
+      onClick={()=>setIntent("personal")}>For myself</button>
+     <button type="button" aria-pressed={intent==="business"}
+      onClick={()=>setIntent("business")}>For my business</button>
+    </div>
     <form onSubmit={apply} className="route-filter-form">
      <label htmlFor="route-origin">Sending from</label>
      <select id="route-origin" value={origin} onChange={e=>setOrigin(e.target.value)}>
@@ -209,8 +216,8 @@ export function CustomerRouteExplorer(){
       <div className="route-card-availability"><Clock3 size={16} aria-hidden/>
        <span>Pricing and transfers are not open on this route yet.</span></div>
       <Link className="route-card-prepare" href={"/login?"+new URLSearchParams({
-       next:"/app/send?corridor="+row.id
-      }).toString()}>Review this route in your account <ArrowRight size={15} aria-hidden/></Link>
+       next:(intent==="business"?"/app/business":"/app/send")+"?corridor="+row.id
+      }).toString()}>{intent==="business"?"Review for my business":"Review personal transfer"} <ArrowRight size={15} aria-hidden/></Link>
      </article>)}
     </div>:null}
     {state.status==="ready"&&state.pageError?<p role="alert" className="route-filter-error">

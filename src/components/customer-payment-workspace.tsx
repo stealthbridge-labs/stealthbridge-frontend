@@ -10,9 +10,10 @@ import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
 import {currentRecipientContract,validRecipientPresence,type RecipientPresence} from "@/lib/recipient-presence";
+import {currentClassicRecipient,validClassicRecipientPresence,type ClassicRecipientPresence} from "@/lib/classic-recipient-presence";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
-import {loadCustomerCorridorPreflight,type CustomerCorridorPreflight} from "@/lib/corridor-preflight";
+import {loadCustomerCorridorPreflight} from "@/lib/corridor-preflight";
 
 type Flow="send"|"business";
 type FetchState="loading"|"ready"|"error";
@@ -23,12 +24,17 @@ function isRecipient(value:string){return !!canonicalStellarAccountAddress(value
 function labelForCorridor(item:CustomerCorridor){
  return country(item.origin_country)+" → "+country(item.destination_country)+" · "+item.asset_code;
 }
-async function inspectRecipient(address:string):Promise<RecipientPresence>{
- const response=await fetch("/api/public/recipient/"+address,{method:"GET",cache:"no-store",credentials:"omit",
-  signal:AbortSignal.timeout(9500)});
- if(!response.ok)throw new Error("We couldn't confirm this contract on Testnet.");
+async function inspectRecipient(address:string):Promise<RecipientPresence|ClassicRecipientPresence>{
+ const contract=isContractStrKey(address);
+ const response=await fetch((contract?"/api/public/recipient/":"/api/public/classic-recipient/")+address,
+  {method:"GET",cache:"no-store",credentials:"omit",signal:AbortSignal.timeout(9500)});
+ if(!response.ok)throw new Error("Recipient information is unavailable. Please try again.");
  const result:unknown=await response.json();
- if(!validRecipientPresence(result,address))throw new Error("The contract response could not be verified.");
+ if(contract){
+  if(!validRecipientPresence(result,address))throw new Error("The recipient record could not be verified.");
+  return result;
+ }
+ if(!validClassicRecipientPresence(result,address))throw new Error("The recipient record could not be verified.");
  return result;
 }
 export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;identityAddress?:string}){
@@ -49,20 +55,28 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [recipient,setRecipient]=useState("");
  const [amount,setAmount]=useState("");
  const [reference,setReference]=useState("");
- const [recipientEvidence,setRecipientEvidence]=useState<RecipientPresence|null>(null);
+ const [recipientEvidence,setRecipientEvidence]=useState<RecipientPresence|ClassicRecipientPresence|null>(null);
+ const [recipientName,setRecipientName]=useState("");
+ const [recipientConfirmed,setRecipientConfirmed]=useState(false);
+ const [,setFreshnessTick]=useState(0);
  const [recipientPending,setRecipientPending]=useState(false);
  const [recipientError,setRecipientError]=useState<string|null>(null);
  const [reviewed,setReviewed]=useState(false);
  const [reviewPending,setReviewPending]=useState(false);
  const [reviewError,setReviewError]=useState<string|null>(null);
- const [corridorPreflight,setCorridorPreflight]=useState<CustomerCorridorPreflight|null>(null);
  const reviewGeneration=useRef(0);
  const invalidateReview=useCallback(()=>{
   reviewGeneration.current++;
-  setReviewPending(false);setReviewError(null);setReviewed(false);setCorridorPreflight(null);
+  setReviewPending(false);setReviewError(null);setReviewed(false);
+ },[]);
+ useEffect(()=>{
+  const timer=setInterval(()=>setFreshnessTick(v=>v+1),15000);
+  return ()=>clearInterval(timer);
  },[]);
  const recipientRequest=useRef(0);
- const onWalletChange=useCallback((value:string|null)=>{setConnected(value);invalidateReview();},[invalidateReview]);
+ const onWalletChange=useCallback((value:string|null)=>{
+  setConnected(value);setRecipientConfirmed(false);invalidateReview();
+ },[invalidateReview]);
  useEffect(()=>{
   const ctl=new AbortController();setNetwork(null);setNetworkState("loading");invalidateReview();
   void (async()=>{
@@ -125,13 +139,15 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const networkFresh=!!network&&validPublicWalletStatus(network);
  const recipientAddress=recipient.trim();
  const contractRecipient=isContractStrKey(recipientAddress);
- const contractPresent=!contractRecipient||currentRecipientContract(recipientEvidence,recipientAddress);
+ const recipientPresent=contractRecipient?
+  currentRecipientContract(recipientEvidence,recipientAddress):
+  currentClassicRecipient(recipientEvidence,recipientAddress);
  const rail=corridor?.privacy_rail??(business?"confidential-token":"private-payments");
  const prepared=preparePrivateTransfer({
   sender:connected,recipient:recipientAddress,amount,rail,backendTestnetFresh:networkFresh
  });
  const formComplete=!!corridor&&!!connected&&isRecipient(recipientAddress)&&amountValid(amount)&&
-  prepared.validLocalDraft&&contractPresent&&
+  prepared.validLocalDraft&&recipientPresent&&recipientConfirmed&&
   (!business||reference.trim().length>=3);
  const canReview=formComplete&&networkFresh&&corridorState==="ready";
  const recipientKind=canonicalStellarAccountAddress(recipientAddress)?"classic":
@@ -150,10 +166,12 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
     loadCustomerCorridorPreflight(selected.id,AbortSignal.timeout(9000)),
     fetch("/api/public/status",{method:"GET",credentials:"omit",cache:"no-store",
      signal:AbortSignal.timeout(9000)}),
-    contractRecipient?inspectRecipient(recipientAddress):Promise.resolve(null)
+    isRecipient(recipientAddress)?inspectRecipient(recipientAddress):Promise.resolve(null)
    ]);
-   if(contractRecipient&&(!recipientStatus||!currentRecipientContract(recipientStatus,recipientAddress)))
-    throw Error("We could not verify the recipient contract right now.");
+   const freshRecipient=contractRecipient?
+    currentRecipientContract(recipientStatus,recipientAddress):
+    currentClassicRecipient(recipientStatus,recipientAddress);
+   if(!freshRecipient)throw Error("Your recipient could not be reconfirmed. Check the address and try again.");
    if(!statusResponse.ok)throw Error("The Testnet network observation is unavailable.");
    const observed:unknown=await statusResponse.json();
    if(!validPublicWalletStatus(observed))
@@ -167,7 +185,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
     throw Error("Testnet ledger observations are inconsistent. Refresh the network before reviewing.");
    if(generation!==reviewGeneration.current)return;
    setNetwork(observed);
-   setCorridorPreflight(preflight);
+   setRecipientEvidence(recipientStatus);
    setReviewed(true);
   }catch(error){
    if(generation===reviewGeneration.current){
@@ -178,7 +196,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
   }
  };
  const checkRecipient=async()=>{
-  if(!contractRecipient)return;
+  if(!isRecipient(recipientAddress))return;
   const address=recipientAddress;
   const request=++recipientRequest.current;
   setRecipientPending(true);setRecipientError(null);setRecipientEvidence(null);invalidateReview();
@@ -192,10 +210,11 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  };
  const clearRecipient=(value:string)=>{
   recipientRequest.current++;setRecipient(value);setRecipientEvidence(null);
+  setRecipientName("");setRecipientConfirmed(false);
   setRecipientError(null);setRecipientPending(false);invalidateReview();
  };
  const changeCorridor=(value:string)=>{
-  setCorridorId(value);invalidateReview();setAmount("");
+  setCorridorId(value);invalidateReview();setAmount("");setRecipientConfirmed(false);
   // A corridor is specific to an asset and privacy rail. Old recipient checks
   // are not carried into a new payment intent.
   recipientRequest.current++;setRecipientEvidence(null);setRecipientPending(false);setRecipientError(null);
@@ -213,7 +232,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    <nav className="payment-nav" aria-label="Product sections">
     <Link href={identityAddress?"/app/send":"/send"} aria-current={!business?"page":undefined}>Personal transfers</Link>
     <Link href={identityAddress?"/app/business":"/business"} aria-current={business?"page":undefined}>Business payments</Link>
-    <Link href={identityAddress?"/app":"/platform"}>{identityAddress?"Overview":"Platform"} <ArrowUpRight size={14} aria-hidden/></Link>
+    <Link href={identityAddress?"/app":"/platform"}>{identityAddress?"Overview":"Privacy & trust"} <ArrowUpRight size={14} aria-hidden/></Link>
    </nav>
    <div className="payment-intro">
     <div>
@@ -226,8 +245,8 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
     <div className="payment-live">
      <span className="payment-live-dot"><Globe2 size={16} aria-hidden/></span>
      <div>
-      <strong>{networkFresh?"Stellar Testnet online":networkState==="loading"?"Checking network":"Live status unavailable"}</strong>
-      <small>{networkFresh?"Ledger "+network.ledger_sequence.toLocaleString():"Transfers are not enabled"}</small>
+      <strong>{networkFresh?"Network check completed":networkState==="loading"?"Checking availability":"Network check unavailable"}</strong>
+      <small>Transfers are not enabled</small>
      </div>
      <button type="button" onClick={()=>{invalidateReview();setNetworkRevision(n=>n+1);}} aria-label="Refresh network status"><RefreshCw size={16} aria-hidden/></button>
     </div>
@@ -251,7 +270,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       </select>
       {corridorState==="ready"&&corridors.length===0?<div className="payment-empty" role="status">
        <Clock3 size={18} aria-hidden/><div><strong>No payment corridors are available yet.</strong>
-        <p>Only verified operator-configured routes appear here. You can connect your wallet, but funds cannot be sent through StealthBridge yet.</p></div>
+        <p>We don't have a configured route available for preparation here yet. No funding or transfer can take place.</p></div>
       </div>:null}
       {corridorState==="error"?<div className="payment-empty" role="alert"><Clock3 size={18} aria-hidden/>
        <div><strong>We couldn't load payment routes.</strong><p>Please retry. No destinations or prices have been guessed.</p>
@@ -266,7 +285,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <div><span>From</span><strong>{country(corridor.origin_country)}</strong></div>
        <ArrowRight size={17} aria-hidden/>
        <div><span>To</span><strong>{country(corridor.destination_country)}</strong></div>
-       <div><span>Declared asset</span><strong>{corridor.asset_code}</strong></div>
+       <div><span>Planning asset</span><strong>{corridor.asset_code}</strong></div>
       </div>:null}
       {corridor?<div className="payment-privacy-info"><ShieldCheck size={18} aria-hidden/>
        <div><strong>{corridor.privacy_rail==="confidential-token"?"Amount confidentiality":"Sender-recipient relationship privacy"}</strong>
@@ -278,14 +297,26 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       <input className="payment-input" id="payment-recipient" value={recipient} autoComplete="off" spellCheck={false}
        placeholder="G… or C… address" maxLength={56} onChange={event=>clearRecipient(event.target.value)}/>
       {recipient&&recipientKind==="unknown"?<p className="payment-field-error" role="status">Enter a valid Stellar account or contract address.</p>:null}
-      {contractRecipient?<div className="payment-contract-check">
+      <label className="payment-label" htmlFor="payment-recipient-name">Recipient nickname (optional)</label>
+      <input className="payment-input" id="payment-recipient-name" value={recipientName}
+       placeholder={business?"e.g. Your supplier":"e.g. Family member"} autoComplete="off" maxLength={48}
+       onChange={e=>{setRecipientName(e.target.value);setRecipientConfirmed(false);invalidateReview();}}/>
+      <p className="payment-hint">Your label is known only to you. It is not verified or saved to an account.</p>
+      {isRecipient(recipientAddress)?<div className="payment-contract-check">
        <Button type="button" size="sm" variant="outline" disabled={recipientPending} onClick={()=>void checkRecipient()}>
-        {recipientPending?"Checking contract…":"Check recipient contract"}
+        {recipientPending?"Checking recipient…":"Check recipient account"}
        </Button>
-       {recipientEvidence?<span role="status">{contractPresent?
-        "Active contract observed. Asset acceptance and ownership are not verified.":
-        "No active contract found. This address cannot proceed."}</span>:null}
+       {recipientEvidence?<span role="status">{recipientPresent?
+        (contractRecipient?"Contract address found":"Stellar account found")+" on Testnet. Ownership and asset support are unverified.":
+        "Account not found or the check has expired. Check again before review."}</span>:null}
        {recipientError?<span role="alert">{recipientError}</span>:null}
+      </div>:null}
+      {isRecipient(recipientAddress)?<div className="payment-recipient-confirm">
+       <details><summary>Review complete recipient address</summary><code>{recipientAddress}</code></details>
+       <label><input type="checkbox" checked={recipientConfirmed}
+        onChange={event=>{setRecipientConfirmed(event.target.checked);invalidateReview();}}/>
+        <span>I have checked this full address with my recipient. A public account check does not verify their identity.</span></label>
+       <p>Checking an address contacts StealthBridge and the Stellar network. Your nickname, amount and reference stay in this browser tab.</p>
       </div>:null}
       <div className="payment-step"><span>03</span><strong>{business?"Payment details":"Amount to send"}</strong></div>
       <div className="payment-input-grid">
@@ -317,9 +348,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <CheckCircle2 size={20} aria-hidden/><div><strong>Current route and Testnet observation rechecked · payment not submitted</strong>
         <p>{amount} {corridor!.asset_code} · {labelForCorridor(corridor!)}. {business?"Your reference is included in this browser-only review. ":""}
          This corridor record does not confirm liquidity, issuer support, fees, privacy proofs or payout readiness.</p>
-        <p>{corridorPreflight?.database_schema_ready?
-         "Core database schema verified for read-only operations. This is not financial readiness.":
-         "Platform database migration checks are incomplete. Account and payment services remain unavailable."}</p>
+        <p>This is a planning review, not a payment offer. Funding, charges and delivery are not yet available.</p>
         <p>Route and network checks were refreshed. Liquidity, recipient asset support, privacy verification, exchange rates and fees remain unverified.</p>
         <p>Transfer execution is not yet available. Nothing has been signed, charged or stored.</p>
        </div>
@@ -358,7 +387,8 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       <dl>
        <div><dt>Destination</dt><dd>{corridor?country(corridor.destination_country):"Not selected"}</dd></div>
        <div><dt>Send amount</dt><dd>{amountValid(amount)&&corridor?amount+" "+corridor.asset_code:"—"}</dd></div>
-       <div><dt>Recipient</dt><dd>{isRecipient(recipientAddress)?recipientAddress.slice(0,8)+"…"+recipientAddress.slice(-6):"Not entered"}</dd></div>
+       <div><dt>Recipient</dt><dd>{isRecipient(recipientAddress)?recipientName.trim()||recipientAddress.slice(0,8)+"…"+recipientAddress.slice(-6):"Not entered"}</dd></div>
+       <div><dt>Recipient check</dt><dd>{recipientPresent?"Found on Testnet":"Not confirmed"}</dd></div>
        <div><dt>Privacy option</dt><dd>{corridor?(corridor.privacy_rail==="confidential-token"?"Amount privacy · pending":"Relationship privacy · pending"):"Not selected"}</dd></div>
        <div><dt>FX rate</dt><dd>Unavailable</dd></div>
        <div><dt>Platform & provider fees</dt><dd>Not quoted</dd></div>

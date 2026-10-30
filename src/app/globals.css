@@ -1175,3 +1175,19 @@
 .trust-footer p{margin-left:auto}.trust-footer a{display:inline-flex;gap:6px;align-items:center;color:#baf6d6}
 @media(max-width:900px){.trust-intro,.trust-clarity{grid-template-columns:1fr}.trust-intro{padding-block:75px;gap:35px}.trust-visual{min-height:350px}.trust-principle-grid{grid-template-columns:1fr}.trust-principle-grid article{padding:25px}.trust-clarity{padding-block:80px}}
 @media(max-width:640px){.trust-nav{height:auto;min-height:84px;flex-wrap:wrap;padding-block:14px}.trust-nav nav{order:3;width:100%;margin:0;justify-content:space-between}.trust-login{margin-left:auto}.trust-intro h1{font-size:clamp(42px,11vw,70px)}.trust-visual{min-height:320px}.trust-core{width:205px}.trust-orbit-note{font-size:9px}.trust-orbit-note.note-a{left:0;top:15%}.trust-orbit-note.note-b{right:0;bottom:10%}.trust-footer{flex-wrap:wrap}.trust-footer p{margin-left:0}}
+
+/* Customer intent is selected before any wallet connection. */
+.route-intent{display:flex;flex-wrap:wrap;gap:8px;border:1px solid #618f7b;border-radius:15px;padding:5px;background:#0a2c25;margin-top:24px}
+.route-intent button{flex:1;min-width:125px;background:transparent;border:0;color:#b8dccb;padding:12px 15px;border-radius:10px;font-weight:750;font-size:13px;cursor:pointer}
+.route-intent button[aria-pressed="true"]{background:#b3f2ce;color:#0b3b31}
+.route-intent button:focus-visible{outline:2px solid #b7ffdc;outline-offset:3px}
+.business-onboarding-section{margin-top:46px}
+
+/* Recipient review remains local to the browser and never creates payment authority. */
+.payment-recipient-confirm{margin:15px 0 25px;border:1px solid #669d8b;border-radius:14px;padding:18px;background:#103b33}
+.payment-recipient-confirm details summary{cursor:pointer;color:#c6f5df;font-weight:750;font-size:13px}
+.payment-recipient-confirm details code{display:block;margin:11px 0;font-size:12px;line-height:1.7;overflow-wrap:anywhere;color:#e8fff5}
+.payment-recipient-confirm>label{display:flex;align-items:flex-start;gap:12px;font-size:13px;font-weight:650;line-height:1.6;cursor:pointer;margin-top:14px}
+.payment-recipient-confirm input[type="checkbox"]{width:20px;height:20px;flex-shrink:0;accent-color:#a9f4cb;cursor:pointer;margin:1px 0 0}
+.payment-recipient-confirm p{font-size:12px;color:#b6d6c8;line-height:1.7;margin:11px 0 0}
+.payment-summary-card dd{overflow-wrap:anywhere}

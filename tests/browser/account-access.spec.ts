@@ -243,7 +243,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   }});
  });
  await page.goto("/app/business");
- await expect(page.getByRole("heading",{name:"Where your business goes further."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"Build your business space."})).toBeVisible();
  await page.getByLabel("Business or organization name").fill("Browser Test Only Ltd");
  await page.getByRole("button",{name:"Register business application"}).click();
@@ -273,7 +273,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByText(/Transfers, settlement, fiat payouts and platform fee claims remain disabled/)).toBeVisible();
  await expect(page.getByRole("button",{name:/Invite|Submit settlement|Approve payment/})).toHaveCount(0);
  await page.goto("/app/business");
- await expect(page.getByRole("heading",{name:"Where your business goes further."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
  await page.getByRole("button",{name:"Withdraw",exact:true}).click();
  await expect(page.getByText(/Permanent withdrawal/)).toBeVisible();
  await expect(page.getByRole("button",{name:"Permanently withdraw application"})).toBeDisabled();
@@ -281,7 +281,6 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.getByRole("button",{name:"Permanently withdraw application"}).click();
  await expect(page.getByText(/haven't registered a business workspace yet/)).toBeVisible();
  await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toHaveCount(0);
- await page.getByText("Explore Testnet payment preparation (not yet enabled)").click();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
  const logout=await page.request.post("/api/auth/logout",{headers:{origin}});

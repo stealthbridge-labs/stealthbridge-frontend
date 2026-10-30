@@ -57,14 +57,17 @@ test("public route navigation only preserves a validated UUID across sign-in",as
  const {validAccountDestination}=await import("../src/lib/account-destination.ts");
  assert.equal(validAccountDestination("/app"),true);
  assert.equal(validAccountDestination("/app/send?corridor="+id),true);
+ assert.equal(validAccountDestination("/app/business?corridor="+id),true);
  for(const bad of ["https://phishing.example","//phishing.example","/app/send?corridor=../evil",
   "/app/send?corridor="+id+"&admin=true","/app/send?amount=1000",
-  "/app/business?redirect=https://example.com"]){
+  "/app/business?redirect=https://example.com",
+  "/app/business?corridor="+id+"&amount=2","/app/business?corridor="+id+"&corridor="+id]){
   assert.equal(validAccountDestination(bad),false);
  }
  const routes=await readFile("src/components/customer-route-explorer.tsx","utf8");
  const signed=await readFile("src/components/customer-payment-workspace.tsx","utf8");
- assert.match(routes,/Review this route in your account/);
+ assert.match(routes,/Review for my business/);
+ assert.match(routes,/Review personal transfer/);
  assert.match(signed,/linkedRouteId/);
  assert.match(signed,/loadVerifiedCustomerCorridor\(requested,ctl\.signal\)/);
 });
