@@ -284,7 +284,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   payment_execution_enabled:false,organization_payment_authorized:false
  }}));
  await page.getByRole("link",{name:"Review application and team"}).click();
- await expect(page.getByRole("heading",{name:"People, roles, and progress."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Your organization and team."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toBeVisible();
  await expect(page.getByText("Application pending")).toBeVisible();
  await expect(page.getByText("Team invitations",{exact:true})).toBeVisible();
@@ -333,7 +333,7 @@ test("active owner can invite and revoke a viewer, without finance permissions",
   account_address:signer,organization:{id:org,display_name:"Test Merchant Only",
    status:"active",your_role:"owner"},
   members:[{account_address:signer,role:"owner",joined_at_unix:1800000000}],
-  next_cursor:null,business_verified:false,invitation_issuance_enabled:false,
+  next_cursor:null,business_verified:false,invitation_issuance_enabled:true,
   payment_execution_enabled:false,organization_payment_authorized:false
  }}));
  let issued=false;
@@ -361,8 +361,20 @@ test("active owner can invite and revoke a viewer, without finance permissions",
   }});
  });
  await page.goto("/app/business/"+org);
- await expect(page.getByRole("heading",{name:"People, roles, and progress."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Your organization and team."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"Invite a viewer"})).toBeVisible();
+ await expect(page.getByText(/Viewer invitations are enabled for your current role/)).toBeVisible();
+ await expect(page.getByText(/Not yet enabled/)).toHaveCount(0);
+ await expect(page.getByText(org,{exact:true})).toBeHidden();
+ const reference=page.getByText("Organization reference",{exact:true});
+ await reference.focus();
+ await page.keyboard.press("Enter");
+ await expect(page.getByText(org,{exact:true})).toBeVisible();
+ await page.keyboard.press("Enter");
+ await expect(page.getByText(org,{exact:true})).toBeHidden();
+ await expect(page.getByRole("heading").filter({hasText:/G[A-Z2-7]{55}|9a1a395f/})).toHaveCount(0);
+ await expect(page.getByText(/No KYC, legal-entity or regulatory approval/)).toBeVisible();
+ await expect(page.getByText(/Role changes and removal of existing members are not available/)).toBeVisible();
  await page.getByLabel("Recipient's Stellar G-address").fill(invited);
  await page.getByRole("button",{name:"Invite viewer"}).click();
  await expect(page.getByRole("button",{name:"Revoke invitation"})).toBeVisible();
@@ -428,4 +440,158 @@ test("Business snapshot distinguishes real records, empty state and API failure"
  await expect(overview.getByText("1 current membership")).toHaveCount(0);
  await expect(overview.getByText("Transfers not available")).toHaveCount(0);
  await expect(page.getByRole("button",{name:/Submit settlement|Confirm and send/})).toHaveCount(0);
+});
+
+// Use the same real local challenge/session API and browser-only response fixtures
+// as the account workflows above. No production mock route or database writes.
+async function signInForTeam(page:import("@playwright/test").Page){
+ const {publicKey,privateKey}=generateKeyPairSync("ed25519");
+ const key=publicKey.export({format:"jwk"});
+ if(typeof key.x!=="string")throw Error("Invalid test signing identity");
+ const address=stellarAddress(Buffer.from(key.x,"base64url"));
+ await page.goto("/login");
+ const origin=new URL(page.url()).origin;
+ const challenge=await page.request.post("/api/auth/challenge",{data:{address},headers:{origin}});
+ expect(challenge.status()).toBe(200);
+ const {message}=await challenge.json() as {message:string};
+ const verified=await page.request.post("/api/auth/verify",{
+  data:{address,signature:signature(message,privateKey)},headers:{origin}
+ });
+ expect(verified.status()).toBe(200);
+ return address;
+}
+const teamOrganization="9a1a395f-249c-4907-b657-d48df4b38d28";
+function teamFixture(address:string,{active=false,enabled=false,role="owner"}:
+ {active?:boolean;enabled?:boolean;role?:string}={}){
+ return {schema_version:1,network:"testnet",source:"neon-organization-team",
+  account_address:address,organization:{id:teamOrganization,display_name:"Team Fixture Only",
+   status:active?"active":"pending",your_role:role},
+  members:[{account_address:address,role,joined_at_unix:1800000000}],
+  next_cursor:null as string|null,business_verified:false,invitation_issuance_enabled:enabled,
+  payment_execution_enabled:false,organization_payment_authorized:false};
+}
+
+test("pending organization explains applicant-only access without invitation calls on mobile",async({page},testInfo)=>{
+ const address=await signInForTeam(page);
+ let inviteCalls=0;
+ await page.route("**/api/account/team-invites*",route=>{
+  inviteCalls++;return route.fulfill({status:503,json:{}});
+ });
+ await page.route("**/api/account/organizations/*/team",route=>route.fulfill({json:teamFixture(address)}));
+ await page.setViewportSize({width:390,height:844});
+ await page.goto("/app/business/"+teamOrganization);
+ await expect(page.getByText("Application pending",{exact:true})).toBeVisible();
+ await expect(page.getByText(/Only your applicant membership/)).toBeVisible();
+ await expect(page.getByText(/Unavailable while your application is pending/)).toBeVisible();
+ await expect(page.getByRole("list",{name:"Recorded team members"}).getByRole("listitem")).toHaveCount(1);
+ await expect(page.getByRole("heading",{name:"Owner access"})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Invite|Approve|Pay|Change role|Remove member/})).toHaveCount(0);
+ await expect(page.getByText(teamOrganization,{exact:true})).toBeHidden();
+ await expect(page.getByText(address,{exact:true})).toBeHidden();
+ await page.getByText("View member account",{exact:true}).click();
+ await expect(page.getByText(address,{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ expect(inviteCalls).toBe(0);
+ await testInfo.attach("pending-team-mobile",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
+});
+
+test("active organization with issuance disabled never offers invitation permissions",async({page})=>{
+ const address=await signInForTeam(page);
+ let inviteCalls=0;
+ await page.route("**/api/account/team-invites*",route=>{
+  inviteCalls++;return route.fulfill({status:503,json:{}});
+ });
+ await page.route("**/api/account/organizations/*/team",route=>route.fulfill({json:
+  teamFixture(address,{active:true,role:"admin"})}));
+ await page.goto("/app/business/"+teamOrganization);
+ await expect(page.getByRole("heading",{name:"Administrator access"})).toBeVisible();
+ await expect(page.getByText(/Invitation issuance is not enabled for this organization/)).toBeVisible();
+ await expect(page.getByText(/You cannot issue invitations/)).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Invite a viewer"})).toHaveCount(0);
+ expect(inviteCalls).toBe(0);
+});
+
+test("team refresh hides stale data on denied, unavailable, expired or forged permissions",async({page})=>{
+ const address=await signInForTeam(page);
+ let response:{status?:number;json:unknown}={json:teamFixture(address,{active:true,enabled:true})};
+ let inviteCalls=0;
+ await page.route("**/api/account/team-invites*",route=>{
+  inviteCalls++;return route.fulfill({status:503,json:{}});
+ });
+ await page.route("**/api/account/organizations/*/team",route=>route.fulfill(response));
+ await page.goto("/app/business/"+teamOrganization);
+ await expect(page.getByRole("heading",{name:"Team Fixture Only"})).toBeVisible();
+ await expect(page.getByText("Invitations cannot be verified right now. Nothing has been added to your team.")).toBeVisible();
+ await expect(page.getByRole("button",{name:"Invite viewer",exact:true})).toHaveCount(0);
+ const refresh=page.getByRole("region",{name:"Who's on your team"}).getByRole("button",{name:"Refresh"});
+ for(const code of [403,404,503,401]){
+  response={status:code,json:{code:"TEST_ONLY_ERROR"}};
+  if(code===403)await refresh.click();
+  else await page.getByRole("button",{name:"Try again"}).click();
+  await expect(page.getByRole("heading",{name:code===401?"Sign in again to view your team.":
+   code===503?"Organization details unavailable.":"Team access not available."})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Team Fixture Only"})).toHaveCount(0);
+  await expect(page.getByRole("list",{name:"Recorded team members"})).toHaveCount(0);
+  await expect(page.getByRole("heading",{name:"Owner access"})).toHaveCount(0);
+ }
+ for(const forged of [
+  {...teamFixture(address,{active:true,enabled:true}),business_verified:true},
+  {...teamFixture(address,{active:true,enabled:true}),payment_execution_enabled:true},
+  {...teamFixture(address,{active:true,enabled:true}),organization_payment_authorized:true},
+  teamFixture(address,{active:true,enabled:true,role:"viewer"})
+ ]){
+  response={json:forged};
+  await page.getByRole("button",{name:"Try again"}).click();
+  await expect(page.getByRole("heading",{name:"Organization details unavailable."})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Invite a viewer"})).toHaveCount(0);
+ }
+ response={json:{...teamFixture(address,{active:true}),members:[]}};
+ await page.getByRole("button",{name:"Try again"}).click();
+ await expect(page.getByText("No members on this page. Refresh to verify the roster.")).toBeVisible();
+ await expect(page.getByRole("list",{name:"Recorded team members"})).toHaveCount(0);
+ expect(inviteCalls).toBe(1);
+});
+
+test("team pagination preserves verified rows on failure and clears changed permissions",async({page})=>{
+ const address=await signInForTeam(page);
+ const accounts=Array.from({length:26},()=>{
+  const key=generateKeyPairSync("ed25519").publicKey.export({format:"jwk"});
+  return stellarAddress(Buffer.from(key.x!,"base64url"));
+ }).sort();
+ const members=accounts.map(account_address=>({account_address,role:"viewer",joined_at_unix:1800000000}));
+ let next:"failure"|"overlap"|"changed"|"valid"="failure";
+ const queries:string[]=[];
+ await page.route("**/api/account/organizations/*/team*",route=>{
+  const after=new URL(route.request().url()).searchParams.get("after");
+  if(after){
+   queries.push(after);
+   if(next==="failure")return route.fulfill({status:503,json:{}});
+   return route.fulfill({json:{...teamFixture(address,{active:true}),
+    organization:{...teamFixture(address,{active:true}).organization,your_role:next==="changed"?"admin":"owner"},
+    members:[members[next==="overlap"?24:25]],next_cursor:null}});
+  }
+  return route.fulfill({json:{...teamFixture(address,{active:true}),members:members.slice(0,25),next_cursor:accounts[24]}});
+ });
+ await page.goto("/app/business/"+teamOrganization);
+ const roster=page.getByRole("list",{name:"Recorded team members"});
+ await expect(roster.getByRole("listitem")).toHaveCount(25);
+ for(const mode of ["failure","overlap"] as const){
+  next=mode;
+  await page.getByRole("button",{name:"Load more members"}).click();
+  // The client rejects the overlapping page before merging it, so both
+  // malformed pagination and temporary 503 produce the same safe notice.
+  await expect(page.locator(".team-error")).toContainText("Couldn't verify the next page");
+  await expect(roster.getByRole("listitem")).toHaveCount(25);
+ }
+ next="valid";
+ await page.getByRole("button",{name:"Load more members"}).click();
+ await expect(roster.getByRole("listitem")).toHaveCount(26);
+ await expect(page.getByRole("button",{name:"Load more members"})).toHaveCount(0);
+ await page.getByRole("region",{name:"Who's on your team"}).getByRole("button",{name:"Refresh"}).click();
+ await expect(roster.getByRole("listitem")).toHaveCount(25);
+ next="changed";
+ await page.getByRole("button",{name:"Load more members"}).click();
+ await expect(page.getByRole("heading",{name:"Organization details unavailable."})).toBeVisible();
+ await expect(roster).toHaveCount(0);
+ expect(queries).toEqual(Array(4).fill(accounts[24]));
 });

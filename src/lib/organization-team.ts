@@ -68,6 +68,13 @@ export function validOrganizationTeam(
  return true;
 }
 
+export class OrganizationTeamReadError extends Error{
+ readonly kind:"session"|"denied"|"unavailable";
+ constructor(kind:"session"|"denied"|"unavailable",message:string){
+  super(message);this.name="OrganizationTeamReadError";this.kind=kind;
+ }
+}
+
 export async function loadOrganizationTeam(
  organizationId:string,address:string,after?:string,signal?:AbortSignal
 ):Promise<OrganizationTeam>{
@@ -80,10 +87,10 @@ export async function loadOrganizationTeam(
   headers:{accept:"application/json"},signal
  });
  if(!response.ok){
-  if(response.status===401)throw Error("Session expired. Please sign in again.");
+  if(response.status===401)throw new OrganizationTeamReadError("session","Session expired. Please sign in again.");
   if(response.status===403||response.status===404)
-   throw Error("You do not have access to that organization's team.");
-  throw Error("The team records are temporarily unavailable.");
+   throw new OrganizationTeamReadError("denied","You do not have access to that organization's team.");
+  throw new OrganizationTeamReadError("unavailable","The team records are temporarily unavailable.");
  }
  const result:unknown=await response.json();
  if(!validOrganizationTeam(result,organizationId,address))

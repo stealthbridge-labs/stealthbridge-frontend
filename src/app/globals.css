@@ -1294,3 +1294,22 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .business-readiness-notice{border:1px solid #638f7b65;border-radius:12px;padding:15px;margin-top:20px;font-size:12px;line-height:1.6}
 .business-readiness-notice p{margin:5px 0 0;color:#bbd5c9}
 @media(max-width:690px){.business-readiness-grid{grid-template-columns:1fr}}
+
+/* Business team: summary, scoped access and a private, readable roster. */
+.organization-reference{margin-top:16px;min-width:0;color:var(--ink)}
+.organization-reference summary,.team-account-details summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:13px;font-weight:700;color:var(--aqua);width:fit-content}
+.organization-reference code,.team-account-details code{display:block;overflow-wrap:anywhere;font-size:12px;line-height:1.8}
+.organization-reference p{margin:0 0 6px;font-size:13px;line-height:1.7}
+.organization-reference summary:focus-visible,.team-account-details summary:focus-visible{outline:2px solid var(--aqua);outline-offset:4px;border-radius:3px}
+.team-access{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;padding:25px 0;border-block:1px solid var(--line)}
+.team-access h2{font-size:24px;letter-spacing:-.035em;margin:10px 0}
+.team-access p,.team-access li{font-size:14px;color:#bcd1c9;line-height:1.8}
+.team-access ul{list-style:disc;padding-left:20px;margin:0;display:grid;gap:8px}
+.team-member-list{list-style:none;padding:0}
+.team-member{align-items:flex-start}
+.team-member-main .team-role-context{color:#b7d2c4;font-size:13px;line-height:1.7;margin:3px 0;max-width:40ch}
+.team-account-details{min-width:0}
+.team-overview>div:first-child{min-width:0}
+.team-workspace .team-invite-panel{margin:0}
+@media(max-width:820px){.team-access{grid-template-columns:1fr;gap:18px}}
+@media(max-width:520px){.team-access p,.team-access li,.team-readiness-item p,.team-panel-heading p,.team-overview p,.team-member-main .team-role-context{font-size:16px}.team-member-avatar{display:none}.team-member-role{max-width:85px;overflow-wrap:anywhere}.team-workspace button{min-height:48px}.team-invite-form input{font-size:16px}.team-invite-header p,.team-invite-form p{font-size:16px}}

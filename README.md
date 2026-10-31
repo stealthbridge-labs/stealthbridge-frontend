@@ -26,7 +26,7 @@ StealthBridge has a **deployed, authenticated Stellar Testnet customer experienc
 | Business / team | `/app/business/[id]` | View tenant-scoped team details and pending onboarding status |
 | Account | `/app/settings` | Edit saved name, purpose and optional country preferences |
 
-The Business hub includes an account-bound snapshot of **real pending applications and active memberships** with explicit unavailable/empty states. Neither saved preferences nor a membership proves identity, legal-entity approval, or financial authorization. Public routes stay separate from authenticated routes. Operator receipts and developer tools are not customer app navigation.
+The Business hub includes an account-bound snapshot of **real pending applications and active memberships** with explicit unavailable/empty states. Organization detail views provide recorded member roles, deliberately disclosed account/reference identifiers, and a permissions-aware invitation area. Viewer invitations are shown only when a valid active owner/admin record, the backend's invitation-issuance flag, and the site feature setting all permit them; denied/stale information is hidden rather than assumed. Neither saved preferences nor a membership proves identity, legal-entity approval, or financial authorization. Public routes stay separate from authenticated routes. Operator receipts and developer tools are not customer app navigation.
 
 Read [Product structure and user journeys](docs/PRODUCT-ARCHITECTURE-AND-JOURNEYS.md), [Account trust and privacy boundaries](docs/CUSTOMER-EXPERIENCE-AND-PRIVACY.md), and [Business batching](docs/BATCH-LIVE-PREFLIGHT-UX.md).
 

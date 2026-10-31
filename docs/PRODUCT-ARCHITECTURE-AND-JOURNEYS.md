@@ -69,3 +69,29 @@ business single-payment page via the signed-in redirect whitelist. Existing
 links to /app/business?corridor=<uuid> redirect server-side to the new page
 only when the query contains that single valid UUID. Amounts, recipients
 and private references are neither accepted nor forwarded.
+
+### Business organization and team review
+
+The team workspace separates organization summary, current account permissions,
+recorded membership and organization review. Pending owners see only their own
+applicant membership. Active owners/admins can inspect the permitted roster;
+role names never imply KYC, payment approvals or financial execution.
+Organization UUIDs and full member accounts are in user-controlled disclosures,
+including references on Business application and organization cards. No operator
+or deployer wallets are supplied to this customer view.
+
+Viewer invitations use the existing `TeamInvitations` component and endpoint
+only when the site setting **and** the validated team's
+`invitation_issuance_enabled` flag allow issuance for an active owner/admin.
+This intentionally fails closed if the backend still reports disabled issuance.
+Invitation records have their own loading/error state; eligibility alone is not
+a successful invitation or membership. No role changes or member removal are added.
+Denied access, expired sessions, invalid responses and dependency outages hide
+team details and actions. Pagination rejects overlapping records and clears the
+workspace if organization status, role or issuance permission changes.
+
+`tests/browser/account-access.spec.ts` uses the established local signed-session
+APIs and isolated browser response fixtures to cover owner invite/revoke,
+pending mobile review, disabled issuance, access failures, forged financial
+permissions, empty results and pagination recovery. It never writes a database
+or broadcasts a transaction.

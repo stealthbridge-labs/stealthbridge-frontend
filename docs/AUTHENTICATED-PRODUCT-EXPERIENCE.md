@@ -174,7 +174,7 @@ The server-side BFF verifies the HttpOnly session and signs an exact, short-live
 
 The response validator checks the exact organization ID and signer, StrKey checksums, roles, sorted/unique addresses, cursor consistency, all false payment and verification flags, and pending-owner isolation. A backend failure shows an explicit error without fictional team members.
 
-This is *not* a feature for sending invitations, managing roles or approving payments. It is **private membership and status visibility**. The workspace calls out that an internally active tenant is not a legally verified business.
+This provides **private membership and status visibility**. Viewer invitations are available only through the separately gated flow below, when both the site setting and validated organization issuance permission allow them. Role management and payment approvals remain unavailable. The workspace calls out that an internally active tenant is not a legally verified business.
 
 The backend endpoint uses the existing Neon organization tables: no migrations, seeded records, financial writes or private keys. All demo organizational identities in Playwright remain **test fixtures only**, never database seed data.
 

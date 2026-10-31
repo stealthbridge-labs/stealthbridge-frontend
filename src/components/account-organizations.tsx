@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import Link from "next/link";
 import {ArrowRight,Building2,CheckCircle2,RefreshCw,ShieldCheck} from "lucide-react";
+import {OrganizationReference} from "@/components/organization-reference";
 import {Button} from "@/components/ui/button";
 import {getAccountDirectory,type AccountDirectory} from "@/lib/account-directory";
 
@@ -43,7 +44,7 @@ export function AccountOrganizations({address}:{address:string}){
      <span className="account-org-verified"><CheckCircle2 size={14} aria-hidden/> Current membership</span>
      <h3>{org.display_name}</h3>
      <p><strong>Account role:</strong> {org.role}</p>
-     <p className="account-org-id">Organization ID: {org.id}</p>
+     <OrganizationReference id={org.id}/>
      <span className="account-org-warning"><ShieldCheck size={14} aria-hidden/>
       Membership does not authorize financial execution</span>
      {["owner","admin"].includes(org.role)?

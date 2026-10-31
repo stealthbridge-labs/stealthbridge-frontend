@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import Link from "next/link";
 import {ArrowRight,Building2,CheckCircle2,Clock3,RefreshCw,ShieldCheck} from "lucide-react";
+import {OrganizationReference} from "@/components/organization-reference";
 import {Button} from "@/components/ui/button";
 import {PendingBusinessActions} from "@/components/pending-business-actions";
 import {loadBusinessOnboarding,registerBusinessOnboarding,
@@ -91,7 +92,7 @@ export function BusinessOnboarding({address}:{address:string}){
      {data.applications.map(application=><article key={application.id} className="business-onboarding-card">
       <span className="business-onboarding-status"><Clock3 size={14} aria-hidden/> Pending onboarding</span>
       <h3>{application.display_name}</h3>
-      <p>Application reference: <code>{application.id}</code></p>
+      <OrganizationReference id={application.id}/>
       <p>Your recorded role: {application.role} (pending business only)</p>
       <Link className="team-open-link" href={"/app/business/"+application.id}>
        Review application and team <ArrowRight size={16} aria-hidden/>

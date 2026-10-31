@@ -52,7 +52,7 @@ export function TeamInvitations({
    <div><span className="section-index">TEAM ACCESS / OPT-IN</span>
     <h2>{organizationId?"Invite a viewer":"Invitations for you"}</h2>
     <p>{organizationId?
-     "Offer read-only organizational access to a verified Stellar public account. Only owners and administrators of active workspaces can invite.":
+     "Offer read-only organizational access to a specific Stellar public account. Account ownership does not establish a person’s identity. Only owners and administrators of active workspaces can invite.":
      "Only you can accept an invitation addressed to your signed-in Stellar account. Accepting grants viewer access to that organization, not payment authority."}</p>
    </div>
    <Button type="button" size="sm" variant="outline" disabled={working||status==="loading"}
@@ -72,8 +72,9 @@ export function TeamInvitations({
     <label htmlFor={"team-invite-recipient-"+organizationId}>Recipient's Stellar G-address</label>
     <input id={"team-invite-recipient-"+organizationId} required
      value={recipient} placeholder="G…" autoComplete="off" spellCheck={false}
+     aria-describedby={"team-invite-help-"+organizationId}
      onChange={e=>setRecipient(e.target.value.toUpperCase())} maxLength={56}/>
-    <p>Viewer only. The recipient must explicitly accept, and the invitation expires in seven days. Wallet signing and payment approvals are never requested.</p>
+    <p id={"team-invite-help-"+organizationId}>Viewer only. The recipient must explicitly accept, and the invitation expires in seven days. Wallet signing and payment approvals are never requested.</p>
     <Button type="submit" disabled={working||!invitee||invitee===address}>
      <UserPlus size={16} aria-hidden/> {working?"Sending invitation…":"Invite viewer"}
     </Button>

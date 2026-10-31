@@ -64,3 +64,13 @@ test("private server proxy signs exact organization and cursor and bounds respon
  assert.match(route,/search.getAll\(key\).length!==1/);
  assert.doesNotMatch(route,/NEXT_PUBLIC_|export async function POST|export async function PATCH|submitPayment/);
 });
+
+test("team read failures distinguish lost session and denied access from unavailable records",async()=>{
+ const real=globalThis.fetch;
+ try{
+  for(const [status,kind] of [[401,"session"],[403,"denied"],[404,"denied"],[503,"unavailable"]]){
+   globalThis.fetch=async()=>new Response("",{status});
+   await assert.rejects(()=>loadOrganizationTeam(id,owner),error=>error.kind===kind);
+  }
+ }finally{globalThis.fetch=real;}
+});
