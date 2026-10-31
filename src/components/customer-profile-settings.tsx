@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useState} from "react";
 import {CheckCircle2,LockKeyhole,RefreshCw,ShieldCheck,UserRound} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import {COUNTRIES,countryName} from "@/lib/customer-countries";
 import {loadCustomerProfile,saveCustomerProfile,type ProfileInput,
  validProfileInput} from "@/lib/account-profile";
 const EMPTY:ProfileInput={display_name:"",use_case:"personal",residence_country:null};
@@ -56,7 +57,7 @@ export function CustomerProfileSettings({address}:{address:string}){
   {status==="loading"?<p role="status" className="customer-profile-state">Loading your saved preferences…</p>:null}
   {status==="error"?<div className="customer-profile-state" role="alert">
    <strong>Account preferences aren't available yet.</strong>
-   <p>No profile was created or changed. Database setup may still be in progress.</p>
+   <p>No preferences were changed. Please retry when your connection is available.</p>
    <Button variant="outline" size="sm" type="button" onClick={()=>reload(v=>v+1)}>
     <RefreshCw size={15} aria-hidden/> Try again
    </Button>
@@ -78,11 +79,14 @@ export function CustomerProfileSettings({address}:{address:string}){
     <p>Exploring a business use case doesn't automatically create or verify an organization.</p>
    </div>
    <div className="customer-profile-field"><label htmlFor="profile-country">Country of residence (optional)</label>
-    <input id="profile-country" maxLength={2} placeholder="e.g. NG" inputMode="text"
-      autoComplete="off" value={profile.residence_country??""}
-      onChange={e=>update({residence_country:e.target.value?
-       e.target.value.toUpperCase():null})}/>
-    <p>Two-letter country code. Self-reported, and never used as proof of residence.</p>
+    <select id="profile-country" autoComplete="country-name" value={profile.residence_country??""}
+     onChange={e=>update({residence_country:e.target.value||null})}>
+     <option value="">Prefer not to say</option>
+     {profile.residence_country&&!COUNTRIES.some(([id])=>id===profile.residence_country)?
+      <option value={profile.residence_country}>{countryName(profile.residence_country)}</option>:null}
+     {COUNTRIES.map(([id,name])=><option value={id} key={id}>{name}</option>)}
+    </select>
+    <p>Optional and self-reported. This does not establish residence or route availability.</p>
    </div>
    <div className="customer-profile-actions">
     <Button type="submit" disabled={saving||!validProfileInput(profile)}>

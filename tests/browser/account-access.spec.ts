@@ -208,11 +208,18 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"Account settings."})).toBeVisible();
  await page.getByLabel("Display name").fill("Customer Test Profile");
  await page.getByLabel("What brings you to StealthBridge?").selectOption("both");
- await page.getByLabel("Country of residence (optional)").fill("NG");
+ await page.getByLabel("Country of residence (optional)").selectOption("NG");
  await page.getByRole("button",{name:"Save my preferences"}).click();
  await expect(page.getByText("Saved in your account")).toBeVisible();
  expect(savedProfile).toMatchObject({display_name:"Customer Test Profile",
   use_case:"both",residence_country:"NG"});
+ await page.goto("/app");
+ await expect(page.getByRole("heading",{name:"Good to see you, Customer."})).toBeVisible();
+ await expect(page.getByText("Based in Nigeria")).toBeVisible();
+ await expect(page.getByRole("link",{name:/Prepare a personal transfer/})).toHaveAttribute("href","/app/send");
+ await expect(page.getByRole("link",{name:/Manage business payments/})).toHaveAttribute("href","/app/business");
+ await expect(page.getByRole("link",{name:/Edit preferences/})).toHaveAttribute("href","/app/settings");
+
  // A browser test can exercise UX with isolated API fixtures; it must never
  // create a real organization in Neon or claim a fictitious customer in prod.
  let application:{id:string;display_name:string;status:"pending";role:"owner"}|null=null;

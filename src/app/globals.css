@@ -1191,3 +1191,31 @@
 .payment-recipient-confirm input[type="checkbox"]{width:20px;height:20px;flex-shrink:0;accent-color:#a9f4cb;cursor:pointer;margin:1px 0 0}
 .payment-recipient-confirm p{font-size:12px;color:#b6d6c8;line-height:1.7;margin:11px 0 0}
 .payment-summary-card dd{overflow-wrap:anywhere}
+
+/* Actual account personalization, not a fabricated balance or transaction timeline. */
+.account-journey{border:1px solid rgba(151,229,203,.28);border-radius:21px;padding:clamp(20px,4vw,34px);background:linear-gradient(115deg,#123d36,#082831);margin:26px 0 30px;color:#edf9f5}
+.account-journey-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.account-journey-head h2{font-size:clamp(25px,3vw,37px);letter-spacing:-.055em;line-height:1.18;margin:10px 0}
+.account-journey-head p,.account-journey-start p{font-size:13px;line-height:1.75;color:#accbc2;margin:0}
+.account-journey-mark{border:1px solid #a3f2d955;background:#74dcb321;border-radius:17px;padding:13px;color:#b5ffe2}
+.account-journey-hint{color:#bddbd0;font-size:13px}
+.account-journey-alert{border:1px solid #d6a9856a;border-radius:12px;padding:16px;font-size:13px}
+.account-journey-alert p{margin:0 0 12px}
+.account-journey-summary{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 0;font-size:12px;color:#c0dfd2}
+.account-journey-summary span:first-child{display:inline-flex;align-items:center;gap:6px;color:#baffd8}
+.account-journey-summary a,.account-journey-start a{display:inline-flex;align-items:center;gap:7px;color:#c1ffe1;text-decoration:underline;text-underline-offset:4px}
+.account-journey-start{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:18px;background:#a5e9ce0d;border-radius:13px;border:1px solid #9bdfcb30;margin:17px 0}
+.account-journey-start>span{padding:13px;border-radius:12px;background:#d9f7e517;color:#aff2d9}
+.account-journey-start>div{flex:1;min-width:185px}
+.account-journey-start strong{font-size:14px}
+.account-journey-start a{margin-left:auto;font-size:12px;font-weight:700}
+.account-journey-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.account-journey-action{min-width:0;display:flex;align-items:center;gap:13px;padding:17px;border:1px solid #b5f6db40;background:#06292b;border-radius:13px}
+.account-journey-action>svg:first-child{color:#a6f3d1;flex-shrink:0}
+.account-journey-action>svg:last-child{margin-left:auto;flex-shrink:0}
+.account-journey-action span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.account-journey-action strong{font-size:13px}
+.account-journey-action small{font-size:11px;line-height:1.5;color:#a7cbc0}
+.account-journey-action:hover{background:#155047;border-color:#9be9cc}
+.account-journey-disclaimer{display:flex;align-items:flex-start;gap:8px;color:#9fc2b6;font-size:11px;line-height:1.6;margin:19px 0 0}
+@media(max-width:730px){.account-journey-actions{grid-template-columns:1fr}.account-journey-mark{display:none}}
