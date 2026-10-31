@@ -1,5 +1,5 @@
 /** AUTO-GENERATED from specs/backend-openapi.v0.3.yaml.
- * Backend source commit: acad5777f2217917421469e9722fbfbf6222ff7a
+ * Backend source commit: ba0e579084750be1ad7b001f98830a342fa51b5c
  * Run: npm run generate:api-types; edit the pinned schema only after review.
  * Types alone are not runtime validators or permission to move money.
  */

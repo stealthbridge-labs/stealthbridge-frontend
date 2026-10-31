@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 
 // Immutable reviewed SDK revision, not an npm latest/tag or dynamically fetched branch.
-const SDK_REF="9e774cc6eb3b45da6940641f40fe64ced73fc50a";
+const SDK_REF="eebffb78634f83edce0dd28b1300dc7be5d79c69";
 const upstream=`https://raw.githubusercontent.com/stealthbridge-labs/stealthbridge-sdk/${SDK_REF}/src/generated/api-wire.ts`;
 const local=await readFile("src/lib/sdk-api-wire.v0.2.ts","utf8");
 const response=await fetch(upstream,{redirect:"error",signal:AbortSignal.timeout(12_000)});
