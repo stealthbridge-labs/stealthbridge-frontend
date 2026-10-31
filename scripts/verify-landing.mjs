@@ -27,11 +27,11 @@ try{
   await delay(300);
  }
  assert.ok(ready,"Server failed to start: "+logs);
- await expectPage("/",["StealthBridge","Move value","Not exposure","/business","/send","/platform"]);
+ await expectPage("/",["StealthBridge","Money moves","Life stays yours","/business","/send","/platform"]);
  await expectPage("/business",["Confidentiality","means business","Sign in to StealthBridge","/login"]);
  await expectPage("/send",["Close to home","Across borders","Sign in to StealthBridge","/login"]);
  await expectPage("/login",["Sign in","Stellar","Continue with Freighter"]);
- await expectPage("/platform",["StealthBridge","More than","In development"]);
+ await expectPage("/platform",["StealthBridge","Your money is personal","Payment services are in development"]);
  await expectPage("/discover/send",["StealthBridge Send","Close to home","In development"]);
  await expectPage("/discover/business",["StealthBridge Business","Confidentiality","In development"]);
  const logo=await fetch(BASE+"/brand/stealthbridge-symbol.svg");
