@@ -29,3 +29,19 @@ The customer view does not show ledger sequence numbers, the production migratio
 The authenticated app home includes an optional first-party account journey, based on a strict response from the existing GET /api/account/profile BFF. A customer can self-report a name, use case and country through /app/settings only after session verification. The browser renders relevant Send or Business actions based on the saved preference, but never interprets it as KYC, a verified business, country support, a balance or payment authorization. No fictional transfers, liquidity, quotes or ledger events are shown.
 
 STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED=true must be released only after both production BFF and backend have the same server-only STEALTHBRIDGE_ACCOUNT_BRIDGE_SECRET, the 12 SQLx migrations are registered, the /v1/account/profile backend is reachable, and an actual signed-in smoke test succeeds. The BFF HMAC is bound to method, path, account, timestamp, nonce and body hash; database one-time update receipts guard PATCH replay. This nonfinancial feature stores self-reported names and country in Neon and must not be marketed as cryptographically confidential.
+
+## Reproducible production smoke (no customer data writes)
+
+Run npm run smoke:customer from the frontend repository. The script uses a
+disposable in-memory Ed25519 keypair to prove a genuine Stellar-format
+signed message to StealthBridge's cookie-bound wallet sign-in endpoints,
+and then verifies authenticated read-only account profile, organizations,
+business onboarding, personal/business pages, and the explicit disabled-payment
+flag. It does not create a real profile, organization, recipient, payment,
+payout, smart account or ledger transaction. It never prints or persists
+the generated signing key or account address. Its network origin is pinned
+to the customer production domain (or the exact local test loopback origin).
+
+This smoke does not substitute for manual Freighter extension testing,
+reviewed passkey account creation/recovery, cryptographic privacy, fiat delivery,
+issuer controls, partner contract tests, KYC or finance release authorization.

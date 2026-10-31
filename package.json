@@ -15,7 +15,8 @@
     "test:landing": "node scripts/verify-landing.mjs",
     "test:browser": "playwright test",
     "test:browser:preview": "STEALTHBRIDGE_SITE_MODE=preview npm run build && STEALTHBRIDGE_TEST_PREVIEW=1 npm run test:browser",
-    "test:seo": "node scripts/verify-seo.mjs"
+    "test:seo": "node scripts/verify-seo.mjs",
+    "smoke:customer": "node scripts/smoke-customer-journey.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.0",

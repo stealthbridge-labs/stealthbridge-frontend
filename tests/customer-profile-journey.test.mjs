@@ -15,3 +15,13 @@ test("onboarding is based only on signed-in saved preferences, never fabricated 
  assert.match(settings,/COUNTRIES\.map/);
  assert.match(settings,/validProfileInput\(profile\)/);
 });
+
+test("production smoke exercises signed-in real account reads without financial writes",async()=>{
+ const smoke=await readFile("scripts/smoke-customer-journey.mjs","utf8");
+ assert.match(smoke,/generateKeyPairSync\("ed25519"\)/);
+ assert.match(smoke,/Stellar Signed Message/);
+ assert.match(smoke,/\/api\/account\/profile/);
+ assert.match(smoke,/\/api\/account\/business-onboarding/);
+ assert.match(smoke,/transactionsBroadcast:0/);
+ assert.doesNotMatch(smoke,/method:"PATCH"|method:"DELETE"|\/v1\/settlements|\.sendTransaction\(/);
+});
