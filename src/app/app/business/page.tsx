@@ -5,6 +5,7 @@ import {ArrowRight,Building2,FileSpreadsheet,LockKeyhole,SquarePen,UsersRound} f
 import {requireWalletIdentity} from "@/lib/auth-server";
 import {AccountOrganizations} from "@/components/account-organizations";
 import {BusinessOnboarding} from "@/components/business-onboarding";
+import {BusinessOverview} from "@/components/business-overview";
 import {TeamInvitations} from "@/components/team-invitations";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Your business workspace — StealthBridge",
@@ -28,6 +29,7 @@ export default async function AppBusiness({
     <p>Registration does not verify a business. Settlement, transfers and payouts remain disabled until the necessary independent checks are complete.</p>
    </div>
   </div>
+  <BusinessOverview address={identity.address}/>
   <section aria-labelledby="business-tools-title" className="business-hub-actions">
    <div className="business-hub-section-header"><span className="section-index">YOUR WORKFLOWS</span><h2 id="business-tools-title">What would you like to do?</h2></div>
    <div className="business-hub-action-grid">

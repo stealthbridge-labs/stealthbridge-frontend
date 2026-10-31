@@ -1273,3 +1273,24 @@
  .business-hub-action{padding:17px}
 }
 @media(prefers-reduced-motion:reduce){.account-nav-links a,.business-hub-action{transition:none}}
+
+/* Real saved business status, not compliance approval or payment availability. */
+.business-readiness{margin:27px 0 18px;background:#0d3030;border:1px solid #3773648c;border-radius:19px;padding:clamp(18px,3vw,28px)}
+.business-readiness-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.business-readiness-header h2{font-size:clamp(22px,2.6vw,31px);letter-spacing:-.04em;line-height:1.2;margin:8px 0}
+.business-readiness-header p,.business-readiness-fineprint{font-size:12px;line-height:1.65;color:#a9cbbc;margin:0}
+.business-readiness-header button{flex-shrink:0}
+.business-readiness-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:20px}
+.business-readiness-item{display:flex;align-items:center;gap:12px;min-width:0;background:#113b37;border:1px solid #5986756b;border-radius:12px;padding:16px;text-decoration:none}
+a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
+.business-readiness-icon{width:39px;height:39px;border-radius:11px;background:#86e7be22;color:#a5f6ce;display:grid;place-items:center;flex-shrink:0}
+.business-readiness-item>span:nth-child(2){min-width:0;display:grid;gap:5px}
+.business-readiness-item small{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94bdae;font-weight:750}
+.business-readiness-item strong{font-size:14px;color:#f4fff6}
+.business-readiness-item em{font-size:11px;font-style:normal;color:#b4d6c6;line-height:1.5}
+.business-readiness-item>svg:last-child{margin-left:auto;flex-shrink:0;color:#bbf5d9}
+.business-readiness-blocked{background:#1b3331;border-color:#5b76664d}
+.business-readiness-fineprint{margin-top:15px}
+.business-readiness-notice{border:1px solid #638f7b65;border-radius:12px;padding:15px;margin-top:20px;font-size:12px;line-height:1.6}
+.business-readiness-notice p{margin:5px 0 0;color:#bbd5c9}
+@media(max-width:690px){.business-readiness-grid{grid-template-columns:1fr}}

@@ -374,3 +374,58 @@ test("active owner can invite and revoke a viewer, without finance permissions",
  ]);
  await expect(page.getByRole("button",{name:/Submit settlement|Authorize payment|Claim fees/})).toHaveCount(0);
 });
+
+test("Business snapshot distinguishes real records, empty state and API failure",async({page})=>{
+ const {publicKey,privateKey}=generateKeyPairSync("ed25519");
+ const key=publicKey.export({format:"jwk"});
+ if(typeof key.x!=="string")throw Error("Invalid test signing identity");
+ const address=stellarAddress(Buffer.from(key.x,"base64url"));
+ await page.goto("/login");
+ const origin=new URL(page.url()).origin;
+ const challenge=await page.request.post("/api/auth/challenge",{
+  data:{address},headers:{origin}
+ });
+ expect(challenge.status()).toBe(200);
+ const {message}=await challenge.json() as {message:string};
+ const verified=await page.request.post("/api/auth/verify",{
+  data:{address,signature:signature(message,privateKey)},headers:{origin}
+ });
+ expect(verified.status()).toBe(200);
+ let hasPending=false;
+ let hasMembership=false;
+ let unavailable=false;
+ const organization="9a1a395f-249c-4907-b657-d48df4b38d28";
+ await page.route("**/api/account/business-onboarding",route=>
+  route.fulfill(unavailable?{status:503,json:{code:"DEPENDENCY_UNAVAILABLE"}}:{
+   json:{schema_version:1,network:"testnet",source:"neon-pending-business-applications",
+    account_address:address,applications:hasPending?[{
+     id:organization,display_name:"Saved Business Example",status:"pending",role:"owner"
+    }]:[],has_more:false,organization_verified:false,payment_execution_enabled:false,
+    organization_payment_authorized:false}
+  }));
+ await page.route("**/api/account/directory",route=>route.fulfill({
+  json:{schema_version:1,network:"testnet",source:"neon-active-memberships",
+   account_address:address,organizations:hasMembership?[{
+    id:organization,display_name:"Actual Organization",role:"viewer"
+   }]:[],has_more:false,payment_execution_enabled:false,
+   organization_payment_authorized:false}
+ }));
+ await page.goto("/app/business");
+ const overview=page.locator(".business-readiness");
+ await expect(overview.getByText("No pending applications")).toBeVisible();
+ await expect(overview.getByText("No linked organizations")).toBeVisible();
+ await expect(overview.getByText("Transfers not available")).toBeVisible();
+ expect(await overview.getByText(/available for transfer/).count()).toBe(0);
+ hasPending=true;hasMembership=true;
+ await overview.getByRole("button",{name:"Refresh"}).click();
+ await expect(overview.getByText("1 pending application")).toBeVisible();
+ await expect(overview.getByText("1 current membership")).toBeVisible();
+ await expect(overview.getByRole("link",{name:/Review people and access/})).toHaveAttribute(
+  "href","#business-organizations");
+ unavailable=true;
+ await overview.getByRole("button",{name:"Refresh"}).click();
+ await expect(overview.getByText("Some business information could not be verified.")).toBeVisible();
+ await expect(overview.getByText("1 current membership")).toHaveCount(0);
+ await expect(overview.getByText("Transfers not available")).toHaveCount(0);
+ await expect(page.getByRole("button",{name:/Submit settlement|Confirm and send/})).toHaveCount(0);
+});
