@@ -216,7 +216,7 @@ export function CustomerRouteExplorer(){
       <div className="route-card-availability"><Clock3 size={16} aria-hidden/>
        <span>Pricing and transfers are not open on this route yet.</span></div>
       <Link className="route-card-prepare" href={"/login?"+new URLSearchParams({
-       next:(intent==="business"?"/app/business":"/app/send")+"?corridor="+row.id
+       next:(intent==="business"?"/app/business/payments":"/app/send")+"?corridor="+row.id
       }).toString()}>{intent==="business"?"Review for my business":"Review personal transfer"} <ArrowRight size={15} aria-hidden/></Link>
      </article>)}
     </div>:null}

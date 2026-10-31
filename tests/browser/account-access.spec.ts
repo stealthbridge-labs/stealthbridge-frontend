@@ -32,7 +32,8 @@ test("public stories build confidence before wallet permissions",async({page})=>
  await expect(page.getByRole("button",{name:"Connect Freighter"})).toHaveCount(0);
 });
 test("unauthenticated dashboard and payment pages are redirected to sign-in",async({page})=>{
- for(const path of ["/app","/app/send","/app/business","/app/business/batch"]){
+ for(const path of ["/app","/app/send","/app/business",
+  "/app/business/payments","/app/business/batch"]){
   await page.goto(path);
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
   await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
@@ -69,6 +70,10 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
 });
 test("SEP-53 signed challenge creates real short-lived session; invalid proof and cross-origin fail",async({page})=>{
+ // This covers authentication, team access, local drafts, saved profiles,
+ // business creation, amendment, withdrawal and logout in one real browser.
+ // Give the entire multi-workflow scenario sufficient time on CI runners.
+ test.slow();
  const {publicKey,privateKey}=generateKeyPairSync("ed25519");
  const jwk=publicKey.export({format:"jwk"});
  if(typeof jwk.x!=="string")throw Error("Test key does not expose raw Ed25519 public key.");
@@ -127,6 +132,12 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  });
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Overview",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("heading",{name:"Business access, in one place."})).toHaveCount(0);
+ await page.goto("/app/business");
+ await expect(page.getByRole("link",{name:"Workspace",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("link",{name:/Prepare one payment/})).toHaveAttribute("href","/app/business/payments");
+ await expect(page.getByRole("heading",{name:"New business payment"})).toHaveCount(0);
  await expect(page.getByRole("heading",{name:"Invitations for you"})).toBeVisible();
  await expect(page.getByText("Invitation Test Only")).toBeVisible();
  await page.getByRole("button",{name:"Accept viewer invitation"}).click();
@@ -135,7 +146,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"Business access, in one place."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
  await expect(page.getByText("Current membership")).toBeVisible();
- await expect(page.getByRole("link",{name:/Send internationally/})).toHaveAttribute("href","/app/send");
+ await expect(page.getByRole("link",{name:"Transfers",exact:true})).toHaveAttribute("href","/app/send");
  await page.goto("/app/send");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await expect(page.getByText("Signed in securely")).toBeVisible();
@@ -288,7 +299,10 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.getByRole("button",{name:"Permanently withdraw application"}).click();
  await expect(page.getByText(/haven't registered a business workspace yet/)).toBeVisible();
  await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toHaveCount(0);
+ await page.getByRole("link",{name:/Prepare one payment/}).click();
+ await expect(page).toHaveURL(/\/app\/business\/payments$/);
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Single payment",exact:true})).toHaveAttribute("aria-current","page");
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
  const logout=await page.request.post("/api/auth/logout",{headers:{origin}});
  expect(logout.status()).toBe(200);

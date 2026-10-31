@@ -232,7 +232,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    <nav className="payment-nav" aria-label="Product sections">
     <Link href={identityAddress?"/app/send":"/send"} aria-current={!business?"page":undefined}>Personal transfers</Link>
     <Link href={identityAddress?"/app/business":"/business"} aria-current={business?"page":undefined}>Business payments</Link>
-    <Link href={identityAddress?"/app":"/platform"}>{identityAddress?"Overview":"Privacy & trust"} <ArrowUpRight size={14} aria-hidden/></Link>
+    <Link href={identityAddress?(business?"/app/business":"/app"):"/platform"}>{identityAddress?(business?"Business workspace":"Overview"):"Privacy & trust"} <ArrowUpRight size={14} aria-hidden/></Link>
    </nav>
    <div className="payment-intro">
     <div>

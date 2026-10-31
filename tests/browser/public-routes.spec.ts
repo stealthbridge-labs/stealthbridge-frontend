@@ -106,7 +106,7 @@ test("business payment intent survives sign-in as a public corridor ID only",asy
  const link=page.getByRole("link",{name:"Review for my business"});
  const href=await link.getAttribute("href");
  const dest=new URL(href!,"https://stealthbridge.example").searchParams.get("next");
- expect(dest).toBe("/app/business?corridor="+id);
+ expect(dest).toBe("/app/business/payments?corridor="+id);
  expect(href).not.toMatch(/recipient|amount|name|reference|privacy_rail/i);
  await link.click();
  await expect(page).toHaveURL(/\/login\?next=/);

@@ -2,8 +2,6 @@ import type {Metadata} from "next";
 import Link from "next/link";
 import {ArrowRight,ArrowUpRight,Building2,Clock3,LockKeyhole,Send,ShieldCheck} from "lucide-react";
 import {requireWalletIdentity} from "@/lib/auth-server";
-import {AccountOrganizations} from "@/components/account-organizations";
-import {TeamInvitations} from "@/components/team-invitations";
 import {AccountJourney} from "@/components/account-journey";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Account overview — StealthBridge"};
@@ -15,7 +13,7 @@ export default async function Dashboard(){
    <p>Your payment journey starts here. Find a route, understand your options, and manage your next steps with clarity.</p>
   </div>
   {process.env.STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED==="true"?
-   <AccountJourney address={identity.address}/>:null}
+   <AccountJourney address={identity.address}/>:
   <div className="account-overview-grid">
    <Link href="/app/send" className="account-feature-card"><span className="account-feature-icon"><Send size={26} aria-hidden/></span>
     <span className="account-feature-eyebrow">FOR YOU</span><h2>Send internationally</h2>
@@ -27,11 +25,8 @@ export default async function Dashboard(){
     <p>Explore organizational payment routes, payment references and the controls needed for cross-border settlement.</p>
     <span className="account-feature-link">Open business <ArrowRight size={17} aria-hidden/></span>
    </Link>
-  </div>
+  </div>}
 
-  <AccountOrganizations address={identity.address}/>
-  {process.env.STEALTHBRIDGE_TEAM_INVITES_ENABLED==="true"?
-   <TeamInvitations address={identity.address}/>:null}
   <section className="account-status-section" aria-labelledby="account-security-heading">
    <div><span className="section-index">ACCOUNT & SECURITY</span><h2 id="account-security-heading">A clearer picture of your access.</h2></div>
    <div className="account-status-list">

@@ -83,7 +83,8 @@ async function main(){
   business.data.organization_payment_authorized===false,
   "Business onboarding read failed");
  results.business=200;
- for(const path of ["/app","/app/settings","/app/send","/app/business"]){
+ for(const path of ["/app","/app/settings","/app/send","/app/business",
+  "/app/business/payments","/app/business/batch"]){
   const response=await fetch(ORIGIN+path,{headers:{cookie},
    redirect:"error",cache:"no-store",signal:AbortSignal.timeout(12000)});
   check(response.status===200,"Signed-in page unavailable: "+path);

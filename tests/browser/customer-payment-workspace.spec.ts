@@ -76,7 +76,7 @@ test("business corridor deep link renders the payment workspace, not hidden deve
  await page.route(/\/api\/public\/corridors(?:\?.*)?$/,route=>
   route.fulfill({json:{items:[record],next_cursor:null}}));
  await page.route("**/api/public/status",route=>route.fulfill({json:status()}));
- await page.goto("/app/business?corridor="+id);
+ await page.goto("/app/business/payments?corridor="+id);
  await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByLabel("Payment route")).toHaveValue(id);

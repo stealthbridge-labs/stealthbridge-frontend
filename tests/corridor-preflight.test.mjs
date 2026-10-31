@@ -58,10 +58,14 @@ test("public route navigation only preserves a validated UUID across sign-in",as
  assert.equal(validAccountDestination("/app"),true);
  assert.equal(validAccountDestination("/app/send?corridor="+id),true);
  assert.equal(validAccountDestination("/app/business?corridor="+id),true);
+ assert.equal(validAccountDestination("/app/business/payments"),true);
+ assert.equal(validAccountDestination("/app/business/payments?corridor="+id),true);
  for(const bad of ["https://phishing.example","//phishing.example","/app/send?corridor=../evil",
   "/app/send?corridor="+id+"&admin=true","/app/send?amount=1000",
   "/app/business?redirect=https://example.com",
-  "/app/business?corridor="+id+"&amount=2","/app/business?corridor="+id+"&corridor="+id]){
+  "/app/business?corridor="+id+"&amount=2","/app/business?corridor="+id+"&corridor="+id,
+  "/app/business/payments?corridor="+id+"&recipient=G-secret",
+  "/app/business/payments?amount=9000"]){
   assert.equal(validAccountDestination(bad),false);
  }
  const routes=await readFile("src/components/customer-route-explorer.tsx","utf8");
