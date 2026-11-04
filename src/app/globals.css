@@ -670,6 +670,13 @@
 .payment-review svg{color:#b5ffe2;flex-shrink:0}
 .payment-review strong{font-size:13px}
 .payment-review p{color:#c3e0d6;font-size:12px;line-height:1.65;margin-top:7px}
+/* A customer-owned fingerprint is not a public transaction or a privacy proof. */
+.payment-review-fingerprint{min-width:0;margin-top:18px;padding-top:16px;border-top:1px solid #366b5d}
+.payment-review-fingerprint strong{display:block;color:#e7fff6;margin-bottom:4px}
+.payment-fingerprint-value{display:block;max-width:100%;overflow-wrap:anywhere;user-select:all;
+ padding:12px;margin-top:12px;font-size:11px;line-height:1.8;color:#d6f8e9;
+ background:#0b2827;border:1px solid #427a6f;border-radius:8px}
+.payment-review-fingerprint .payment-action-row{justify-content:flex-start;margin-top:14px;padding-top:14px;gap:10px}
 .payment-account-card .wallet-section{padding:0;margin:0;border:0;max-width:none;background:transparent}
 .payment-account-card .wallet-top{margin-bottom:17px}
 .payment-account-card .wallet-top h3{font-size:14px}

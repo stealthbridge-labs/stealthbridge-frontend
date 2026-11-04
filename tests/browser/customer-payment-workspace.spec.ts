@@ -84,3 +84,47 @@ test("business corridor deep link renders the payment workspace, not hidden deve
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
  await expect(page.locator("main")).not.toContainText(/ledger #|database migration checks|operator_local|WASM SHA/i);
 });
+
+
+test("local randomized draft fingerprint verifies without sending amount or recipient to a new endpoint",async({page})=>{
+ await signIn(page);
+ const outgoing:string[]=[];
+ page.on("request",request=>{
+  if(new URL(request.url()).pathname.startsWith("/api/public/"))
+   outgoing.push(request.method()+" "+new URL(request.url()).pathname);
+ });
+ await page.route(/\/api\/public\/corridors(?:\?.*)?$/,route=>
+  route.fulfill({json:{items:[record],next_cursor:null}}));
+ await page.route("**/api/public/corridors/"+id,route=>route.fulfill({json:record}));
+ await page.route("**/api/public/corridors/"+id+"/preflight",route=>route.fulfill({json:{
+  schema_version:1,network:"testnet",source:"live-corridor-metadata-preflight",
+  observed_at_unix:Math.floor(Date.now()/1000),corridor:record,network_fresh:true,
+  ledger_sequence:5300000,database_schema_ready:true,read_only_dependencies_ready:true,
+  payment_execution_enabled:false,fee_quote_available:false,liquidity_verified:false,
+  issuer_verified:false,privacy_verified:false,fiat_payouts_enabled:false
+ }}));
+ await page.route("**/api/public/status",route=>route.fulfill({json:status()}));
+ await page.route("**/api/public/classic-recipient/**",route=>route.fulfill({json:{
+  schema_version:1,network:"testnet",source:"stellar-horizon/account-presence",address:recipient,
+  observed_at_unix:Math.floor(Date.now()/1000),classic_account_found:true,
+  ownership_verified:false,asset_acceptance_verified:false,payment_execution_enabled:false
+ }}));
+ await page.goto("/app/send");
+ await page.getByLabel("Payment route").selectOption(id);
+ await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
+ await page.getByLabel("Amount").fill("42.50");
+ await page.getByRole("button",{name:"Check recipient account"}).click();
+ await expect(page.getByText(/Stellar account found on Testnet/)).toBeVisible();
+ await page.getByRole("checkbox",{name:/I have checked this full address/}).check();
+ await page.getByRole("button",{name:"Review payment details"}).click();
+ await expect(page.getByText("Private local review fingerprint")).toBeVisible();
+ const fingerprint=await page.locator(".payment-fingerprint-value").innerText();
+ expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
+ await page.getByRole("button",{name:"Verify locally"}).click();
+ await expect(page.getByText(/Local draft integrity verified/)).toBeVisible();
+ expect(outgoing.every(call=>call.startsWith("GET "))).toBe(true);
+ expect(outgoing.every(call=>!call.includes("42.50")&&!call.includes(recipient+"?"))).toBe(true);
+ await page.getByLabel("Amount").fill("43.50");
+ await expect(page.getByText("Private local review fingerprint")).toHaveCount(0);
+ await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+});

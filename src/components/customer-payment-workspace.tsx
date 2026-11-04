@@ -9,6 +9,7 @@ import {WalletConnect} from "@/components/wallet-connect";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
+import {createPrivateReviewReceipt,verifyPrivateReviewReceipt,type PrivateReviewReceipt} from "@/lib/private-review-commitment";
 import {currentRecipientContract,validRecipientPresence,type RecipientPresence} from "@/lib/recipient-presence";
 import {currentClassicRecipient,validClassicRecipientPresence,type ClassicRecipientPresence} from "@/lib/classic-recipient-presence";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
@@ -64,10 +65,13 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [reviewed,setReviewed]=useState(false);
  const [reviewPending,setReviewPending]=useState(false);
  const [reviewError,setReviewError]=useState<string|null>(null);
+ const [privateReceipt,setPrivateReceipt]=useState<PrivateReviewReceipt|null>(null);
+ const [receiptMessage,setReceiptMessage]=useState("");
  const reviewGeneration=useRef(0);
  const invalidateReview=useCallback(()=>{
   reviewGeneration.current++;
   setReviewPending(false);setReviewError(null);setReviewed(false);
+  setPrivateReceipt(null);setReceiptMessage("");
  },[]);
  useEffect(()=>{
   const timer=setInterval(()=>setFreshnessTick(v=>v+1),15000);
@@ -148,7 +152,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  });
  const formComplete=!!corridor&&!!connected&&isRecipient(recipientAddress)&&amountValid(amount)&&
   prepared.validLocalDraft&&recipientPresent&&recipientConfirmed&&
-  (!business||reference.trim().length>=3);
+  (!business||/^[A-Za-z0-9_-]{3,64}$/.test(reference.trim()));
  const canReview=formComplete&&networkFresh&&corridorState==="ready";
  const recipientKind=canonicalStellarAccountAddress(recipientAddress)?"classic":
   contractRecipient?"contract":"unknown";
@@ -156,7 +160,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
   if(!canReview||!networkFresh||!corridor){invalidateReview();return;}
   const generation=++reviewGeneration.current;
   const selected=corridor;
-  setReviewed(false);setReviewError(null);setReviewPending(true);
+  setReviewed(false);setPrivateReceipt(null);setReceiptMessage("");setReviewError(null);setReviewPending(true);
   try{
    // Fetch new server-side operator configuration and RPC-derived network
    // status; only the public corridor ID goes to StealthBridge's backend.
@@ -183,7 +187,15 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    if(!preflight.network_fresh||preflight.ledger_sequence===null||
       Math.abs(preflight.ledger_sequence-observed.ledger_sequence)>2)
     throw Error("Testnet ledger observations are inconsistent. Refresh the network before reviewing.");
+   // A fresh 256-bit secret salt binds all locally reviewed details without
+   // publishing the amount, payee, internal reference or salt to an API.
+   const evidence=await createPrivateReviewReceipt({
+    corridorId:selected.id,originCountry:selected.origin_country,destinationCountry:selected.destination_country,
+    assetCode:selected.asset_code,assetIssuer:selected.asset_issuer,privacyRail:selected.privacy_rail,
+    sender:connected!,recipient:recipientAddress,amount,reference:business?reference.trim():""
+   });
    if(generation!==reviewGeneration.current)return;
+   setPrivateReceipt(evidence);
    setNetwork(observed);
    setRecipientEvidence(recipientStatus);
    setReviewed(true);
@@ -333,7 +345,8 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       {business?<><label className="payment-label" htmlFor="payment-reference">Internal payment reference</label>
        <input className="payment-input" id="payment-reference" autoComplete="off" maxLength={64}
         value={reference} onChange={event=>{setReference(event.target.value);invalidateReview();}}
-        placeholder="Your invoice or purchase-order reference"/>
+        placeholder="Invoice_2026_001"/>
+       <p className="payment-hint">3–64 letters, numbers, underscores or hyphens. Kept in this tab only.</p>
        <p className="payment-hint">Reference is kept in this browser tab; no invoice or approval request is submitted.</p>
       </>:null}
       <div className="payment-action-row">
@@ -351,6 +364,25 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
         <p>This is a planning review, not a payment offer. Funding, charges and delivery are not yet available.</p>
         <p>Route and network checks were refreshed. Liquidity, recipient asset support, privacy verification, exchange rates and fees remain unverified.</p>
         <p>Transfer execution is not yet available. Nothing has been signed, charged or stored.</p>
+        {privateReceipt?<div className="payment-review-fingerprint">
+         <strong>Private local review fingerprint</strong>
+         <p>Randomized SHA-256 integrity evidence for this exact draft. Only the fingerprint is safe to share; the nonce and payment details remain in this tab. This is not encryption, a ZK proof, or a payment receipt.</p>
+         <code className="payment-fingerprint-value">{privateReceipt.commitment}</code>
+         <div className="payment-action-row">
+          <Button type="button" size="sm" variant="outline" onClick={async()=>{
+           try{await navigator.clipboard.writeText(privateReceipt.commitment);setReceiptMessage("Fingerprint copied without payment details.");}
+           catch{setReceiptMessage("Copy unavailable. Select the fingerprint above to copy it manually.");}
+          }}>Copy fingerprint</Button>
+          <Button type="button" size="sm" variant="outline" onClick={async()=>{
+           const valid=await verifyPrivateReviewReceipt({corridorId:corridor!.id,
+            originCountry:corridor!.origin_country,destinationCountry:corridor!.destination_country,
+            assetCode:corridor!.asset_code,assetIssuer:corridor!.asset_issuer,privacyRail:corridor!.privacy_rail,
+            sender:connected!,recipient:recipientAddress,amount,reference:business?reference.trim():""},privateReceipt);
+           setReceiptMessage(valid?"Local draft integrity verified. No payment authorization was performed.":"Review integrity failed. Recheck the draft.");
+          }}>Verify locally</Button>
+         </div>
+         {receiptMessage?<p role="status">{receiptMessage}</p>:null}
+        </div>:null}
        </div>
       </div>:null}
      </section>

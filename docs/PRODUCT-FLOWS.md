@@ -84,3 +84,22 @@ from re-enabling it. Reviewing a draft is still **not** a provider quote,
 pre-funded payment, signature, compliance approval or transfer submission.
 All final send/settlement controls stay disabled. No mock corridor or price
 may be supplied to the production experience.
+
+## Private local review fingerprint (November 2026)
+
+After both an exact corridor preflight and a consent-based public recipient
+presence recheck, Send/Business creates a **browser-owned** 256-bit random salt
+and a SHA-256 integrity fingerprint of the Testnet draft. The exact corridor,
+asset, issuer, public addresses, amount and (for Business) internal reference
+are bound to the fingerprint, but neither draft nor salt leaves the tab through
+this feature. Customers may copy the **hash only**, re-verify locally, and see
+it disappear when a field/network/wallet changes. A fingerprint is NOT a ZK
+proof, confidential payment, signed receipt, quote or transfer authorization.
+No new backend endpoint or on-chain submission has been added. All financial
+buttons remain disabled and backend policy stays fail-closed.
+
+Business references in this bounded local-review field now require 3–64 ASCII
+letters, digits, underscores or hyphens, avoiding ambiguous canonicalization
+and newline injection. The Rust/backend and SDK both pin a cross-language test
+vector; contract tests assert the local receipt cannot replace an operator
+policy commitment.
