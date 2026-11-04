@@ -93,3 +93,122 @@ test("customer can download encrypted draft backup without backend availability"
  await expect(page.getByText(/Encrypted backup created/)).toBeVisible();
  await expect(page.getByRole("button",{name:"Save encrypted to account"})).toBeDisabled();
 });
+
+test("customer updates an encrypted draft in place, rotates its passphrase and rejects concurrent overwrite",async({page})=>{
+ test.setTimeout(90_000);
+ const address=await signIn(page);
+ const records:{id:string;revision:number;updated_at_unix:number;encrypted:unknown}[]=[];
+ const previous:string[]=[];
+ await page.route(/\/api\/public\/corridors(?:\?.*)?$/,request=>request.fulfill({json:{items:[route],next_cursor:null}}));
+ await page.route("**/api/public/status",request=>request.fulfill({status:503,body:""}));
+ await page.route("**/api/account/drafts",request=>{
+  const method=request.request().method();
+  if(method==="GET")return request.fulfill({json:emptyVault(address,records)});
+  if(method!=="PUT")throw Error("unexpected vault method "+method);
+  const raw=request.request().postData()??"";
+  for(const secret of [PASS,"private-rotated-phrase-on-another-device"]){
+   expect(raw).not.toContain(secret);
+  }
+  expect(raw).not.toContain(recipient);
+  const data=JSON.parse(raw) as {id:string;expected_revision:number;encrypted:unknown};
+  const current=records.find(record=>record.id===data.id);
+  if(data.expected_revision!==(current?.revision??0))
+   return request.fulfill({status:409,json:{code:"CONCURRENT_DRAFT_CHANGE"}});
+  previous.push(JSON.stringify(current?.encrypted??null));
+  const next={id:data.id,revision:data.expected_revision+1,
+   updated_at_unix:Math.floor(Date.now()/1000),encrypted:data.encrypted};
+  if(current)records.splice(records.indexOf(current),1,next);else records.push(next);
+  return request.fulfill({status:204,body:""});
+ });
+ await page.goto("/app/send");
+ await page.getByLabel("Payment route").selectOption(id);
+ await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
+ await page.getByLabel("Amount").fill("42.50");
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Save encrypted to account"}).click();
+ await expect(page.getByRole("button",{name:"Update saved encrypted draft"})).toBeEnabled();
+ expect(records).toHaveLength(1);expect(records[0].revision).toBe(1);
+ const previousId=records[0].id;
+ await page.getByLabel("Amount").fill("51.25");
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Update saved encrypted draft"}).click();
+ await expect(page.getByText(/Encrypted draft updated safely/)).toBeVisible();
+ expect(records).toHaveLength(1);expect(records[0].id).toBe(previousId);
+ expect(records[0].revision).toBe(2);
+ expect(JSON.stringify(records[0].encrypted)).not.toBe(previous[1]);
+ await page.getByLabel("Amount").fill("99.00");
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Unlock and restore"}).click();
+ await expect(page.getByLabel("Amount")).toHaveValue("51.25");
+ await expect(page.getByRole("button",{name:"Review payment details"})).toBeDisabled();
+ await page.getByLabel("Vault passphrase").fill("wrong-old-passphrase-rejected");
+ await page.getByLabel("New passphrase",{exact:true}).fill("private-rotated-phrase-on-another-device");
+ await page.getByLabel("Confirm new passphrase").fill("private-rotated-phrase-on-another-device");
+ await page.getByRole("button",{name:"Change draft passphrase"}).click();
+ await expect(page.getByText(/Unable to unlock the draft/)).toBeVisible();
+ expect(records[0].revision).toBe(2);
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Change draft passphrase"}).click();
+ await expect(page.getByText(/Vault passphrase changed/)).toBeVisible();
+ expect(records).toHaveLength(1);expect(records[0].revision).toBe(3);
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Unlock and restore"}).click();
+ await expect(page.getByText(/Unable to unlock the draft/)).toBeVisible();
+ await page.getByLabel("Vault passphrase").fill("private-rotated-phrase-on-another-device");
+ await page.getByRole("button",{name:"Unlock and restore"}).click();
+ await expect(page.getByText(/Draft restored locally/)).toBeVisible();
+ await expect(page.getByLabel("Amount")).toHaveValue("51.25");
+ // Represent another device winning the update race. The first device must
+ // not be able to overwrite it with its previously witnessed revision 3.
+ records[0].revision=4;
+ await page.getByLabel("Amount").fill("60.00");
+ await page.getByLabel("Vault passphrase").fill("private-rotated-phrase-on-another-device");
+ await page.getByRole("button",{name:"Update saved encrypted draft"}).click();
+ await expect(page.getByText(/Draft changed on another device/)).toBeVisible();
+ expect(records[0].revision).toBe(4);
+ await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+});
+
+test("encrypted backup can be imported after a fresh page load and explicitly synced to a new slot",async({page})=>{
+ test.setTimeout(90_000);
+ const address=await signIn(page);
+ const records:{id:string;revision:number;updated_at_unix:number;encrypted:unknown}[]=[];
+ await page.route(/\/api\/public\/corridors(?:\?.*)?$/,request=>request.fulfill({json:{items:[route],next_cursor:null}}));
+ await page.route("**/api/public/status",request=>request.fulfill({status:503,body:""}));
+ await page.route("**/api/account/drafts",request=>{
+  if(request.request().method()==="GET")return request.fulfill({json:emptyVault(address,records)});
+  const raw=request.request().postData()??"";
+  expect(raw).not.toContain(recipient);
+  expect(raw).not.toContain(PASS);
+  expect(raw).not.toContain("73.00");
+  const data=JSON.parse(raw) as {id:string;expected_revision:number;encrypted:unknown};
+  if(data.expected_revision!==0||records.some(item=>item.id===data.id))
+   return request.fulfill({status:409,json:{code:"DUPLICATE"}});
+  records.push({id:data.id,revision:1,updated_at_unix:Math.floor(Date.now()/1000),encrypted:data.encrypted});
+  return request.fulfill({status:204,body:""});
+ });
+ await page.goto("/app/send");
+ await page.getByLabel("Payment route").selectOption(id);
+ await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
+ await page.getByLabel("Amount").fill("73.00");
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ const downloading=page.waitForEvent("download");
+ await page.getByRole("button",{name:"Download encrypted backup"}).click();
+ const downloaded=await downloading;
+ const {readFile}=await import("node:fs/promises");
+ const blob=await readFile(await downloaded.path());
+ expect(blob.toString()).not.toContain(recipient);
+ expect(blob.toString()).not.toContain("73.00");
+ await page.reload();
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.locator("#customer-vault-file").setInputFiles({name:"encrypted-backup.json",mimeType:"application/json",buffer:blob});
+ await expect(page.getByLabel("Amount")).toHaveValue("73.00");
+ await expect(page.getByRole("button",{name:"Save backup as new encrypted draft"})).toBeEnabled();
+ await page.getByLabel("Vault passphrase").fill(PASS);
+ await page.getByRole("button",{name:"Save backup as new encrypted draft"}).click();
+ await expect(page.getByText(/Encrypted draft saved to your account/)).toBeVisible();
+ expect(records).toHaveLength(1);
+ const archived=JSON.parse(blob.toString()) as {id:string};
+ expect(records[0].id).not.toBe(archived.id);
+ await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+});

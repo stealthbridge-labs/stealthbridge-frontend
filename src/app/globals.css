@@ -1341,3 +1341,13 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .customer-vault-import input{max-width:100%;font-size:12px}
 .customer-vault-success{display:flex;align-items:flex-start;gap:8px;color:#b0f9dd;font-size:12px;line-height:1.6}
 .customer-vault .payment-field-error{overflow-wrap:anywhere}
+
+/* In-place encrypted vault edits and explicit passphrase rotation. */
+.customer-vault-source{display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+ padding:12px 14px;border:1px solid #37655d;border-radius:10px;line-height:1.7;
+ font-size:12px;color:#d0ede4;margin:14px 0}
+.customer-vault-rotate{border:1px solid #37655d;border-radius:12px;padding:16px;margin:16px 0}
+.customer-vault-rotate h3{font-size:14px;font-weight:700;margin:0 0 6px}
+.customer-vault-rotate p{font-size:12px;line-height:1.65;color:#b7d9ce;margin:0 0 14px}
+.customer-vault-rotate .payment-label{display:block;margin:12px 0 6px}
+.customer-vault-rotate button{margin-top:14px}
