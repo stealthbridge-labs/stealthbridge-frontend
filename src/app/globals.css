@@ -1320,3 +1320,24 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .team-workspace .team-invite-panel{margin:0}
 @media(max-width:820px){.team-access{grid-template-columns:1fr;gap:18px}}
 @media(max-width:520px){.team-access p,.team-access li,.team-readiness-item p,.team-panel-heading p,.team-overview p,.team-member-main .team-role-context{font-size:16px}.team-member-avatar{display:none}.team-member-role{max-width:85px;overflow-wrap:anywhere}.team-workspace button{min-height:48px}.team-invite-form input{font-size:16px}.team-invite-header p,.team-invite-form p{font-size:16px}}
+
+/* Customer-owned encrypted drafts: full-width, legible and mobile safe. */
+.customer-vault{min-width:0;grid-column:1 / -1}
+.customer-vault>.payment-card-heading~p{font-size:13px;line-height:1.7;color:#bdd8d1}
+.customer-vault-actions,.customer-vault-record>div{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.customer-vault-directory{border-top:1px solid #315953;margin-top:23px;padding-top:15px}
+.customer-vault-directory-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.customer-vault-directory-head strong{font-size:13px}
+.customer-vault-directory>p{font-size:12px;color:#b7d9ce}
+.customer-vault-record{border:1px solid #37655d;border-radius:10px;margin:12px 0;padding:12px;
+ display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.customer-vault-record span{display:flex;flex-direction:column;gap:5px;font-size:12px;min-width:0}
+.customer-vault-record code{overflow-wrap:anywhere}
+.customer-vault-record small{font-size:11px;color:#afcfc6}
+.customer-vault-delete-confirm{display:flex;align-items:center;gap:10px;font-size:12px;margin:16px 0;cursor:pointer}
+.customer-vault-delete-confirm input{height:17px;width:17px;accent-color:#80f6db}
+.customer-vault-import{margin-top:18px}
+.customer-vault-import label{display:flex;align-items:center;gap:8px}
+.customer-vault-import input{max-width:100%;font-size:12px}
+.customer-vault-success{display:flex;align-items:flex-start;gap:8px;color:#b0f9dd;font-size:12px;line-height:1.6}
+.customer-vault .payment-field-error{overflow-wrap:anywhere}

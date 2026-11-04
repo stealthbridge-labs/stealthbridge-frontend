@@ -6,6 +6,8 @@ import {ArrowLeft,ArrowRight,ArrowUpRight,Building2,CheckCircle2,Clock3,Globe2,L
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {WalletConnect} from "@/components/wallet-connect";
+import {CustomerDraftVault} from "@/components/customer-draft-vault";
+import {validCustomerDraft,type CustomerDraft} from "@/lib/private-draft-vault";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
@@ -154,6 +156,24 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
   prepared.validLocalDraft&&recipientPresent&&recipientConfirmed&&
   (!business||/^[A-Za-z0-9_-]{3,64}$/.test(reference.trim()));
  const canReview=formComplete&&networkFresh&&corridorState==="ready";
+ const vaultDraft:CustomerDraft|null=corridor&&isRecipient(recipientAddress)&&amountValid(amount)?{
+  kind:business?"business":"personal",corridor_id:corridor.id,recipient:recipientAddress,amount,
+  reference:business?reference.trim():""
+ }:null;
+ const persistableDraft=vaultDraft&&validCustomerDraft(vaultDraft)?vaultDraft:null;
+ const restoreDraft=async(draft:CustomerDraft)=>{
+  if(draft.kind!==(business?"business":"personal"))throw Error("This draft belongs to the other payment workspace.");
+  // Recovery cannot reinstate the original recipient check, live route review
+  // or customer consent. Re-fetch missing operator route and invalidate all.
+  if(!corridors.some(row=>row.id===draft.corridor_id)){
+   const verified=await loadVerifiedCustomerCorridor(draft.corridor_id,AbortSignal.timeout(9000));
+   setCorridors(rows=>[verified,...rows]);
+  }
+  recipientRequest.current++;invalidateReview();
+  setCorridorId(draft.corridor_id);setRecipient(draft.recipient);setAmount(draft.amount);
+  setReference(draft.reference);setRecipientName("");setRecipientEvidence(null);
+  setRecipientConfirmed(false);setRecipientPending(false);setRecipientError(null);
+ };
  const recipientKind=canonicalStellarAccountAddress(recipientAddress)?"classic":
   contractRecipient?"contract":"unknown";
  const review=async()=>{
@@ -397,6 +417,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       <Link href="/platform" className="payment-inline-link">Learn about privacy & trust <ArrowUpRight size={15} aria-hidden/></Link>
      </section>:null}
     </div>
+    {identityAddress?<CustomerDraftVault address={identityAddress} draft={persistableDraft} onRestore={restoreDraft}/>:null}
     <aside className="payment-stack" aria-label="Payment account and summary">
      <section className="payment-card payment-account-card">
       <div className="payment-card-heading"><div><span className="payment-eyebrow">Account</span>
