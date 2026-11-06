@@ -116,8 +116,9 @@ export function validEncryptedDraftDirectory(input:unknown,account:string):input
   if(!entry||typeof entry!=="object"||Array.isArray(entry))return false;
   const row=entry as Record<string,unknown>;
   if(!exact(row,["id","revision","updated_at_unix","encrypted"])||typeof row.id!=="string"||!UUID.test(row.id)||found.has(row.id)||
-   !Number.isSafeInteger(row.revision)||Number(row.revision)<1||
+   !Number.isSafeInteger(row.revision)||Number(row.revision)<1||Number(row.revision)>1000000||
    !Number.isSafeInteger(row.updated_at_unix)||Number(row.updated_at_unix)<=0||
+   Number(row.updated_at_unix)>Math.floor(Date.now()/1000)+300||
    !validEncryptedCustomerDraft(row.encrypted))return false;
   found.add(row.id);
  }

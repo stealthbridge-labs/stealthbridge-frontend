@@ -59,7 +59,7 @@ export function canonicalPrivateReviewDraft(draft:PrivateReviewDraft):string {
 }
 /** Reproducible only when holding the original nonce AND the complete draft. */
 export async function digestPrivateReviewDraft(draft:PrivateReviewDraft,nonceHex:string):Promise<string>{
-  if(!HEX64.test(nonceHex))throw new TypeError("Review nonce must be 32 random bytes in lowercase hex");
+  if(!HEX64.test(nonceHex)||/^0+$/.test(nonceHex))throw new TypeError("Review nonce must be 32 random bytes in lowercase hex");
   const bytes=new TextEncoder().encode(DOMAIN+" nonce:"+nonceHex+"\n"+canonicalPrivateReviewDraft(draft));
   return toHex(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)));
 }
@@ -75,9 +75,9 @@ export async function createPrivateReviewReceipt(draft:PrivateReviewDraft):Promi
     nonceHex,paymentAuthorized:false,zkProofVerified:false};
 }
 export async function verifyPrivateReviewReceipt(draft:PrivateReviewDraft,receipt:PrivateReviewReceipt):Promise<boolean>{
-  if(receipt.scheme!=="sb-review-sha256-random256-v1"||receipt.network!=="stellar-testnet"||
+  if(!receipt||receipt.scheme!=="sb-review-sha256-random256-v1"||receipt.network!=="stellar-testnet"||
     receipt.paymentAuthorized!==false||receipt.zkProofVerified!==false||
-    !HEX64.test(receipt.commitment)||!HEX64.test(receipt.nonceHex))return false;
+    !HEX64.test(receipt.commitment)||!HEX64.test(receipt.nonceHex)||/^0+$/.test(receipt.nonceHex))return false;
   try{return await digestPrivateReviewDraft(draft,receipt.nonceHex)===receipt.commitment;}
   catch{return false;}
 }
