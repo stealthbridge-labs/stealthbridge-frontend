@@ -1369,3 +1369,28 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
  .payment-card,.form-panel,.insight-panel,.routing-board{border-color:#acd7ca}
  .payment-hint,.payment-card p,.hero-note{color:#e1f7f0}
 }
+
+/* Compact navigation and accessible, non-overflowing product heroes. */
+.hero-copy,.hero-art,.routing-board,.board-top,.consumer-journey{min-width:0}
+.hero h1{overflow-wrap:normal;max-width:12ch}
+.hero-buttons [data-slot="button"]{min-height:48px;max-width:100%}
+.story-content,.story-art{min-width:0}
+@media(max-width:800px){
+ .hero-art{min-height:330px;max-width:100%;overflow:clip}
+ .routing-board{min-width:0;max-width:min(100%,590px);transform:none!important}
+ .board-top{gap:12px;flex-wrap:wrap}
+ .hero-buttons{align-items:stretch}
+ .hero-buttons [data-slot="button"]{flex:1 1 210px}
+ .story-hero{min-width:0}
+}
+@media(max-width:460px){
+ .hero{padding-top:44px;gap:18px}
+ .hero h1{font-size:clamp(42px,11.5vw,56px);letter-spacing:-.075em;max-width:100%}
+ .hero-art{min-height:270px}
+ .routing-board{min-width:0;width:100%;border-radius:16px}
+ .board-top{padding:16px}
+ .board-top strong{font-size:clamp(13px,4vw,17px)}
+ .hero-buttons [data-slot="button"]{width:100%;flex-basis:100%;padding-inline:18px}
+ .site-header .brand{font-size:20px}
+ .story-content{min-width:0}
+}
