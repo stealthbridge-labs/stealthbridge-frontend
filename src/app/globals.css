@@ -1431,3 +1431,23 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
  .payment-card{padding:clamp(15px,4vw,22px)}
  .payment-review-fingerprint{min-width:0}
 }
+
+/* Customer vault and workspace navigation: resilient contrast and touch affordances. */
+.customer-vault-directory-head button,.customer-vault-record button,
+.customer-vault-actions button,.customer-vault-rotate button{min-height:44px}
+.customer-vault-record{background:rgba(7,39,42,.65);align-items:flex-start}
+.customer-vault-record>div{margin:0}
+.customer-vault-record code{font-size:12px;line-height:1.6}
+.customer-vault .payment-input{background:#102e33;color:#f5fffc;border:1px solid #79b3a4}
+.customer-vault input[type="file"]{min-height:44px;padding:9px;border-radius:9px}
+.customer-vault input[type="file"]::file-selector-button{margin-right:14px;padding:9px 14px;
+ border-radius:8px;border:1px solid #9ee9d6;background:#194d49;color:#f0fff8;cursor:pointer}
+.account-nav-links a:focus-visible{outline:3px solid var(--sb-focus);outline-offset:2px}
+@media(max-width:520px){
+ .customer-vault-record{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+ .customer-vault-record>div{width:100%;display:grid;grid-template-columns:minmax(0,1fr)}
+ .customer-vault-record button{width:100%;white-space:normal}
+ .customer-vault-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+ .customer-vault-actions button{width:100%}
+ .account-nav-scroll{scrollbar-width:thin;scrollbar-color:#85e5d0 #103a37}
+}

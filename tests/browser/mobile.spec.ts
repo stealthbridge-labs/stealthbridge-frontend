@@ -7,6 +7,7 @@ test("homepage mobile navigation expands and follows a product link",async({page
  const navigation=page.getByRole("navigation",{name:"Main navigation"});
  const open=page.getByRole("button",{name:"Open navigation"});
  await expect(open).toHaveAttribute("aria-expanded","false");
+ await expect(open).toHaveAttribute("aria-controls","stealthbridge-site-navigation");
  await expect(navigation).toBeHidden();
 
  await open.click();
