@@ -1351,3 +1351,21 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .customer-vault-rotate p{font-size:12px;line-height:1.65;color:#b7d9ce;margin:0 0 14px}
 .customer-vault-rotate .payment-label{display:block;margin:12px 0 6px}
 .customer-vault-rotate button{margin-top:14px}
+
+/* Design system: strong focus, readable form feedback and predictable controls. */
+:root{--sb-focus:#b6ffe9;--sb-field:#0c333a;--sb-field-border:#679b93;--sb-error:#ffcebb}
+:where(button,a,[role="button"],input,select,textarea,summary):focus-visible{
+ outline:3px solid var(--sb-focus);outline-offset:3px;scroll-margin:24px}
+:where(input,select,textarea){accent-color:#95f4d6;caret-color:#c7ffec}
+:where(input,textarea)::placeholder{color:#a6c9c5;opacity:1}
+:where(button,[role="button"]):disabled{cursor:not-allowed}
+:where(button,[role="button"]):not(:disabled){touch-action:manipulation}
+:where(button,a,[role="button"]){-webkit-tap-highlight-color:rgba(134,246,217,.22)}
+:where(.payment-field-error,.validation-error,[role="alert"]){overflow-wrap:anywhere}
+:where(.payment-input,.tx-input,.field input,.field select):focus-visible{
+ outline:3px solid #a4fadd;outline-offset:2px;border-color:#9ff9e2}
+@media(prefers-contrast:more){
+ :root{--line:#a1ddd1;--muted:#dbf4ec}
+ .payment-card,.form-panel,.insight-panel,.routing-board{border-color:#acd7ca}
+ .payment-hint,.payment-card p,.hero-note{color:#e1f7f0}
+}
