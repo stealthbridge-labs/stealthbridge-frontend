@@ -1405,3 +1405,29 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
  .nav-links.nav-open a{min-height:48px;display:flex;align-items:center;width:100%;padding:11px 8px}
  .site-header{isolation:isolate}
 }
+
+/* Payments: usable two-column composition on tablet; single column on phones. */
+.payment-main,.payment-layout,.payment-stack,.payment-card{min-width:0}
+.payment-input-grid{min-width:0}
+.payment-route-summary,.payment-review,.payment-fingerprint-value,.account-identity-detail{
+ overflow-wrap:anywhere;word-break:break-word}
+.payment-label{line-height:1.5}
+.payment-input{width:100%;max-width:100%;min-height:46px}
+.payment-card{border-radius:clamp(14px,2vw,22px)}
+.payment-field-error{color:var(--sb-error)}
+.payment-hint{color:#badad2;line-height:1.7}
+.payment-action-row{display:flex;gap:12px;flex-wrap:wrap}
+.payment-action-row button{min-height:44px}
+@media(max-width:920px){
+ .payment-layout{grid-template-columns:minmax(0,1fr)}
+ .payment-stack{min-width:0}
+ .payment-main{padding-inline:clamp(14px,4vw,28px)}
+}
+@media(max-width:520px){
+ .payment-topbar{flex-wrap:wrap;height:auto;min-height:76px}
+ .payment-top-actions{gap:8px;flex-wrap:wrap}
+ .payment-input-grid{grid-template-columns:minmax(0,1fr)}
+ .payment-action-row button{width:100%}
+ .payment-card{padding:clamp(15px,4vw,22px)}
+ .payment-review-fingerprint{min-width:0}
+}
