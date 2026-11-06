@@ -63,7 +63,7 @@ export function Home(){
  return <div ref={root} className="page-frame">
  <div className="noise" aria-hidden="true"/>
  <header className="site-header container-wide"><Brand/>
- <nav className={mobileMenu?"nav-links nav-open":"nav-links"} aria-label="Main navigation">
+ <nav id="stealthbridge-site-navigation" className={mobileMenu?"nav-links nav-open":"nav-links"} aria-label="Main navigation">
  <Link href="/platform" onClick={()=>setMobileMenu(false)}>Privacy & trust</Link>
  <Link href="/business" onClick={()=>setMobileMenu(false)}>For business</Link>
  <Link href="/send" onClick={()=>setMobileMenu(false)}>For people</Link>
@@ -71,7 +71,7 @@ export function Home(){
  </nav>
  <div className="header-actions"><span className="network-chip"><i/> Privacy-minded payments</span>
  <Link className="nav-cta" href="/login">Sign in <ArrowUpRight size={15}/></Link></div>
- <button className="mobile-toggle" aria-label={mobileMenu?"Close navigation":"Open navigation"} aria-expanded={mobileMenu} onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button></header>
+ <button type="button" className="mobile-toggle" aria-controls="stealthbridge-site-navigation" aria-label={mobileMenu?"Close navigation":"Open navigation"} aria-expanded={mobileMenu} onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button></header>
  <main id="main-content">
  <section className="hero container-wide">
  <div className="hero-copy">

@@ -1394,3 +1394,14 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
  .site-header .brand{font-size:20px}
  .story-content{min-width:0}
 }
+
+/* Navigation: a consistently reachable menu with explicit focus targets. */
+.mobile-toggle{min-width:44px;min-height:44px;display:none;place-items:center;border-radius:12px}
+.mobile-toggle:focus-visible{outline:3px solid var(--sb-focus);outline-offset:3px}
+@media(max-width:800px){
+ .mobile-toggle{display:grid}
+ .nav-links.nav-open{max-height:min(70dvh,560px);overflow-y:auto;overscroll-behavior:contain;
+  box-shadow:0 20px 55px rgba(0,0,0,.42);z-index:40}
+ .nav-links.nav-open a{min-height:48px;display:flex;align-items:center;width:100%;padding:11px 8px}
+ .site-header{isolation:isolate}
+}
