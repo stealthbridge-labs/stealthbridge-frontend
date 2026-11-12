@@ -54,9 +54,9 @@ export function assessRegistryUpgrade(value:RegistryUpgradeObservation):Registry
    return unsafe("Malformed or unsupported upgrade proposal");
  const same=p.wasm_hash===value.candidateWasmSha256;
  if(!same)return unsafe("Proposed executable does not match independently reviewed candidate hash");
+ if(value.currentLedger>p.expires_at_ledger)return base("expired",true,"On-chain proposal validity window has expired");
  if(!value.paused)return base("waiting",true,"Registry is not paused; execution must fail closed");
  if(value.currentLedger<p.ready_at_ledger)return base("waiting",true,"On-chain proposal timelock has not elapsed");
- if(value.currentLedger>p.expires_at_ledger)return base("expired",true,"On-chain proposal validity window has expired");
  return base("window-open-unverified",true,
   "Only the ledger window appears open; separately confirm deployed code, upload and administrator signature");
 }

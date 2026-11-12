@@ -22,6 +22,7 @@ test("wrong hash, unexpected gate and expired timelocks fail closed",()=>{
   {pending:{...base().pending,expires_at_ledger:201}},
  ])assert.equal(assessRegistryUpgrade({...base(),...patch}).state,"invalid");
  assert.equal(assessRegistryUpgrade({...base(),currentLedger:10_201}).state,"expired");
+ assert.equal(assessRegistryUpgrade({...base(),paused:false,currentLedger:10_201}).state,"expired");
 });
 test("operator page is preview-only and cannot sign or submit contracts",async()=>{
  const page=await readFile("src/app/preview/upgrades/page.tsx","utf8");

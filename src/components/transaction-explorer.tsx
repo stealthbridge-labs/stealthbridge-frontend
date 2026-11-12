@@ -1,5 +1,5 @@
 "use client";
-import {useRef,useState,type FormEvent} from "react";
+import {useEffect,useRef,useState,type FormEvent} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,AlertTriangle,CheckCircle2,Clock3,Search,XCircle} from "lucide-react";
 import {Brand} from "@/components/brand";
@@ -12,6 +12,12 @@ export function TransactionExplorer(){
  const [error,setError]=useState<string|null>(null);
  const [loading,setLoading]=useState(false);
  const controller=useRef<AbortController|null>(null);
+ useEffect(()=>()=>controller.current?.abort(),[]);
+ function changeHash(value:string){
+  controller.current?.abort();
+  controller.current=null;
+  setHash(value);setResult(null);setError(null);setLoading(false);
+ }
  async function verify(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
   controller.current?.abort();setResult(null);setError(null);
@@ -36,7 +42,7 @@ export function TransactionExplorer(){
      <div className="panel-heading"><div><h2>Transaction lookup</h2><span>Read-only · actual Stellar RPC</span></div><Search size={22}/></div>
      <form onSubmit={verify}>
       <label className="field" htmlFor="transaction-hash">Transaction hash</label>
-      <input id="transaction-hash" className="tx-input" value={hash} onChange={e=>{setHash(e.target.value);setResult(null);setError(null);}} maxLength={64} spellCheck={false} autoCapitalize="none" autoComplete="off" placeholder="Paste a 64-character hex hash"/>
+      <input id="transaction-hash" className="tx-input" value={hash} onChange={e=>changeHash(e.target.value)} maxLength={64} spellCheck={false} autoCapitalize="none" autoComplete="off" placeholder="Paste a 64-character hex hash"/>
       <p className="state-muted">Search only transactions you already know. No wallet history or personal information is indexed here.</p>
       <Button className="w-full" type="submit" disabled={loading||!validTransactionHash(hash.trim())}> {loading?"Checking network…":"Check transaction"} <ArrowUpRight size={16}/></Button>
      </form>
