@@ -104,3 +104,7 @@ Do not display internal deployer/operator addresses on customer pages. A custome
 **Sister repositories:** [Backend](https://github.com/stealthbridge-labs/stealthbridge-backend) · [SDK](https://github.com/stealthbridge-labs/stealthbridge-sdk) · [Contracts](https://github.com/stealthbridge-labs/stealthbridge-contracts).
 
 **Testnet only. No live payments or real-money deposits.**
+
+## Open source
+
+StealthBridge is available under the [MIT license](LICENSE). Third-party dependencies retain their own licenses. Contributions should include meaningful tests and preserve customer privacy and disabled financial execution gates.

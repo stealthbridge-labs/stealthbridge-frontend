@@ -1451,3 +1451,18 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
  .customer-vault-actions button{width:100%}
  .account-nav-scroll{scrollbar-width:thin;scrollbar-color:#85e5d0 #103a37}
 }
+
+/* Account-owned payment instruction management; no synthetic activity. */
+.instruction-workspace { min-width: 0; }
+.instruction-create { display: grid; gap: .8rem; margin: 1rem 0; }
+.instruction-list { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+.instruction-list > li { border-top: 1px solid var(--border, #35535a); padding: 1.25rem 0; }
+.instruction-row-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; }
+.instruction-state { font-size: .8rem; text-transform: capitalize; padding: .25rem .6rem; border: 1px solid currentColor; border-radius: .3rem; }
+.instruction-list dl { display: grid; gap: .6rem; margin: 1rem 0; font-size: .875rem; }
+.instruction-list dl > div { display: grid; grid-template-columns: minmax(5rem, 1fr) minmax(0, 3fr); gap: .75rem; }
+.instruction-list dt { opacity: .75; }
+.instruction-list dd { margin: 0; overflow-wrap: anywhere; }
+.instruction-empty { display: flex; gap: .75rem; align-items: center; padding: 1.5rem 0; }
+.instruction-details { margin-top: 1rem; padding: 1rem; border: 1px solid var(--border, #35535a); border-radius: .5rem; }
+@media (max-width: 540px) { .instruction-list dl > div { grid-template-columns: 1fr; gap: .2rem; } }

@@ -24,12 +24,12 @@ export default defineConfig({
  projects:[
   {
    name:"chromium-desktop",
-   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/,/transaction\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/account-access\.spec\.ts/,/customer-payment-workspace\.spec\.ts/,/customer-draft-vault\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
+   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/,/transaction\.spec\.ts/]:[/public-routes\.spec\.ts/,/desktop\.spec\.ts/,/account-access\.spec\.ts/,/customer-payment-workspace\.spec\.ts/,/customer-draft-vault\.spec\.ts/,/payment-instructions\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:1440,height:900}}
   },
   {
    name:"chromium-mobile",
-   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/,/transaction\.spec\.ts/]:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
+   testMatch:previewTests?[/safety-gates\.spec\.ts/,/activity\.spec\.ts/,/transaction\.spec\.ts/]:[/public-routes\.spec\.ts/,/mobile\.spec\.ts/,/payment-instructions\.spec\.ts/,/marketing-primitives\.spec\.ts/,/motion-regression\.spec\.ts/],
    use:{viewport:{width:390,height:844},isMobile:true,hasTouch:true}
   },
   {
@@ -50,6 +50,7 @@ export default defineConfig({
    // Unique per-test-server secret; never reused for production sessions.
    STEALTHBRIDGE_WEB_SESSION_SECRET:randomBytes(48).toString("hex"),
    STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED:previewTests?"false":"true",
+   STEALTHBRIDGE_PAYMENT_INSTRUCTIONS_ENABLED:previewTests?"false":"true",
    // Browser-only fixtures: not enabled in Vercel until SQLx approval.
    STEALTHBRIDGE_TEAM_INVITES_ENABLED:previewTests?"false":"true",
    STEALTHBRIDGE_API_URL:""

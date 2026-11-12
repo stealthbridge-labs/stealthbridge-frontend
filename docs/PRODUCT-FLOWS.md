@@ -103,3 +103,20 @@ letters, digits, underscores or hyphens, avoiding ambiguous canonicalization
 and newline injection. The Rust/backend and SDK both pin a cross-language test
 vector; contract tests assert the local receipt cannot replace an operator
 policy commitment.
+
+## Encrypted instruction lifecycle (release gated)
+
+`/app/instructions` is a wallet-session protected record-management page. After a
+fresh local recipient/route review, Send and Business can encrypt the reviewed
+instruction, save it through the same-origin signed BFF and reload its durable
+status. An independent passphrase unlocks details only on the current device.
+Cancellation has explicit confirmation and is verified by a new backend read.
+Dates/status come from persisted records; unavailable storage is not an empty
+account. Business-kind records remain owned by the signed-in account and do not
+grant organizational approval.
+
+The backend validates current public route metadata, UUID idempotency, expiry,
+account scope and request replay. It does not decrypt or validate a hidden amount,
+quote FX, authorize spending or submit transactions. Both server-side instruction
+flags stay disabled until the prepared additive migration is explicitly approved
+and applied. Existing payment execution gates stay false throughout release.

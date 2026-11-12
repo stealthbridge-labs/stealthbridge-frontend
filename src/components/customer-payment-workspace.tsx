@@ -6,6 +6,7 @@ import {ArrowLeft,ArrowRight,ArrowUpRight,Building2,CheckCircle2,Clock3,Globe2,L
 import {Brand} from "@/components/brand";
 import {Button} from "@/components/ui/button";
 import {WalletConnect} from "@/components/wallet-connect";
+import {PaymentInstructions} from "@/components/payment-instructions";
 import {CustomerDraftVault} from "@/components/customer-draft-vault";
 import {validCustomerDraft,type CustomerDraft} from "@/lib/private-draft-vault";
 import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
@@ -416,8 +417,9 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
       </div>
       <Link href="/platform" className="payment-inline-link">Learn about privacy & trust <ArrowUpRight size={15} aria-hidden/></Link>
      </section>:null}
-    </div>
+    {identityAddress?<PaymentInstructions key={identityAddress} address={identityAddress} draft={reviewed&&canReview?persistableDraft:null} route={corridor}/>:null}
     {identityAddress?<CustomerDraftVault address={identityAddress} draft={persistableDraft} onRestore={restoreDraft}/>:null}
+    </div>
     <aside className="payment-stack" aria-label="Payment account and summary">
      <section className="payment-card payment-account-card">
       <div className="payment-card-heading"><div><span className="payment-eyebrow">Account</span>
