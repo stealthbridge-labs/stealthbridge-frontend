@@ -35,7 +35,7 @@ test("substituted transaction evidence and malformed inclusion metadata fail clo
   await page.goto("/explorer");
   await page.getByLabel("Transaction hash",{exact:true}).fill(first);
   await page.getByRole("button",{name:"Check transaction"}).click();
-  await expect(page.getByRole("alert")).toContainText("did not match");
+  await expect(page.getByRole("region",{name:"Stellar transaction verification"}).getByRole("alert")).toContainText("did not match");
   await expect(page.locator(".tx-result")).toHaveCount(0);
   await page.unroute("**/api/bridge/v1/transactions/*");
  }
