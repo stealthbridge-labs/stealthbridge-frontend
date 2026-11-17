@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {requireWalletIdentity} from "@/lib/auth-server";
 import {redirect} from "next/navigation";
 import {CustomerProfileSettings} from "@/components/customer-profile-settings";
+import {AccountAccessSecurity} from "@/components/account-access-security";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Account settings — StealthBridge",robots:{index:false,follow:false}};
 export default async function ProfileSettings(){
@@ -13,5 +14,6 @@ export default async function ProfileSettings(){
    <p>Your StealthBridge experience, without the complexity of managing infrastructure.</p>
   </div>
   <CustomerProfileSettings address={account.address}/>
+  <AccountAccessSecurity key={account.address} address={account.address}/>
  </>;
 }

@@ -95,3 +95,42 @@ APIs and isolated browser response fixtures to cover owner invite/revoke,
 pending mobile review, disabled issuance, access failures, forged financial
 permissions, empty results and pagination recovery. It never writes a database
 or broadcasts a transaction.
+
+## Wallet security and smart-account readiness
+
+Account settings places wallet access and future account readiness below saved
+profile preferences. Freighter's signed-message login proves control of a public
+sign-in address for a short-lived session; it authorizes no transfer. Settings
+need no ledger account initialization, balance, or funding lookup. The customer's
+own address is shortened and revealed/copied only by explicit action.
+
+An optional device check calls only WebAuthn's local platform-authenticator
+availability API. It never calls credential creation/get, enrolls a passkey,
+transmits a credential, or verifies recovery. Device capability is distinct from
+ownership of an enrolled credential.
+
+`GET /api/public/smart-account-kit` reads the fixed backend
+`GET /v1/wallet/smart-account-kit`. The BFF accepts no query input, forwards no
+customer identity or cookies, restricts the backend to the existing HTTPS host
+allowlist, rejects redirects, times out after seven seconds, reads at most 32 KiB,
+and validates the entire schema before forwarding uncached JSON. Safe errors
+contain no upstream body or infrastructure configuration. Browser validation
+repeats the contract; observations disappear after 90 seconds and during retries.
+
+Schema 1 observes seven ordered, pinned public artifacts for upstream kit 0.10.0
+through Stellar RPC. Names, kinds, hashes, TTL arithmetic, freshness and all
+capability flags must validate together. Live means matching code with more than
+120,960 ledgers left; low TTL requires operator renewal. Missing code and code
+mismatches remain visible as degraded infrastructure, never customer readiness.
+
+StealthBridge's startup operator deploys smart-account contracts. Customers have
+no deployment controls. Public kit health is neither a StealthBridge customer
+factory deployment nor customer smart-account creation. Both remain false;
+credential recovery and privacy/ZK proofs remain unverified, Mainnet remains
+not yet enabled, and financial execution remains disabled. No network passphrase,
+operator wallet, contract address, balance, fee, FX quote or payout claim is needed
+in the customer security experience. Business and Send retain their existing flows.
+
+The account browser suite uses real local signed-session APIs and mocked public
+BFF observations to exercise disclosure/copy, keyboard access, opt-in device
+checks, degraded/forged/stale responses, retry, expiry and an unfunded identity.

@@ -595,3 +595,90 @@ test("team pagination preserves verified rows on failure and clears changed perm
  await expect(roster).toHaveCount(0);
  expect(queries).toEqual(Array(4).fill(accounts[24]));
 });
+
+// Account settings uses the same real signed-session fixture as team journeys.
+// The public kit fixture is isolated to the browser, never a production fallback.
+test("wallet security separates sign-in, local passkey support and public kit observations",async({page},testInfo)=>{
+ test.slow();
+ const {SMART_ACCOUNT_PINS}=await import("../../src/lib/smart-account-kit");
+ const address=await signInForTeam(page);
+ await page.emulateMedia({reducedMotion:"reduce"});
+ await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
+ let localChecks=0;
+ await page.exposeFunction("recordDeviceCheck",()=>{localChecks++;});
+ await page.addInitScript(()=>{
+  Object.defineProperty(window,"PublicKeyCredential",{configurable:true,value:class {
+   static async isUserVerifyingPlatformAuthenticatorAvailable(){
+    await (window as unknown as {recordDeviceCheck:()=>Promise<void>}).recordDeviceCheck();return true;
+   }
+  }});
+  Object.defineProperty(navigator.credentials,"create",{value:()=>{throw Error("Enrollment must never run");}});
+ });
+ const calls:string[]=[];
+ page.on("request",request=>{if(request.url().includes("/api/")||request.url().includes("horizon"))calls.push(request.method()+" "+new URL(request.url()).pathname);});
+ await page.route("**/api/account/profile",route=>route.fulfill({json:{schema_version:1,network:"testnet",source:"neon-customer-profiles",
+  account_address:address,profile:null,payment_execution_enabled:false,organization_payment_authorized:false}}));
+ function kit(){return {schema_version:1,network:"testnet",source:"stellar-rpc/pinned-smart-account-kit",kit_version:"0.10.0",
+  observed_at_unix:Math.floor(Date.now()/1000),observed_ledger_sequence:1000,
+  entries:SMART_ACCOUNT_PINS.map(([name,kind,expected_wasm_hash])=>({name,kind,expected_wasm_hash,
+   observed_wasm_hash:expected_wasm_hash,status:"live",live_until_ledger:201000,ttl_remaining_ledgers:200000})),
+  all_entries_healthy:true,customer_smart_account_factory_deployed:false,customer_smart_account_created:false,
+  credential_recovery_verified:false,privacy_proofs_verified:false,mainnet_enabled:false,financial_execution_enabled:false,operator_managed_deployment:true};}
+ let payload:unknown=kit();let failure=false;
+ await page.route("**/api/public/smart-account-kit",route=>route.fulfill(failure?{status:503,json:{code:"SMART_ACCOUNT_KIT_UNAVAILABLE"}}:{json:payload}));
+ await page.clock.install();
+ await page.goto("/app/settings");
+ const security=page.getByRole("region",{name:"Wallet security & account access"});
+ await expect(security.getByText(/7\/7 healthy/)).toBeVisible();
+ await expect(security.getByText("Not checked on this device")).toBeVisible();
+ expect(localChecks).toBe(0);
+ await expect(security.getByText(address,{exact:true})).toBeHidden();
+ await security.getByText("View my full wallet address",{exact:true}).focus();
+ await page.keyboard.press("Enter");
+ await expect(security.getByText(address,{exact:true})).toBeVisible();
+ await security.getByRole("button",{name:"Copy my address"}).click();
+ await expect(security.getByText("Address copied",{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>navigator.clipboard.readText())).toBe(address);
+ await security.getByRole("button",{name:"Check this device"}).click();
+ await expect(security.getByText("Device passkey support detected",{exact:true})).toBeVisible();
+ expect(localChecks).toBe(1);
+ await security.getByText("View seven infrastructure observations",{exact:true}).click();
+ await expect(security.locator(".account-security-artifacts li")).toHaveCount(7);
+ await expect(security.getByText("Not available yet",{exact:true})).toBeVisible();
+ await expect(security.getByText("Not yet enabled",{exact:true})).toBeVisible();
+ await expect(security.getByRole("button",{name:/deploy|enroll|create account|send funds/i})).toHaveCount(0);
+ await testInfo.attach("wallet-security-desktop",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
+ await page.setViewportSize({width:390,height:844});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await testInfo.attach("wallet-security-mobile",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
+ const degraded=kit();degraded.all_entries_healthy=false;
+ degraded.entries[0]={...degraded.entries[0],status:"low_ttl",live_until_ledger:1100,ttl_remaining_ledgers:100};
+ payload=degraded;
+ await security.getByRole("button",{name:"Refresh infrastructure"}).click();
+ await expect(security.getByText(/6\/7 healthy · 1 need renewal/)).toBeVisible();
+ const badCases=[
+  {...kit(),observed_at_unix:1}, {...kit(),financial_execution_enabled:true},
+  {...kit(),customer_smart_account_created:true}, {...kit(),entries:kit().entries.slice(1)},
+  {...kit(),entries:[kit().entries[0],...kit().entries.slice(0,6)]},
+  {...kit(),entries:kit().entries.map((entry,i)=>i?entry:{...entry,observed_wasm_hash:"f".repeat(64)})}
+ ];
+ for(const bad of badCases){
+  payload=bad;
+  await security.getByRole("button",{name:/Refresh infrastructure|Retry infrastructure check/}).click();
+  await expect(security.getByRole("alert")).toContainText("Infrastructure status unavailable");
+  await expect(security.getByText(/\/7 healthy/)).toHaveCount(0);
+ }
+ failure=true;
+ await security.getByRole("button",{name:"Retry infrastructure check"}).click();
+ await expect(security.getByRole("alert")).toContainText("Infrastructure status unavailable");
+ failure=false;payload=kit();
+ await security.getByRole("button",{name:"Retry infrastructure check"}).click();
+ await expect(security.getByText(/7\/7 healthy/)).toBeVisible();
+ // This fresh signing identity has no funded/initialized ledger account. Access
+ // depends only on its verified session; no account, balance or funds API runs.
+ expect(calls.filter(call=>/horizon|balance|submit|fund|transaction|deploy/i.test(call))).toEqual([]);
+ expect(calls.every(call=>call.startsWith("GET "))).toBe(true);
+ await page.clock.fastForward(92_000);
+ await expect(security.getByRole("alert")).toContainText("Infrastructure status unavailable");
+ await expect(security.getByText(/\/7 healthy/)).toHaveCount(0);
+});

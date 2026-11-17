@@ -77,3 +77,31 @@ export interface ApiTransactionObservation {
   source: "stellar-rpc";
 }
 
+export interface ApiSmartAccountKitEntry {
+  name: "account_code" | "webauthn_instance" | "webauthn_code" | "threshold_instance" | "threshold_code" | "spendingLimit_instance" | "spendingLimit_code";
+  kind: "code" | "instance";
+  expected_wasm_hash: string;
+  observed_wasm_hash: string | null;
+  status: "live" | "low_ttl" | "unavailable" | "mismatch";
+  live_until_ledger: number | null;
+  ttl_remaining_ledgers: number | null;
+}
+
+export interface ApiSmartAccountKitObservation {
+  schema_version: 1;
+  network: "testnet";
+  source: "stellar-rpc/pinned-smart-account-kit";
+  observed_at_unix: number;
+  observed_ledger_sequence: number;
+  kit_version: "0.10.0";
+  entries: [ApiSmartAccountKitEntry & {name: "account_code"; kind: "code"}, ApiSmartAccountKitEntry & {name: "webauthn_instance"; kind: "instance"}, ApiSmartAccountKitEntry & {name: "webauthn_code"; kind: "code"}, ApiSmartAccountKitEntry & {name: "threshold_instance"; kind: "instance"}, ApiSmartAccountKitEntry & {name: "threshold_code"; kind: "code"}, ApiSmartAccountKitEntry & {name: "spendingLimit_instance"; kind: "instance"}, ApiSmartAccountKitEntry & {name: "spendingLimit_code"; kind: "code"}];
+  all_entries_healthy: boolean;
+  customer_smart_account_factory_deployed: false;
+  customer_smart_account_created: false;
+  credential_recovery_verified: false;
+  privacy_proofs_verified: false;
+  mainnet_enabled: false;
+  financial_execution_enabled: false;
+  operator_managed_deployment: true;
+}
+

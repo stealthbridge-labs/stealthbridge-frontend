@@ -1466,3 +1466,35 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .instruction-empty { display: flex; gap: .75rem; align-items: center; padding: 1.5rem 0; }
 .instruction-details { margin-top: 1rem; padding: 1rem; border: 1px solid var(--border, #35535a); border-radius: .5rem; }
 @media (max-width: 540px) { .instruction-list dl > div { grid-template-columns: 1fr; gap: .2rem; } }
+
+/* Account security shares the account palette; rows express independent trust boundaries. */
+.account-security{max-width:850px;margin-top:36px;color:#eaf9f6;min-width:0}
+.account-security-heading{display:flex;gap:18px;align-items:flex-start;padding:24px 0}
+.account-security-heading>svg{flex-shrink:0;color:#80f6db;margin-top:5px}
+.account-security h2{font-size:28px;line-height:1.2;letter-spacing:-.035em;margin:0 0 12px}
+.account-security h3{font-size:18px;line-height:1.4;margin:0 0 10px}
+.account-security p{font-size:14px;line-height:1.75;color:#bdd4c9;margin:10px 0;max-width:70ch}
+.account-security-row{display:grid;grid-template-columns:1fr 1fr;gap:32px;padding:28px 0;border-top:1px solid #99b7b84d}
+.account-security-value{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+.account-security-value>strong{color:#eaf9f6;font-size:15px}
+.account-security-short{font-family:monospace;color:#80f6db}
+.account-security details{width:100%;min-width:0}
+.account-security summary{cursor:pointer;min-height:48px;padding:12px 0;color:#80f6db;font-size:14px;line-height:1.7}
+.account-security summary:focus-visible{outline:2px solid #80f6db;outline-offset:4px;border-radius:4px}
+.account-security code{display:block;overflow-wrap:anywhere;font-size:13px;margin:12px 0 18px}
+.account-security-gates{margin:0;display:grid;gap:16px;font-size:14px}
+.account-security-gates div{display:grid;gap:4px}
+.account-security-gates dt{color:#bdd4c9}
+.account-security-gates dd{margin:0;font-weight:600;color:#eaf9f6}
+.account-security-infrastructure{padding:28px;background:#092129;border:1px solid #99b7b84d;border-radius:16px}
+.account-security-infrastructure-heading{display:flex;gap:20px;align-items:flex-start;justify-content:space-between}
+.account-security-infrastructure-heading button{flex-shrink:0}
+.account-security .account-security-summary{font-weight:600;color:#eaf9f6;font-size:16px}
+.account-security .account-security-error{color:#ffb5ab}
+.account-security-artifacts{list-style:none;padding:0;margin:0}
+.account-security-artifacts li{display:flex;gap:20px;justify-content:space-between;border-top:1px solid #99b7b833;padding:16px 0;font-size:14px}
+.account-security-artifacts li div{display:grid;gap:5px;min-width:0}
+.account-security-artifacts li div:last-child{text-align:right}
+.account-security-artifacts span{color:#bdd4c9;font-size:13px}
+.account-security .account-security-boundary{border-top:1px solid #99b7b84d;padding-top:20px;margin-top:20px}
+@media(max-width:640px){.account-security-row{grid-template-columns:1fr;gap:18px}.account-security-infrastructure{padding:20px}.account-security-infrastructure-heading{flex-direction:column;gap:10px}.account-security p{font-size:16px}.account-security h2{font-size:25px}.account-security-artifacts li{flex-direction:column;gap:10px}.account-security-artifacts li div:last-child{text-align:left}}

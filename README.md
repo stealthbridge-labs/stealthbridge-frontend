@@ -24,7 +24,7 @@ StealthBridge has a **deployed, authenticated Stellar Testnet customer experienc
 | Business / one payment | `/app/business/payments` | Prepare a single locally held payment draft with live route checks |
 | Business / batches | `/app/business/batch` | Import up to 50 CSV rows locally and check up to 8 distinct public route IDs |
 | Business / team | `/app/business/[id]` | View tenant-scoped team details and pending onboarding status |
-| Account | `/app/settings` | Edit saved name, purpose and optional country preferences |
+| Account | `/app/settings` | Edit preferences; review wallet security, optional local device support and public infrastructure observations |
 
 The Business hub includes an account-bound snapshot of **real pending applications and active memberships** with explicit unavailable/empty states. Organization detail views provide recorded member roles, deliberately disclosed account/reference identifiers, and a permissions-aware invitation area. Viewer invitations are shown only when a valid active owner/admin record, the backend's invitation-issuance flag, and the site feature setting all permit them; denied/stale information is hidden rather than assumed. Neither saved preferences nor a membership proves identity, legal-entity approval, or financial authorization. Public routes stay separate from authenticated routes. Operator receipts and developer tools are not customer app navigation.
 
@@ -82,6 +82,10 @@ npm run smoke:customer
 The customer smoke signs a disposable key in memory, uses production cookie-bound login, checks real read-only account responses and authenticates the app pages. **It never creates profiles, organizations, payment instructions, transfers, or chain transactions.** Run it only for the exact allowlisted product origin.
 
 CI checks builds, TypeScript, accessibility-oriented desktop/mobile journeys, public source parity, wallet-signature failures and disabled financial actions. A Vercel READY deployment alone does not prove this evidence; review GitHub checks and the live smoke report.
+
+## Wallet security and future smart accounts
+
+Freighter signed-wallet login works today and authenticates a session, never a transfer. Account settings shows the signed-in address with deliberate disclosure/copy and an optional local device passkey availability check; it creates no credential. Seven pinned upstream Testnet smart-account kit observations are read through a bounded, validated same-origin proxy. Healthy public code does not establish a customer factory, customer account, enrolled passkey or verified recovery. StealthBridge’s operator manages deployment; customers have no deploy controls. Mainnet and financial execution remain disabled, and privacy/ZK proofs remain unverified.
 
 ## Current limits and next engineering gates
 
