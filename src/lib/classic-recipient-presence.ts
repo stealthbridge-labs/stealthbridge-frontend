@@ -1,5 +1,6 @@
-import {canonicalStellarAccountAddress} from "./stellar-address.ts";
-/** Only public Testnet account existence. No identity, trustline or custody claims. */
+import {canonicalMuxedAccountAddress,canonicalStellarAccountAddress} from "./stellar-address.ts";
+/** Only public Testnet account existence (G... or M... underlying G-account).
+ * No identity, trustline, mux ID routing, or custody claims. */
 export interface ClassicRecipientPresence{
  schema_version:1;network:"testnet";source:"stellar-horizon/account-presence";
  address:string;observed_at_unix:number;classic_account_found:boolean;
@@ -11,7 +12,8 @@ const fields=["schema_version","network","source","address","observed_at_unix",
 export function validClassicRecipientPresence(
  input:unknown,address:string,now=Math.floor(Date.now()/1000)
 ):input is ClassicRecipientPresence{
- if(canonicalStellarAccountAddress(address)!==address||!input||
+ const validAddress=canonicalStellarAccountAddress(address)===address||canonicalMuxedAccountAddress(address)===address;
+ if(!validAddress||!input||
     typeof input!=="object"||Array.isArray(input))return false;
  const v=input as Record<string,unknown>;
  return Object.keys(v).sort().join(",")===fields&&v.schema_version===1&&

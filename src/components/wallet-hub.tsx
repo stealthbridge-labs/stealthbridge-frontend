@@ -5,7 +5,7 @@ import {ArrowLeft,ArrowRight,CheckCircle2,Globe2,LockKeyhole,ShieldAlert,Wallet}
 import {Brand} from "@/components/brand";
 import {WalletConnect} from "@/components/wallet-connect";
 import {Button} from "@/components/ui/button";
-import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
+import {parseStellarAddress} from "@/lib/stellar-address";
 import {isContractStrKey} from "@/lib/observer-activity";
 import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wallet-status";
 import {preparePrivateTransfer} from "@/lib/private-transfer";
@@ -13,10 +13,8 @@ import {validContractObservation,activePublicContractAtAddress,type ContractObse
 
 type Rail="confidential-token"|"private-payments";
 type Flow="send"|"business";
-function addressType(input:string):"classic"|"contract"|null{
- const trimmed=input.trim();
- return canonicalStellarAccountAddress(trimmed)?"classic":
-  isContractStrKey(trimmed)?"contract":null;
+function addressType(input:string):"classic"|"muxed-classic"|"contract"|"muxed-contract"|null{
+ return parseStellarAddress(input)?.kind??null;
 }
 /** The browser reads only the public C-address requested by a visitor. No payment
  * intent, sender, amount or connected-wallet details leave this workspace.
@@ -48,8 +46,9 @@ export function WalletHub({flow}:{flow:Flow}){
  const [contractError,setContractError]=useState<string|null>(null);
  const contractGeneration=useRef(0);
  const inspectContract=async()=>{
-  const address=smartAccount;
-  if(!isContractStrKey(address))return;
+  const parsed=parseStellarAddress(smartAccount);
+  if(!parsed||(parsed.kind!=="contract"&&parsed.kind!=="muxed-contract"))return;
+  const address=parsed.baseAddress;
   const request=++contractGeneration.current;
   setContractPending(true);setContractError(null);setContractEvidence(null);
   try{
@@ -61,8 +60,9 @@ export function WalletHub({flow}:{flow:Flow}){
   }finally{if(request===contractGeneration.current)setContractPending(false);}
  };
  const inspectRecipientContract=async()=>{
-  const address=recipient.trim();
-  if(!isContractStrKey(address))return;
+  const parsed=parseStellarAddress(recipient);
+  if(!parsed||(parsed.kind!=="contract"&&parsed.kind!=="muxed-contract"))return;
+  const address=parsed.baseAddress;
   const request=++recipientGeneration.current;
   setRecipientPending(true);setRecipientError(null);setRecipientEvidence(null);setReviewed(false);
   try{
@@ -99,12 +99,15 @@ export function WalletHub({flow}:{flow:Flow}){
   })();
   return ()=>ctl.abort();
  },[revision]);
+ const parsedTarget=parseStellarAddress(recipient);
  const target=addressType(recipient);
  const preflight=preparePrivateTransfer({
   sender:connected,recipient,amount,rail,backendTestnetFresh:Boolean(status)
  });
- const recipientContractActive=target!=="contract" ||
-  activePublicContractAtAddress(recipientEvidence,recipient.trim());
+ const recipientContractActive=target==="contract"?
+  activePublicContractAtAddress(recipientEvidence,recipient.trim()):
+  target==="muxed-contract"&&parsedTarget?
+   activePublicContractAtAddress(recipientEvidence,parsedTarget.baseAddress):true;
  const canReview=preflight.validLocalDraft&&recipientContractActive&&Boolean(status&&validPublicWalletStatus(status));
  const review=()=>{
   // A browser tab can stay open past the three-minute network evidence window.
@@ -162,24 +165,29 @@ export function WalletHub({flow}:{flow:Flow}){
       <option value="confidential-token">Amount and balances · Confidential Tokens</option>
      </select>
      <label className="field" htmlFor="recipient">Recipient's Stellar address</label>
-     <input id="recipient" className="tx-input" spellCheck={false} autoComplete="off" maxLength={56}
-      placeholder="G… classic account or C… contract account" value={recipient}
+     <input id="recipient" className="tx-input" spellCheck={false} autoComplete="off" maxLength={69}
+      placeholder="G…, M…, C… or W… recipient address" value={recipient}
       onChange={e=>{recipientGeneration.current++;setRecipient(e.target.value);setReviewed(false);
        setRecipientEvidence(null);setRecipientPending(false);setRecipientError(null);}}/>
      {recipient&&!target?<p className="wallet-error" role="status">
-      Enter a checksum-valid Stellar G-address or C-address.</p>:null}
-     {target?<p className="state-muted">Recipient: {target==="classic"?"classic Stellar account":"Soroban contract account (public identity only)"}</p>:null}
-     {target==="contract"?<div className="wallet-passkey-check">
+      Enter a checksum-valid Stellar G-, M-, C- or W-address.</p>:null}
+     {target&&parsedTarget?<p className="state-muted">Recipient: {
+      target==="classic"?"classic Stellar account":
+      target==="muxed-classic"?`muxed classic account (underlying G… ${parsedTarget.baseAddress.slice(0,6)}… · mux ID #${parsedTarget.muxedId} unverified)`:
+      target==="muxed-contract"?`muxed Soroban contract (CAP-84 W… · underlying C… ${parsedTarget.baseAddress.slice(0,6)}… · mux ID #${parsedTarget.muxedId} unverified)`:
+      "Soroban contract account (public identity only)"
+     }</p>:null}
+     {target==="contract"||target==="muxed-contract"?<div className="wallet-passkey-check">
       <Button type="button" variant="outline" disabled={recipientPending}
        onClick={()=>void inspectRecipientContract()}>
        {recipientPending?"Checking recipient…":"Inspect recipient contract on Testnet"}
       </Button>
       {recipientError?<p role="alert">{recipientError} Recipient presence is unverified.</p>:null}
       {recipientEvidence?<p role="status">{recipientContractActive?
-       "Active public contract instance confirmed on Testnet. This is not proof of recipient control or payment support.":
+       "Active public contract instance confirmed on Testnet. This is not proof of recipient control, mux routing or payment support.":
        "No active public contract instance was found at this address. Draft review is blocked."}
        {" "}Observed ledger #{recipientEvidence.observed_ledger_sequence.toLocaleString()}.</p>:
-       <p className="state-muted">Inspect this C-address before local draft review.
+       <p className="state-muted">Inspect this {target==="muxed-contract"?"W-address (underlying C-address)":"C-address"} before local draft review.
         A valid contract address alone does not prove a deployed or capable recipient.</p>}
      </div>:null}
      <label className="field" htmlFor="amount">Intended amount · asset unspecified</label>
@@ -217,15 +225,22 @@ export function WalletHub({flow}:{flow:Flow}){
      {passkeyState==="unavailable"?<p role="status">A platform passkey authenticator is not available or could not be checked. Freighter remains the supported wallet connection.</p>:null}
     </div>
     <label className="field" htmlFor="smart-watch">Already have a Soroban contract-account address?</label>
-    <input id="smart-watch" className="tx-input" placeholder="C… public contract account" maxLength={56}
+    <input id="smart-watch" className="tx-input" placeholder="C… or W… public contract account" maxLength={69}
      value={smartAccount} spellCheck={false} autoComplete="off"
      onChange={e=>{contractGeneration.current++;setSmartAccount(e.target.value);setContractEvidence(null);setContractError(null);setContractPending(false);}}/>
-    {smartAccount?<p className="state-muted" role="status">
-     {isContractStrKey(smartAccount)?"Valid contract-address format. Ownership and wallet authorization are not verified.":
-      "Enter a valid C-address to inspect its public identifier. A C-address alone is not proof of a smart wallet."}
-    </p>:null}
+    {smartAccount?(()=>{
+     const parsedSmart=parseStellarAddress(smartAccount);
+     const validContract=parsedSmart&&(parsedSmart.kind==="contract"||parsedSmart.kind==="muxed-contract");
+     return <p className="state-muted" role="status">
+      {validContract?
+       (parsedSmart.kind==="muxed-contract"?
+        `Valid CAP-84 W-address format (underlying contract ${parsedSmart.baseAddress.slice(0,8)}…, mux ID #${parsedSmart.muxedId}). Ownership and wallet authorization are not verified.`:
+        "Valid contract-address format. Ownership and wallet authorization are not verified."):
+       "Enter a valid C- or W-address to inspect its public identifier. A contract address alone is not proof of a smart wallet."}
+     </p>;
+    })():null}
     <div className="wallet-passkey-check">
-     <Button type="button" variant="outline" disabled={!isContractStrKey(smartAccount)||contractPending}
+     <Button type="button" variant="outline" disabled={!(() => {const p=parseStellarAddress(smartAccount);return p?.kind==="contract"||p?.kind==="muxed-contract";})()||contractPending}
       onClick={()=>void inspectContract()}>{contractPending?"Checking Testnet…":"Inspect contract on Testnet"}</Button>
      {contractError?<p role="alert">{contractError} No contract ownership was inferred.</p>:null}
      {contractEvidence?<p role="status">{contractEvidence.contract_instance_found?

@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalMuxedAccountAddress,canonicalMuxedContractAddress,canonicalStellarAccountAddress} from "./stellar-address";
 import {isContractStrKey} from "./observer-activity";
 
 /** A salted, locally created integrity receipt for a reviewed Testnet draft.
@@ -39,7 +39,9 @@ const toHex=(bytes:Uint8Array)=>Array.from(bytes,b=>b.toString(16).padStart(2,"0
 export function canonicalPrivateReviewDraft(draft:PrivateReviewDraft):string {
   const sender=canonicalStellarAccountAddress(draft.sender);
   const recipient=canonicalStellarAccountAddress(draft.recipient)||
-    (isContractStrKey(draft.recipient)?draft.recipient:null);
+    (isContractStrKey(draft.recipient)?draft.recipient:null)||
+    (canonicalMuxedAccountAddress(draft.recipient)===draft.recipient?draft.recipient:null)||
+    (canonicalMuxedContractAddress(draft.recipient)===draft.recipient?draft.recipient:null);
   const assetOk=/^[A-Za-z0-9_:-]{1,64}$/.test(draft.assetCode);
   if(!UUID.test(draft.corridorId)||
     !/^[A-Z]{2}$/.test(draft.originCountry)||

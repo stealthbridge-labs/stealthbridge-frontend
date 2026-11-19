@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {canonicalStellarAccountAddress} from "@/lib/stellar-address";
+import {canonicalMuxedAccountAddress,canonicalStellarAccountAddress} from "@/lib/stellar-address";
 import {validClassicRecipientPresence} from "@/lib/classic-recipient-presence";
 export const dynamic="force-dynamic";
 const MAX_BODY=4096;
@@ -13,10 +13,11 @@ function backend():URL|null{
   return url;
  }catch{return null;}
 }
-/** Inspect a public C-address only after the visitor explicitly requests it. */
+/** Inspect a public G-address or M-address (underlying classic account) on consent. */
 export async function GET(_request:Request,context:{params:Promise<{address:string}>}){
  const {address}=await context.params;
- if(canonicalStellarAccountAddress(address)!==address)return NextResponse.json({code:"INVALID_CLASSIC_ACCOUNT"},{status:400});
+ if(canonicalStellarAccountAddress(address)!==address&&canonicalMuxedAccountAddress(address)!==address)
+  return NextResponse.json({code:"INVALID_CLASSIC_ACCOUNT"},{status:400});
  const origin=backend();
  if(!origin)return NextResponse.json({code:"BACKEND_NOT_CONFIGURED"},{status:503});
  try{

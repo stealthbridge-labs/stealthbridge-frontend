@@ -1,5 +1,7 @@
 import {isContractStrKey} from "./observer-activity.ts";
-/** A live public contract record. Not proof of ownership, signer or asset acceptance. */
+import {canonicalMuxedContractAddress} from "./stellar-address.ts";
+/** A live public contract record (direct C... or CAP-84 W... underlying contract).
+ * Not proof of ownership, signer, asset acceptance, or mux ID routing. */
 export interface RecipientPresence{
  schema_version:1; network:"testnet"; source:"stellar-rpc/recipient-presence";
  address:string; observed_at_unix:number; observed_ledger_sequence:number;
@@ -14,7 +16,8 @@ const keys=["schema_version","network","source","address","observed_at_unix",
 export function validRecipientPresence(
  payload:unknown,address:string,now=Math.floor(Date.now()/1000)
 ):payload is RecipientPresence{
- if(!isContractStrKey(address)||!payload||typeof payload!=="object"||Array.isArray(payload))return false;
+ const validAddress=isContractStrKey(address)||canonicalMuxedContractAddress(address)===address;
+ if(!validAddress||!payload||typeof payload!=="object"||Array.isArray(payload))return false;
  const v=payload as Record<string,unknown>;
  return Object.keys(v).sort().join(",")===keys&&
   v.schema_version===1&&v.network==="testnet"&&v.source==="stellar-rpc/recipient-presence"&&

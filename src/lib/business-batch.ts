@@ -1,4 +1,4 @@
-import {canonicalStellarAccountAddress} from "./stellar-address.ts";
+import {parseStellarAddress} from "./stellar-address.ts";
 import type {CustomerCorridor} from "./customer-corridors.ts";
 export type BusinessBatchRow={
  corridor_id:string;recipient:string;amount:string;reference:string;
@@ -65,7 +65,8 @@ export function parseBusinessBatchCsv(input:string):BusinessBatchDraft{
   if(parts.length!==4)throw new TypeError("Invalid column count at CSV row "+(i+1));
   const [corridor_id,recipient,amount,reference]=parts as [string,string,string,string];
   if(!uuid.test(corridor_id))throw new TypeError("Invalid corridor ID at row "+(i+1));
-  if(canonicalStellarAccountAddress(recipient)!==recipient)
+  const parsedRecipient=parseStellarAddress(recipient);
+  if(!parsedRecipient||parsedRecipient.address!==recipient)
    throw new TypeError("Invalid recipient account at row "+(i+1));
   // Decimal-string display precision only; actual asset decimals must be verified separately.
   if(!/^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,7})?$/.test(amount)||

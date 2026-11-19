@@ -1,12 +1,12 @@
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalMuxedAccountAddress,canonicalMuxedContractAddress,canonicalStellarAccountAddress} from "./stellar-address";
 import {isContractStrKey} from "./observer-activity";
 
-/** Address classification is not wallet authorization. Any Soroban C-address
- * may be an arbitrary contract; it is not automatically a smart account.
+/** Address classification is not wallet authorization. Any Soroban C/W-address
+ * may be an arbitrary contract; M/W muxed IDs are unverified subaccount labels.
  */
 export type PublicAddressIdentity={
  address:string;
- kind:"classic"|"contract-candidate";
+ kind:"classic"|"muxed-classic"|"contract-candidate"|"muxed-contract-candidate";
  ownershipVerified:false;
  smartWalletCodeVerified:false;
 };
@@ -17,6 +17,10 @@ export function classifyPublicStellarAddress(input:unknown):PublicAddressIdentit
  if(classic)return {address:classic,kind:"classic",ownershipVerified:false,smartWalletCodeVerified:false};
  if(isContractStrKey(text))return {address:text,kind:"contract-candidate",
   ownershipVerified:false,smartWalletCodeVerified:false};
+ const muxedClassic=canonicalMuxedAccountAddress(text);
+ if(muxedClassic)return {address:muxedClassic,kind:"muxed-classic",ownershipVerified:false,smartWalletCodeVerified:false};
+ const muxedContract=canonicalMuxedContractAddress(text);
+ if(muxedContract)return {address:muxedContract,kind:"muxed-contract-candidate",ownershipVerified:false,smartWalletCodeVerified:false};
  return null;
 }
 export type PrivacyRail="confidential-token"|"private-payments";

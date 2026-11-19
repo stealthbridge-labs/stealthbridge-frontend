@@ -125,6 +125,37 @@ test("local randomized draft fingerprint verifies without sending amount or reci
  expect(outgoing.every(call=>call.startsWith("GET "))).toBe(true);
  expect(outgoing.every(call=>!call.includes("42.50")&&!call.includes(recipient+"?"))).toBe(true);
  await page.getByLabel("Amount").fill("43.50");
- await expect(page.getByText("Private local review fingerprint")).toHaveCount(0);
+ expect(await page.getByText("Private local review fingerprint").count()).toBe(0);
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
+});
+
+test("workspace supports 69-char CAP-84 W and M recipients and rejects non-canonical trailing bits",async({page})=>{
+ const wAddr="WDS6HBE6YJSZTRG3VR2HLCNHWJZMKB43BLFFEHEH3Z76WXAF46LW6AAAAAAAAAAAFKW6A";
+ const wBadBit="WDS6HBE6YJSZTRG3VR2HLCNHWJZMKB43BLFFEHEH3Z76WXAF46LW6AAAAAAAAAAAFKW6B";
+ const calls:string[]=[];
+ await signIn(page);
+ await page.route(/\/api\/public\/corridors(?:\?.*)?$/,route=>
+  route.fulfill({json:{items:[record],next_cursor:null}}));
+ await page.route("**/api/public/status",route=>route.fulfill({json:status()}));
+ await page.route("**/api/public/recipient/**",route=>{
+  calls.push(route.request().method()+" "+new URL(route.request().url()).pathname);
+  return route.fulfill({json:{
+   schema_version:1,network:"testnet",source:"stellar-rpc/recipient-presence",
+   address:wAddr,observed_at_unix:Math.floor(Date.now()/1000),observed_ledger_sequence:5810670,
+   contract_instance_found:true,smart_account_verified:false,signer_authority_verified:false,
+   recipient_asset_eligibility_verified:false,privacy_verified:false,payment_execution_enabled:false
+  }});
+ });
+ await page.goto("/app/send");
+ await page.getByLabel("Payment route").selectOption(id);
+
+ await page.getByLabel("Recipient Stellar wallet address").fill(wBadBit);
+ await expect(page.getByText("Enter a valid Stellar G-, M-, C- or W-address.")).toBeVisible();
+ expect(calls).toEqual([]);
+
+ await page.getByLabel("Recipient Stellar wallet address").fill(wAddr);
+ await expect(page.getByText(/CAP-84 muxed contract \(W…\).*mux ID #42 routing and contract permissions are unverified/)).toBeVisible();
+ await page.getByRole("button",{name:"Check recipient account"}).click();
+ await expect(page.getByText(/Underlying contract address found on Testnet\. Mux ID routing, ownership and asset support are unverified\./)).toBeVisible();
+ expect(calls).toEqual(["GET /api/public/recipient/"+wAddr]);
 });

@@ -1,6 +1,6 @@
 /** Customer-held encrypted drafts. This is neither a ZK payment proof nor a
  * smart-account authorization. The API is intentionally network-free. */
-import {canonicalStellarAccountAddress} from "./stellar-address";
+import {canonicalMuxedAccountAddress,canonicalMuxedContractAddress,canonicalStellarAccountAddress} from "./stellar-address";
 import {isContractStrKey} from "./observer-activity";
 
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
@@ -45,7 +45,8 @@ export function validCustomerDraft(input:unknown):input is CustomerDraft{
  const v=input as Record<string,unknown>;
  return exact(v,["kind","corridor_id","recipient","amount","reference"])&&
    (v.kind==="personal"||v.kind==="business")&&typeof v.corridor_id==="string"&&UUID.test(v.corridor_id)&&
-   typeof v.recipient==="string"&&(canonicalStellarAccountAddress(v.recipient)!==null||isContractStrKey(v.recipient))&&
+   typeof v.recipient==="string"&&(canonicalStellarAccountAddress(v.recipient)!==null||isContractStrKey(v.recipient)||
+    canonicalMuxedAccountAddress(v.recipient)===v.recipient||canonicalMuxedContractAddress(v.recipient)===v.recipient)&&
    typeof v.amount==="string"&&AMOUNT.test(v.amount)&&/[1-9]/.test(v.amount)&&
    typeof v.reference==="string"&&/^[A-Za-z0-9_-]{0,64}$/.test(v.reference)&&
    (v.kind==="personal"?v.reference==="":v.reference.length>=3);

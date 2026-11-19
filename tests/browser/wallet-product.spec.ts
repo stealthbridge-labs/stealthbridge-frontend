@@ -11,7 +11,12 @@ test("customer deployment denies raw contract-inspection proxy",async({request})
  const body=await reply.text();
  expect(body).not.toContain("executable_wasm_hash");
 });
-test("customer recipient proxy does not accept malformed C-addresses",async({request})=>{
+test("customer recipient proxy does not accept malformed C-addresses or bad-padding W-addresses",async({request})=>{
  const reply=await request.get("/api/public/recipient/invalid");
  expect(reply.status()).toBe(400);
+ const badPaddingW="WDS6HBE6YJSZTRG3VR2HLCNHWJZMKB43BLFFEHEH3Z76WXAF46LW6AAAAAAAAAAAFKW6B";
+ const badWReply=await request.get("/api/public/recipient/"+badPaddingW);
+ expect(badWReply.status()).toBe(400);
+ const wrongTypeClassic=await request.get("/api/public/classic-recipient/"+badPaddingW);
+ expect(wrongTypeClassic.status()).toBe(400);
 });

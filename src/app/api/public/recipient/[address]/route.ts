@@ -1,5 +1,6 @@
 import {NextResponse} from "next/server";
 import {isContractStrKey} from "@/lib/observer-activity";
+import {canonicalMuxedContractAddress} from "@/lib/stellar-address";
 import {validRecipientPresence} from "@/lib/recipient-presence";
 export const dynamic="force-dynamic";
 const MAX_BODY=4096;
@@ -13,10 +14,11 @@ function backend():URL|null{
   return url;
  }catch{return null;}
 }
-/** Inspect a public C-address only after the visitor explicitly requests it. */
+/** Inspect a public C-address or CAP-84 W-address (underlying contract) on consent. */
 export async function GET(_request:Request,context:{params:Promise<{address:string}>}){
  const {address}=await context.params;
- if(!isContractStrKey(address))return NextResponse.json({code:"INVALID_CONTRACT_ADDRESS"},{status:400});
+ if(!isContractStrKey(address)&&canonicalMuxedContractAddress(address)!==address)
+  return NextResponse.json({code:"INVALID_CONTRACT_ADDRESS"},{status:400});
  const origin=backend();
  if(!origin)return NextResponse.json({code:"BACKEND_NOT_CONFIGURED"},{status:503});
  try{
