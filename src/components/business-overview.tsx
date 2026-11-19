@@ -78,5 +78,11 @@ export function BusinessOverview({address}:{address:string}){
    </div>
   </div>:null}
   <p className="business-readiness-fineprint">A saved application is not company verification. Membership is not payment authority. There is no transfer balance, quote or settlement status here.</p>
+  <div className="business-ops-strip" aria-label="Additional business controls and documentation">
+   <Link href="/app/business/batch">Batch CSV planner</Link>
+   <Link href="/app/instructions">Saved instructions &amp; history</Link>
+   <Link href="/preview/approvals">Approval envelope fingerprint</Link>
+   <Link href="/preview/developers">Developer &amp; read-only API access</Link>
+  </div>
  </section>;
 }

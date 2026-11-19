@@ -81,10 +81,11 @@ export function AccountAccessSecurity({address}:{address:string}){
    </div>
   </div>
   <div className="account-security-row">
-   <div><h3>Your future smart account</h3><p>StealthBridge’s operator manages smart-account deployment. Customers will sign in and use their account when enrollment is available.</p></div>
+   <div><h3>Your future smart account &amp; recovery</h3><p>StealthBridge’s operator manages smart-account deployment. Your Freighter wallet retains full custody; passphrases used to lock encrypted payment instructions are never stored on our servers and cannot be recovered by support.</p></div>
    <dl className="account-security-gates">
     <div><dt>Customer account enrollment</dt><dd>Not available yet</dd></div>
     <div><dt>Credential recovery</dt><dd>Not verified</dd></div>
+    <div><dt>Instruction passphrase reset</dt><dd>Impossible (client-side only)</dd></div>
     <div><dt>Privacy & ZK proofs</dt><dd>Not verified</dd></div>
     <div><dt>Mainnet</dt><dd>Not yet enabled</dd></div>
     <div><dt>Transfers & financial execution</dt><dd>Not enabled</dd></div>

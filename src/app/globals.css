@@ -1498,3 +1498,27 @@ a.business-readiness-item:hover{border-color:#9aebc9;background:#184b41}
 .account-security-artifacts span{color:#bdd4c9;font-size:13px}
 .account-security .account-security-boundary{border-top:1px solid #99b7b84d;padding-top:20px;margin-top:20px}
 @media(max-width:640px){.account-security-row{grid-template-columns:1fr;gap:18px}.account-security-infrastructure{padding:20px}.account-security-infrastructure-heading{flex-direction:column;gap:10px}.account-security p{font-size:16px}.account-security h2{font-size:25px}.account-security-artifacts li{flex-direction:column;gap:10px}.account-security-artifacts li div:last-child{text-align:left}}
+
+/* Milestone 6: browser-local beneficiaries, lifecycle stage progress, and business quick strip */
+.beneficiary-bar{display:grid;gap:.65rem;margin:.75rem 0 1rem;padding:.9rem;border:1px solid #2c5054;border-radius:14px;background:#092129}
+.beneficiary-list{display:flex;flex-wrap:wrap;gap:.5rem}
+.beneficiary-chip{display:inline-flex;align-items:center;border:1px solid #487d78;border-radius:10px;background:#102e33;overflow:hidden}
+.beneficiary-chip>button:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:.1rem;padding:.45rem .75rem;min-height:44px;background:transparent;border:0;color:#eaf9f6;cursor:pointer;text-align:left;transition:background-color .16s ease}
+.beneficiary-chip>button:first-child:hover{background:#163d44}
+.beneficiary-chip>button:first-child strong{font-size:.85rem;font-weight:600}
+.beneficiary-chip>button:first-child small{font-size:.75rem;color:#9ee9d6;font-family:monospace}
+.beneficiary-chip-remove{min-width:38px;min-height:44px;border:0;border-left:1px solid #2c5054;background:transparent;color:#bdd4c9;font-size:1.1rem;cursor:pointer;transition:color .16s ease,background-color .16s ease}
+.beneficiary-chip-remove:hover{background:#2a1d24;color:#ffb5ab}
+.lifecycle-steps{list-style:none;padding:0;margin:.85rem 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.4rem}
+.lifecycle-step{padding:.45rem .6rem;border-radius:8px;font-size:.75rem;border:1px solid #2c5054;color:#99b7b8;background:#06181e}
+.lifecycle-step[data-status="done"]{border-color:#53c6a8;color:#d6fff4;background:#0f3734}
+.lifecycle-step[data-status="current"]{border-color:#80f6db;color:#eaf9f6;background:#144643;font-weight:600}
+.lifecycle-step[data-status="halted"]{border-color:#e5a96b;color:#ffe6c7;background:#2b2116}
+.lifecycle-details{margin:.85rem 0;padding:.75rem .9rem;border:1px solid #2c5054;border-radius:12px;background:#071a20}
+.lifecycle-details summary{cursor:pointer;color:#80f6db;font-size:.85rem;font-weight:600}
+.lifecycle-details code{font-size:.78rem;overflow-wrap:anywhere;color:#d6fff4}
+.lifecycle-events{list-style:none;padding:0;margin:.75rem 0 0;display:grid;gap:.35rem;font-size:.8rem;color:#bdd4c9}
+.business-ops-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.65rem;margin-top:1.1rem}
+.business-ops-strip a{display:flex;align-items:center;min-height:44px;padding:.65rem .9rem;border:1px solid #2c5054;border-radius:12px;background:#092129;color:#eaf9f6;font-size:.875rem;font-weight:500;text-decoration:none;transition:border-color .16s ease,background-color .16s ease}
+.business-ops-strip a:hover{border-color:#80f6db;background:#102e33}
+@media(prefers-reduced-motion:reduce){.beneficiary-chip>button,.business-ops-strip a{transition:none}}

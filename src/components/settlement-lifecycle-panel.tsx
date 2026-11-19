@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { Download, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   advanceSettlementLifecycle,
@@ -10,8 +10,25 @@ import {
   listSettlementLifecycles,
   type SettlementLifecycleRecord,
 } from "@/lib/settlement-lifecycle";
+import {
+  buildReconciliationCsv,
+  buildReconciliationReportJson,
+  plainLanguageLifecycleSummary,
+  stageProgressForLifecycle,
+} from "@/lib/settlement-reconciliation";
+import { describePrivacyRailForCustomer } from "@/lib/privacy-rails";
 import { fingerprintInstructionRoute } from "@/lib/payment-instructions";
 import type { CustomerCorridor } from "@/lib/customer-corridors";
+
+function triggerDownload(filename: string, mime: string, body: string) {
+  const blob = new Blob([body], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 type Props = {
   address: string;
@@ -136,6 +153,36 @@ export function SettlementLifecyclePanel({
         >
           <RefreshCw size={14} aria-hidden /> Refresh lifecycle
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy || rows.length === 0}
+          onClick={() =>
+            triggerDownload(
+              `stealthbridge-testnet-reconciliation-${address.slice(0, 6)}.csv`,
+              "text/csv;charset=utf-8",
+              buildReconciliationCsv(rows),
+            )
+          }
+        >
+          <Download size={14} aria-hidden /> Export CSV
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy || rows.length === 0}
+          onClick={() =>
+            triggerDownload(
+              `stealthbridge-testnet-reconciliation-${address.slice(0, 6)}.json`,
+              "application/json;charset=utf-8",
+              buildReconciliationReportJson(address, rows),
+            )
+          }
+        >
+          <Download size={14} aria-hidden /> Export JSON
+        </Button>
       </div>
       {error ? (
         <p role="alert" className="state-error">
@@ -148,48 +195,113 @@ export function SettlementLifecyclePanel({
           configured in this preview environment.
         </p>
       ) : null}
+      {status === "ready" && rows.length === 0 ? (
+        <p className="payment-hint">
+          No controlled Testnet lifecycle records yet. Prepare and review details
+          above, then start a Testnet lifecycle to track explicit FX, policy,
+          authorization, and Testnet observation stages.
+        </p>
+      ) : null}
       {rows.length > 0 ? (
         <ul className="instruction-list">
-          {rows.map((row) => (
-            <li key={row.id}>
-              <div className="instruction-row-heading">
-                <strong>
-                  {row.asset_code} · {(row.amount_minor_units / 10_000_000).toFixed(7)}
-                </strong>
-                <span className="instruction-state">{row.state}</span>
-              </div>
-              <dl>
-                <div>
-                  <dt>Privacy rail</dt>
-                  <dd>
-                    {row.privacy_rail} (
-                    {row.privacy_rail_verified ? "proof verified" : "unverified / transparent Testnet leg"})
-                  </dd>
+          {rows.map((row) => {
+            const stages = stageProgressForLifecycle(row.state);
+            const railSummary = describePrivacyRailForCustomer(row.privacy_rail);
+            return (
+              <li key={row.id}>
+                <div className="instruction-row-heading">
+                  <strong>
+                    {row.asset_code} · {(row.amount_minor_units / 10_000_000).toFixed(7)}
+                  </strong>
+                  <span className="instruction-state">{row.state}</span>
                 </div>
-                <div>
-                  <dt>Quote status</dt>
-                  <dd>{row.quote_status}</dd>
-                </div>
-                <div>
-                  <dt>On-chain Testnet</dt>
-                  <dd>
-                    {row.chain_status
-                      ? `${row.chain_status} · ledger ${row.observed_ledger ?? "—"}`
-                      : row.testnet_tx_hash
-                        ? `submitted ${row.testnet_tx_hash.slice(0, 10)}…`
-                        : "not submitted"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Fiat payout status</dt>
-                  <dd>{row.payout_status}</dd>
-                </div>
-                <div>
-                  <dt>Reconciliation</dt>
-                  <dd>{row.reconciliation_status}</dd>
-                </div>
-              </dl>
-              <div className="customer-vault-actions">
+                <p className="payment-hint">{plainLanguageLifecycleSummary(row)}</p>
+                <ol className="lifecycle-steps" aria-label="Settlement stage progression">
+                  {stages.map((step) => (
+                    <li
+                      key={step.key}
+                      className="lifecycle-step"
+                      data-status={step.status}
+                    >
+                      {step.label}
+                    </li>
+                  ))}
+                </ol>
+                <dl>
+                  <div>
+                    <dt>Privacy rail</dt>
+                    <dd>
+                      {railSummary.title} (
+                      {row.privacy_rail_verified ? "proof verified" : "transparent Testnet leg"})
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Quote status</dt>
+                    <dd>{row.quote_status}</dd>
+                  </div>
+                  <div>
+                    <dt>On-chain Testnet</dt>
+                    <dd>
+                      {row.chain_status
+                        ? `${row.chain_status} · Testnet ledger ${row.observed_ledger ?? "—"}`
+                        : row.testnet_tx_hash
+                          ? `submitted ${row.testnet_tx_hash.slice(0, 10)}…`
+                          : "not submitted"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Fiat payout status</dt>
+                    <dd>{row.payout_status}</dd>
+                  </div>
+                  <div>
+                    <dt>Reconciliation</dt>
+                    <dd>{row.reconciliation_status}</dd>
+                  </div>
+                </dl>
+                <details className="lifecycle-details">
+                  <summary>Details & Testnet audit journal ({row.events.length} events)</summary>
+                  <dl>
+                    <div>
+                      <dt>Recipient</dt>
+                      <dd>{row.recipient_address}</dd>
+                    </div>
+                    <div>
+                      <dt>Visibility disclosure</dt>
+                      <dd>{railSummary.whatRemainsPublic}</dd>
+                    </div>
+                    <div>
+                      <dt>Request SHA-256</dt>
+                      <dd>
+                        <code>{row.request_sha256}</code>
+                      </dd>
+                    </div>
+                    {row.testnet_tx_hash ? (
+                      <div>
+                        <dt>Testnet tx hash</dt>
+                        <dd>
+                          <code>{row.testnet_tx_hash}</code>
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {row.events.length > 0 ? (
+                    <ul className="lifecycle-events">
+                      {row.events.map((ev) => (
+                        <li key={`${row.id}-${ev.revision}`}>
+                          <span>
+                            Rev {ev.revision}: {ev.previous_state ?? "start"} →{" "}
+                            <strong>{ev.next_state}</strong>
+                          </span>{" "}
+                          <small>
+                            ({ev.reason_code} ·{" "}
+                            {new Date(ev.recorded_at_unix * 1000).toLocaleString()})
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </details>
+                <div className="customer-vault-actions">
                 {row.state === "quote_unavailable" || row.state === "quoted" ? (
                   <Button
                     type="button"
@@ -326,7 +438,8 @@ export function SettlementLifecyclePanel({
                 ) : null}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : null}
     </section>

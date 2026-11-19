@@ -19,6 +19,7 @@ import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wall
 import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
 import {loadCustomerCorridorPreflight} from "@/lib/corridor-preflight";
 import {describePrivacyRailForCustomer} from "@/lib/privacy-rails";
+import {loadLocalBeneficiaries,removeLocalBeneficiary,saveLocalBeneficiary,type LocalBeneficiary} from "@/lib/local-beneficiaries";
 
 type Flow="send"|"business";
 type FetchState="loading"|"ready"|"error";
@@ -72,6 +73,11 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [reviewError,setReviewError]=useState<string|null>(null);
  const [privateReceipt,setPrivateReceipt]=useState<PrivateReviewReceipt|null>(null);
  const [receiptMessage,setReceiptMessage]=useState("");
+ const [savedBeneficiaries,setSavedBeneficiaries]=useState<LocalBeneficiary[]>([]);
+ useEffect(()=>{
+  if(!identityAddress){setSavedBeneficiaries([]);return;}
+  setSavedBeneficiaries(loadLocalBeneficiaries(identityAddress));
+ },[identityAddress]);
  const reviewGeneration=useRef(0);
  const invalidateReview=useCallback(()=>{
   reviewGeneration.current++;
@@ -322,12 +328,26 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <div><span>To</span><strong>{country(corridor.destination_country)}</strong></div>
        <div><span>Planning asset</span><strong>{corridor.asset_code}</strong></div>
       </div>:null}
-      {corridor?<div className="payment-privacy-info"><ShieldCheck size={18} aria-hidden/>
-       <div><strong>{corridor.privacy_rail==="confidential-token"?"Amount confidentiality":"Sender-recipient relationship privacy"}</strong>
-        <p>This route declares a privacy mode. Its verifier, asset issuer and live payment integration are not yet approved; confidentiality is not currently available.</p>
+      {corridor?(()=>{const disclosure=describePrivacyRailForCustomer(corridor.privacy_rail);return <div className="payment-privacy-info"><ShieldCheck size={18} aria-hidden/>
+       <div><strong>{disclosure.title}</strong>
+        <p>{disclosure.whatRemainsPublic}</p>
+        <p className="payment-hint">Intended scope: {disclosure.targetUseCase}. Zero-knowledge proof verifiers and asset issuers remain unverified; transfers are not active.</p>
+       </div>
+      </div>;})():null}
+      <div className="payment-step"><span>02</span><strong>{business?"Who are you paying?":"Who will receive it?"}</strong></div>
+      {identityAddress&&savedBeneficiaries.length>0?<div className="beneficiary-bar" aria-label={business?"Saved beneficiaries on this device":"Saved recipients on this device"}>
+       <span className="payment-hint">Saved locally on this browser ({business?"beneficiaries":"recipients"} — never sent to StealthBridge):</span>
+       <div className="beneficiary-list">
+        {savedBeneficiaries.map(entry=><div key={entry.address} className="beneficiary-chip">
+         <button type="button" onClick={()=>{clearRecipient(entry.address);setRecipientName(entry.label);}}>
+          <strong>{entry.label}</strong>
+          <small>{entry.address.slice(0,6)}…{entry.address.slice(-4)}</small>
+         </button>
+         <button type="button" className="beneficiary-chip-remove" aria-label={`Remove saved recipient ${entry.label}`}
+          onClick={()=>setSavedBeneficiaries(removeLocalBeneficiary(identityAddress,entry.address))}>×</button>
+        </div>)}
        </div>
       </div>:null}
-      <div className="payment-step"><span>02</span><strong>{business?"Who are you paying?":"Who will receive it?"}</strong></div>
       <label className="payment-label" htmlFor="payment-recipient">Recipient Stellar wallet address</label>
       <input className="payment-input" id="payment-recipient" value={recipient} autoComplete="off" spellCheck={false}
        placeholder="G…, M…, C… or W… address" maxLength={69} onChange={event=>clearRecipient(event.target.value)}/>
@@ -347,6 +367,9 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <Button type="button" size="sm" variant="outline" disabled={recipientPending} onClick={()=>void checkRecipient()}>
         {recipientPending?"Checking recipient…":"Check recipient account"}
        </Button>
+       {identityAddress?<Button type="button" size="sm" variant="outline" onClick={()=>{
+        setSavedBeneficiaries(saveLocalBeneficiary(identityAddress,parsedRecipient.address,recipientName));
+       }}>Save on this browser</Button>:null}
        {recipientEvidence?<span role="status">{recipientPresent?
         (parsedRecipient.kind==="muxed-contract"?"Underlying contract address found on Testnet. Mux ID routing, ownership and asset support are unverified.":
          parsedRecipient.kind==="contract"?"Contract address found on Testnet. Ownership and asset support are unverified.":

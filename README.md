@@ -107,6 +107,12 @@ Do not display internal deployer/operator addresses on customer pages. A custome
 
 **Sister repositories:** [Backend](https://github.com/stealthbridge-labs/stealthbridge-backend) · [SDK](https://github.com/stealthbridge-labs/stealthbridge-sdk) · [Contracts](https://github.com/stealthbridge-labs/stealthbridge-contracts).
 
+## Product experience & release readiness (Milestones 3–6)
+
+- **Personal & Business product surfaces:** `/app` overview, `/app/send` personal planner, `/app/instructions` encrypted history, `/app/settings` wallet/recovery/passkey checks, `/app/business` onboarding & organization access, `/app/business/[id]` team & invitations, `/app/business/payments` business settlement planner, `/app/business/batch` local CSV route validator, and `/preview/approvals` / `/preview/developers` read-only technical tooling.
+- **Browser-local recipients & reconciliation export:** Signed-in users can store recipients locally in `localStorage` (`src/lib/local-beneficiaries.ts` — never uploaded or verified on-chain), view plain-language privacy mode disclosures (`src/lib/privacy-rails.ts`), track controlled Testnet lifecycle progress (`SettlementLifecyclePanel`), and export real loaded Testnet records as CSV/JSON (`src/lib/settlement-reconciliation.ts`).
+- **Release Readiness Report:** Full cross-repository scope, working vs. Testnet-only surfaces, security review items, and Mainnet blockers are documented in [`MILESTONE-6-RELEASE-READINESS-REPORT.md`](https://github.com/stealthbridge-labs/stealthbridge-contracts/blob/main/docs/MILESTONE-6-RELEASE-READINESS-REPORT.md).
+
 **Testnet only. No live payments or real-money deposits.**
 
 ## Open source
