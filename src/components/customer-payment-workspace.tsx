@@ -19,7 +19,7 @@ import {validPublicWalletStatus,type PublicWalletStatus} from "@/lib/public-wall
 import {loadCustomerCorridors,loadVerifiedCustomerCorridor,sameCustomerCorridor,type CustomerCorridor} from "@/lib/customer-corridors";
 import {loadCustomerCorridorPreflight} from "@/lib/corridor-preflight";
 import {describePrivacyRailForCustomer} from "@/lib/privacy-rails";
-import {loadLocalBeneficiaries,removeLocalBeneficiary,saveLocalBeneficiary,type LocalBeneficiary} from "@/lib/local-beneficiaries";
+import {listAccountBeneficiaries,removeAccountBeneficiary,saveAccountBeneficiary,validBeneficiaryLabel,type AccountBeneficiary} from "@/lib/account-beneficiaries";
 
 type Flow="send"|"business";
 type FetchState="loading"|"ready"|"error";
@@ -73,10 +73,17 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
  const [reviewError,setReviewError]=useState<string|null>(null);
  const [privateReceipt,setPrivateReceipt]=useState<PrivateReviewReceipt|null>(null);
  const [receiptMessage,setReceiptMessage]=useState("");
- const [savedBeneficiaries,setSavedBeneficiaries]=useState<LocalBeneficiary[]>([]);
+ const [savedBeneficiaries,setSavedBeneficiaries]=useState<AccountBeneficiary[]>([]);
+ const [beneficiaryState,setBeneficiaryState]=useState<"loading"|"ready"|"unavailable">("loading");
+ const [beneficiaryBusy,setBeneficiaryBusy]=useState(false);
+ const [beneficiaryNotice,setBeneficiaryNotice]=useState("");
  useEffect(()=>{
-  if(!identityAddress){setSavedBeneficiaries([]);return;}
-  setSavedBeneficiaries(loadLocalBeneficiaries(identityAddress));
+  if(!identityAddress){setSavedBeneficiaries([]);setBeneficiaryState("unavailable");return;}
+  const ctl=new AbortController();
+  void listAccountBeneficiaries(identityAddress,ctl.signal)
+   .then(dir=>{if(!ctl.signal.aborted){setSavedBeneficiaries(dir.items);setBeneficiaryState("ready");}})
+   .catch(()=>{if(!ctl.signal.aborted){setSavedBeneficiaries([]);setBeneficiaryState("unavailable");}});
+  return ()=>ctl.abort();
  },[identityAddress]);
  const reviewGeneration=useRef(0);
  const invalidateReview=useCallback(()=>{
@@ -335,19 +342,29 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        </div>
       </div>;})():null}
       <div className="payment-step"><span>02</span><strong>{business?"Who are you paying?":"Who will receive it?"}</strong></div>
-      {identityAddress&&savedBeneficiaries.length>0?<div className="beneficiary-bar" aria-label={business?"Saved beneficiaries on this device":"Saved recipients on this device"}>
-       <span className="payment-hint">Saved locally on this browser ({business?"beneficiaries":"recipients"} — never sent to StealthBridge):</span>
+      {identityAddress&&beneficiaryState==="ready"&&savedBeneficiaries.length>0?<div className="beneficiary-bar" aria-label={business?"Saved business beneficiaries":"Saved account recipients"}>
+       <span className="payment-hint">Saved in your account ({business?"beneficiaries":"recipients"} — unverified until independently checked):</span>
        <div className="beneficiary-list">
-        {savedBeneficiaries.map(entry=><div key={entry.address} className="beneficiary-chip">
-         <button type="button" onClick={()=>{clearRecipient(entry.address);setRecipientName(entry.label);}}>
+        {savedBeneficiaries.map(entry=><div key={entry.id} className="beneficiary-chip">
+         <button type="button" onClick={()=>{clearRecipient(entry.recipient_address);setRecipientName(entry.label);}}>
           <strong>{entry.label}</strong>
-          <small>{entry.address.slice(0,6)}…{entry.address.slice(-4)}</small>
+          <small>{entry.recipient_address.slice(0,6)}…{entry.recipient_address.slice(-4)}</small>
          </button>
-         <button type="button" className="beneficiary-chip-remove" aria-label={`Remove saved recipient ${entry.label}`}
-          onClick={()=>setSavedBeneficiaries(removeLocalBeneficiary(identityAddress,entry.address))}>×</button>
+         <button type="button" className="beneficiary-chip-remove" disabled={beneficiaryBusy} aria-label={`Remove saved recipient ${entry.label}`}
+          onClick={async()=>{
+           if(beneficiaryBusy)return;
+           setBeneficiaryBusy(true);setBeneficiaryNotice("");
+           try{
+            const dir=await removeAccountBeneficiary(identityAddress,entry.id);
+            setSavedBeneficiaries(dir.items);
+           }catch(e){setBeneficiaryNotice(e instanceof Error?e.message:"Could not remove recipient.");}
+           finally{setBeneficiaryBusy(false);}
+          }}>×</button>
         </div>)}
        </div>
       </div>:null}
+      {identityAddress&&beneficiaryState==="ready"&&savedBeneficiaries.length===0?<p className="payment-hint">No saved {business?"beneficiaries":"recipients"} in your account yet. Enter an address and label below to save one.</p>:null}
+      {beneficiaryNotice?<p role="alert" className="payment-field-error">{beneficiaryNotice}</p>:null}
       <label className="payment-label" htmlFor="payment-recipient">Recipient Stellar wallet address</label>
       <input className="payment-input" id="payment-recipient" value={recipient} autoComplete="off" spellCheck={false}
        placeholder="G…, M…, C… or W… address" maxLength={69} onChange={event=>clearRecipient(event.target.value)}/>
@@ -367,9 +384,22 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
        <Button type="button" size="sm" variant="outline" disabled={recipientPending} onClick={()=>void checkRecipient()}>
         {recipientPending?"Checking recipient…":"Check recipient account"}
        </Button>
-       {identityAddress?<Button type="button" size="sm" variant="outline" onClick={()=>{
-        setSavedBeneficiaries(saveLocalBeneficiary(identityAddress,parsedRecipient.address,recipientName));
-       }}>Save on this browser</Button>:null}
+       {identityAddress&&beneficiaryState==="ready"?<Button type="button" size="sm" variant="outline"
+        disabled={beneficiaryBusy||!validBeneficiaryLabel(recipientName.trim())}
+        onClick={async()=>{
+         const clean=recipientName.trim();
+         if(!validBeneficiaryLabel(clean)||beneficiaryBusy)return;
+         setBeneficiaryBusy(true);setBeneficiaryNotice("");
+         try{
+          const dir=await saveAccountBeneficiary(identityAddress,{
+           id:crypto.randomUUID(),recipient_address:parsedRecipient.address,
+           label:clean,flow:business?"business":"personal"
+          });
+          setSavedBeneficiaries(dir.items);
+          setBeneficiaryNotice("Recipient saved to your account.");
+         }catch(e){setBeneficiaryNotice(e instanceof Error?e.message:"Could not save recipient.");}
+         finally{setBeneficiaryBusy(false);}
+        }}>{beneficiaryBusy?"Saving…":"Save to account"}</Button>:null}
        {recipientEvidence?<span role="status">{recipientPresent?
         (parsedRecipient.kind==="muxed-contract"?"Underlying contract address found on Testnet. Mux ID routing, ownership and asset support are unverified.":
          parsedRecipient.kind==="contract"?"Contract address found on Testnet. Ownership and asset support are unverified.":
