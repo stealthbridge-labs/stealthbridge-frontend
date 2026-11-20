@@ -1,0 +1,22 @@
+name: Bug report (Frontend / UX / A11y / BFF)
+description: Report a UI, wallet auth, accessibility, responsive layout, or same-origin BFF bug.
+title: "[Frontend Bug] "
+labels: ["bug", "frontend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste Freighter mnemonics, session cookies, draft passphrases, or sensitive user details.
+  - type: input
+    id: route
+    attributes:
+      label: Affected route & site mode (`landing` vs `preview`)
+      placeholder: "e.g., /app/send, /app/business/batch, /preview/developers"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce & scrubbed screenshot/output
+    validations:
+      required: true

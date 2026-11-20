@@ -1,0 +1,17 @@
+name: Frontend Product / Accessibility Proposal
+description: Propose UI workflows, Personal/Business/Developer experiences, or design-system improvements.
+title: "[Frontend Proposal] "
+labels: ["enhancement", "frontend"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Customer or developer outcome & real backend/SDK integration path
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Fail-closed UI states (empty/unavailable/unverified) & Playwright coverage
+    validations:
+      required: true

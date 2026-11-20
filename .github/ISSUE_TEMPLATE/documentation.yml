@@ -1,0 +1,11 @@
+name: Frontend Docs & Accessibility Guide Improvement
+description: Improve contributor UX docs, design system references, or testing walkthroughs.
+title: "[Docs] "
+labels: ["documentation", "frontend"]
+body:
+  - type: textarea
+    id: details
+    attributes:
+      label: Documentation improvement details
+    validations:
+      required: true
