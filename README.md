@@ -115,6 +115,11 @@ Do not display internal deployer/operator addresses on customer pages. A custome
 
 **Testnet only. No live payments or real-money deposits.**
 
-## Open source
+## Open source & community
 
 StealthBridge is available under the [MIT license](LICENSE). Third-party dependencies retain their own licenses. Contributions should include meaningful tests and preserve customer privacy and disabled financial execution gates.
+
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [MIT License](LICENSE)
