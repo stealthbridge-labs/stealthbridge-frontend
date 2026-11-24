@@ -1,11 +1,11 @@
 "use client";
 import {usePathname} from "next/navigation";
 import Link from "next/link";
-import {Building2,FileLock2,FileSpreadsheet,House,Send,Settings2,SquarePen} from "lucide-react";
+import {Building2,FileLock2,FileSpreadsheet,Fingerprint,House,Send,Settings2,SquarePen} from "lucide-react";
 
 const businessDetail=/^\/app\/business\/[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 const sections=[
- {name:"Your space",items:[{href:"/app",label:"Overview",Icon:House}]},
+ {name:"Your space",items:[{href:"/app",label:"Overview",Icon:House},{href:"/app/accounts",label:"Smart accounts",Icon:Fingerprint}]},
  {name:"Personal",items:[{href:"/app/send",label:"Transfers",Icon:Send},{href:"/app/instructions",label:"Instructions",Icon:FileLock2}]},
  {name:"Business",items:[
   {href:"/app/business",label:"Workspace",Icon:Building2},
