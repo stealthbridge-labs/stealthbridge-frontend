@@ -1,5 +1,6 @@
 import type {Metadata,Viewport} from "next";
 import "./globals.css";
+import "./design-system.css";
 import { SITE_ORIGIN } from "./site-metadata";
 import {SiteEnhancements} from "@/components/site-enhancements";
 export const metadata:Metadata={
