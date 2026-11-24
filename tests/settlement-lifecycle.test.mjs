@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import {
   canonicalCustomerAuthorizationDigest,
   canonicalSettlementIntentDigest,
+  settlementErrorMessage,
   validSettlementLifecycleDirectory,
 } from "../src/lib/settlement-lifecycle.ts";
 import {
@@ -126,4 +127,12 @@ test("reconciliation export and lifecycle progression preserve factual Testnet b
   assert.equal(parsedJson.live_fx_enabled, false);
   assert.equal(parsedJson.fiat_payouts_enabled, false);
   assert.equal(parsedJson.record_count, 1);
+});
+
+test("settlement errors are explained in plain language, including chain-evidence mismatch", async () => {
+  assert.match(settlementErrorMessage(422), /not this settlement's payment/);
+  assert.match(settlementErrorMessage(409), /already linked elsewhere/);
+  assert.doesNotMatch(settlementErrorMessage(500), /SETTLEMENT_/);
+  const route = await readFile(new URL("../src/app/api/account/settlements/route.ts", import.meta.url), "utf8");
+  assert.match(route, /response\.status === 422[\s\S]*TX_EVIDENCE_MISMATCH/);
 });
