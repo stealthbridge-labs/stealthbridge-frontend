@@ -227,6 +227,13 @@ async function relay(request: Request, method: "GET" | "PUT" | "POST") {
         { status: 409, headers: common },
       );
     }
+    if (response.status === 422) {
+      // The referenced transaction is real but is not this intent's payment.
+      return NextResponse.json(
+        { code: "TX_EVIDENCE_MISMATCH" },
+        { status: 422, headers: common },
+      );
+    }
     if (response.status === 502) {
       return NextResponse.json(
         { code: "TESTNET_RPC_OBSERVATION_FAILED" },

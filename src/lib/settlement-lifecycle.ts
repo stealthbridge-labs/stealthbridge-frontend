@@ -188,6 +188,24 @@ export async function canonicalCustomerAuthorizationDigest(
   return sha256(`stealthbridge-auth-v1\n${account}\n${requestSha256}\n`);
 }
 
+/** Customer-readable explanation for a failed settlement BFF call. */
+export function settlementErrorMessage(status: number): string {
+  switch (status) {
+    case 401:
+      return "Sign in again to continue.";
+    case 409:
+      return "This settlement changed, expired, or that transaction is already linked elsewhere. Refresh and try again.";
+    case 422:
+      return "That transaction is not this settlement's payment: the payer, recipient, asset and amount must all match.";
+    case 429:
+      return "Too many requests. Wait a moment and try again.";
+    case 502:
+      return "Stellar Testnet could not confirm this transaction yet. Try again shortly.";
+    default:
+      return "The settlement service is unavailable right now.";
+  }
+}
+
 export async function listSettlementLifecycles(
   account: string,
   signal?: AbortSignal,
@@ -198,7 +216,7 @@ export async function listSettlementLifecycles(
     cache: "no-store",
     signal: signal ?? AbortSignal.timeout(10_000),
   });
-  if (!res.ok) throw new Error(`SETTLEMENT_${res.status}`);
+  if (!res.ok) throw new Error(settlementErrorMessage(res.status));
   const data: unknown = await res.json();
   if (!validSettlementLifecycleDirectory(data, account)) {
     throw new Error("INVALID_SETTLEMENT_DIRECTORY");
@@ -216,7 +234,7 @@ export async function createSettlementLifecycle(
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error(`SETTLEMENT_${res.status}`);
+  if (!res.ok) throw new Error(settlementErrorMessage(res.status));
   return (await res.json()) as Record<string, unknown>;
 }
 
@@ -230,6 +248,6 @@ export async function advanceSettlementLifecycle(
     headers: { "content-type": "application/json" },
     body: JSON.stringify(action),
   });
-  if (!res.ok) throw new Error(`SETTLEMENT_${res.status}`);
+  if (!res.ok) throw new Error(settlementErrorMessage(res.status));
   return (await res.json()) as Record<string, unknown>;
 }
