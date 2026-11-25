@@ -170,6 +170,16 @@ export function SmartAccountPayment({ address }: { address: string }) {
                 {available === null ? "Balance unavailable" : `Available: ${formatStroops(available)} ${assetLabel(asset)}`}
               </small>
             </label>
+            {available === "0" ? (
+              <div className="sb-alert sb-span-2" role="status">
+                <span>
+                  <strong>Add funds to start sending.</strong> Send {assetLabel(asset)} from your Stellar wallet (for example Freighter, on Testnet)
+                  to your smart account address: <span className="sb-mono" style={{ overflowWrap: "anywhere" }}>{from}</span>{" "}
+                  <button type="button" className="sb-link" style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
+                    onClick={() => void navigator.clipboard?.writeText(from)}>Copy address</button>
+                </span>
+              </div>
+            ) : null}
             <label className="sb-field">
               Asset
               <select className="sb-input" value={asset} onChange={(e) => setAsset(e.target.value)} disabled={busy}>
