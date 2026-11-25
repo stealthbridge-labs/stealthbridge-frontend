@@ -1,12 +1,67 @@
-# StealthBridge Marketing Design System
+# StealthBridge design system
+
+Source: [`src/app/design-system.css`](../src/app/design-system.css). Version 1, 2026-11-24.
+
+## Brand (unchanged)
+
+The existing logo (`public/brand/`) and colours are kept. Deep teal surfaces (`#031419`), mint accent (`#80f6db`), pale ink (`#eaf9f6`). The tokens below formalize them; they don't replace them.
+
+## Rules
+
+1. **New and redesigned screens use only `--sb-*` tokens and `sb-` primitives.** No raw hex values, no page-specific colour classes.
+2. **Mint is for action and verified state**, not decoration. One primary button per view.
+3. **No invented data.** Empty, loading, unavailable and error states are designed, not hidden. "Active", "verified" and "deployed" appear only for state the backend observed (on-chain or from a signed provider callback).
+4. **Customers never need protocol vocabulary.** XDR, RPC, Soroban, witness and similar terms belong in developer and advanced views. Explorer links are offered, not required.
+5. **Accessibility:** 44px minimum touch targets, visible focus (`outline: 2px` mint), labels on every input, `role="status"`/`role="alert"` for async messages, no horizontal scroll at 390px.
+
+## Tokens
+
+| Group | Tokens |
+|---|---|
+| Brand | `--sb-brand-50 … 800` (300 = brand mint) |
+| Surfaces | `--sb-surface-0` page · `-1` section · `-2` card · `-3` raised/input; `--sb-border`, `--sb-border-strong` |
+| Ink | `--sb-ink`, `--sb-ink-muted`, `--sb-ink-subtle`, `--sb-ink-on-brand` |
+| Semantic | `--sb-success`, `--sb-warning`, `--sb-danger`, `--sb-info` |
+| Privacy | `--sb-privacy-protected` (cryptographically protected), `-encrypted` (encrypted off-chain), `-public` (public on the ledger), `-unavailable` |
+| Type | `--sb-text-xs … 2xl`, `--sb-leading`, `--sb-font`, `--sb-mono` |
+| Space | `--sb-space-1 … 7` (4px grid) |
+| Shape and motion | `--sb-radius-sm/md/lg/pill`, `--sb-shadow-1`, `--sb-ease`, `--sb-duration` |
+
+## Primitives
+
+`sb-page`, `sb-page-header` (+ `sb-eyebrow`), `sb-section`/`sb-section-title`, `sb-card`/`sb-card-row`, `sb-btn` + `sb-btn-primary`/`sb-btn-secondary`, `sb-field`/`sb-input`/`sb-check`, `sb-badge[data-tone]`, `sb-alert[data-tone]`, `sb-details` (key/value), `sb-mono`, `sb-link`, `sb-checklist` (`data-state="done|todo|unavailable"`), `sb-privacy-facts`/`sb-privacy-fact[data-level]`.
+
+## Privacy language
+
+Each privacy statement names the mechanism and one level: **protected** (a cryptographic guarantee was verified), **encrypted** (encrypted off-chain; StealthBridge cannot read it), **public** (visible on Stellar), or **unavailable**. A transparent Stellar payment is never labelled confidential. Today no on-chain confidentiality is live (see the contracts repo, ADR-0002), so **protected** is used only for keys that never leave the device.
+
+## Page-by-page redesign checklist
+
+Status: ✅ on design system v1 · 🔶 functional, legacy styling · ⛔ preview-only (404 in production)
+
+| Route | Status | Notes |
+|---|---|---|
+| `/app/accounts` Smart accounts | ✅ | Real passkey creation; chain-backed status; security checklist; privacy facts |
+| `/app` Overview | 🔶 | Should surface smart-account and security state |
+| `/app/send` Transfers | 🔶 | Needs a privacy review step and transaction receipts once execution exists |
+| `/app/instructions` | 🔶 | Encrypted drafts; flag-gated in production |
+| `/app/settings` | 🔶 | Merge into a privacy & security centre with `/app/accounts` |
+| `/app/business`, `/[id]`, `/payments`, `/batch` | 🔶 | Organizations stay pending until operator activation exists |
+| `/`, `/send`, `/business`, `/platform`, `/routes`, `/discover/*` | 🔶 | Marketing; restyle onto tokens; no invented metrics |
+| `/login` | 🔶 | Add passkey sign-in once smart-account auth exists |
+| `/preview/*`, `/explorer`, `/wallet` | ⛔ | Developer and operator surfaces; to become the developer portal and operator workspace |
+
+## Marketing surfaces, motion and existing primitives
+
+Carried over unchanged from the previous marketing design guide; it still applies to the public site. Where it conflicts with the rules above (for example raw hex values), the token rules win for new work.
 
 **Thesis:** Move value. Not exposure. Express a world of connected opportunities through subtle, directional light, protected routes, translucent architectural objects and substantial editorial typography. Product sites must never route a public visitor to a codebase, engineering issues or source roadmaps.
 
-## Brand
+### Brand
 
 Keep the approved StealthBridge cyan/teal ribbon icon in `public/brand/`. Navy `#031419`, surface `#092129`, mint `#80F6DB`, sky `#80B9FF`, primary type `#EAF9F6` and secondary text `#99B7B8`. Large heads, small uppercase editorial labels, narrow readable prose, generous white space and transparent limitations.
 
-## Public surfaces
+### Public surfaces
 
 `/`: positioning + living schematic, selectable product cards, responsible privacy principles.
 
@@ -18,7 +73,7 @@ Keep the approved StealthBridge cyan/teal ribbon icon in `public/brand/`. Navy `
 
 All pages are information products at this stage. No fabricated corridor, provider name, FX quote, transaction hash, fund success state, or performance statistics.
 
-## Motion language
+### Motion language
 
 - **GSAP entrance**: header + headline reveal through motion and blur, settling into a stable readable position.
 - **GSAP MotionPathPlugin**: soft packets travel across the conceptual settlement board following its curved routes. They represent *connection*, not transfer completion.
@@ -29,29 +84,29 @@ All pages are information products at this stage. No fabricated corridor, provid
 
 Respect `prefers-reduced-motion: reduce`: disable looping and entrance animation in JavaScript and CSS, never use visibility:hidden as a static starting state and leave all content readable. No motion should claim on-chain finality or actual fiat payout.
 
-## Accessibility & responsive quality
+### Accessibility & responsive quality
 
 Keyboard-visible focus, aria-expanded mobile navigation, semantic anchors for product exploration, meaningful screen reader labels, legible dark/light contrast, no hover-only content, flexible product cards on mobile, high-contrast error/availability text. Audit with real browser screenshots and screen reader; do not infer conformance from code alone.
 
-## Interaction primitives and navigation
+### Interaction primitives and navigation
 
 Use `Button` (`src/components/ui/button.tsx`) for consistently styled action links and button controls. The primary mint button identifies one meaningful CTA per section; outline/secondary styles show alternatives; glass is reserved for surfaces over artwork; danger should be reserved for truly destructive, future authorized actions. Buttons have visible focus rings, accessible 44–48px targets on mobile, deterministic disabled states and reduced-motion fallbacks. `asChild` must wrap one real link, not a nested button.
 
 `SiteEnhancements` adds a passive scroll-progress indicator and a visible, keyboard-operable Back to Top button after meaningful scroll depth. These are navigation aids only, not financial-state indicators.
 
-## Primary CTA color regression (2026-10)
+### Primary CTA color regression (2026-10)
 
 The mint CTA must use a **dark ink label and icon**, never inherited white text. Root cause: an unlayered global `a { color: inherit }` style out-ranked Tailwind's layered `text-*` utilities on anchor-as-button controls. The global anchor reset now lives inside `@layer base`, and explicit `data-variant` selectors reinforce every Button variant.
 
 The automated browser test `tests/browser/button-contrast.spec.ts` reads computed CSS colors and checks at least 4.5:1 for primary mint buttons across the homepage and three product pages. Keep icon strokes bound to `currentColor`, avoid hover contrast regressions, and test tablet/mobile sizes. Marketing link buttons should have readable 14–15px labels and approximately 52–56px touch heights.
 
-## GSAP lifecycle and visual-evidence regression gate
+### GSAP lifecycle and visual-evidence regression gate
 
 The Playwright `motion-regression.spec.ts` exercises **all four public routes** in normal-motion desktop/mobile and reduced-motion Chromium. It captures full-page screenshots and route recordings under the CI artifact `marketing-motion-evidence`, without accessing private workspaces, wallets or accounts. The browser additionally asserts reduced-motion text remains fully visible, no JS runtime errors appear and repeated client-side product navigation does not accumulate ScrollTrigger instances. The inert DOM attribute `data-stealthbridge-gsap-triggers` reports only a count of GSAP triggers for leak detection; it contains no user or payment data and is cleared when each context reverts.
 
 Each GSAP context is created inside a React effect and reverted on unmount. The CSS `prefers-reduced-motion: reduce` cascade suppresses ambient/transient motion and the React effects never start looping GSAP animations in reduced mode. Review desktop/mobile screenshots and videos for actual visual quality; a passing automated test does not replace a screen-reader or device audit. All routing illustrations describe **conceptual** movement, never settled transfers.
 
-## Shared editorial marketing primitives
+### Shared editorial marketing primitives
 
 The five typed presentation primitives live in `src/components/marketing/primitives.tsx` and are consumed through `ProductStory` on **Business**, **Send** and **Platform**:
 
