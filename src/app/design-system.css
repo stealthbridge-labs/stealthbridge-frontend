@@ -143,3 +143,19 @@
   .sb-details dd { margin-bottom: var(--sb-space-2); }
   .sb-btn { width: 100%; }
 }
+
+/* ---------- Payments ---------- */
+.sb-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sb-space-4); margin-top: var(--sb-space-4); }
+.sb-span-2 { grid-column: span 2; }
+.sb-actions { display: flex; flex-wrap: wrap; gap: var(--sb-space-3); align-items: center; margin-top: var(--sb-space-5); }
+.sb-pay-history { list-style: none; margin: 0; padding: 0; border: 1px solid var(--sb-border); border-radius: var(--sb-radius-lg); background: var(--sb-surface-2); }
+.sb-pay-row { display: flex; justify-content: space-between; align-items: center; gap: var(--sb-space-4); padding: var(--sb-space-4) var(--sb-space-5); border-bottom: 1px solid var(--sb-border); flex-wrap: wrap; }
+.sb-pay-row:last-child { border-bottom: 0; }
+.sb-pay-row > div:first-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sb-pay-row strong { color: var(--sb-ink); font-variant-numeric: tabular-nums; }
+.sb-pay-row-end { display: flex; align-items: center; gap: var(--sb-space-3); }
+select.sb-input { appearance: auto; }
+@media (max-width: 640px) {
+  .sb-form-grid { grid-template-columns: 1fr; }
+  .sb-span-2 { grid-column: auto; }
+}

@@ -44,8 +44,9 @@ async function inspectRecipient(address:string):Promise<RecipientPresence|Classi
  if(!validClassicRecipientPresence(result,parsed.address))throw new Error("The recipient record could not be verified.");
  return result;
 }
-export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;identityAddress?:string}){
+export function CustomerPaymentWorkspace({flow,identityAddress,embedded=false}:{flow:Flow;identityAddress?:string;embedded?:boolean}){
  const business=flow==="business";
+ const Title=embedded?"h2":"h1";
  const [network,setNetwork]=useState<PublicWalletStatus|null>(null);
  const [networkState,setNetworkState]=useState<FetchState>("loading");
  const [networkRevision,setNetworkRevision]=useState(0);
@@ -285,7 +286,7 @@ export function CustomerPaymentWorkspace({flow,identityAddress}:{flow:Flow;ident
    <div className="payment-intro">
     <div>
      <span className="section-index">StealthBridge / {business?"Business":"Send"}</span>
-     <h1>{business?"Your business, across borders.":"Send beyond borders."}</h1>
+     <Title>{business?"Your business, across borders.":"Plan a cross-border transfer"}</Title>
      <p>{business?
       "Manage cross-border payment preparation from one workspace, with clear corridor availability, asset details and wallet access.":
       "Choose where you're sending, add a recipient, and see what is available for your transfer."}</p>
