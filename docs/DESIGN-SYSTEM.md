@@ -1,29 +1,38 @@
 # StealthBridge design system
 
-Sources: [`src/app/design-system.css`](../src/app/design-system.css) (app, `sb-`) and [`src/app/marketing.css`](../src/app/marketing.css) (public site, `mk-`). Version 2, 2026-11-26 (v1: 2026-11-24).
+Sources: [`src/app/design-system.css`](../src/app/design-system.css) (component tokens and `sb-` primitives), Tailwind theme colours in [`src/app/globals.css`](../src/app/globals.css) (`sb-*`). Version 2.1, 2026-11-26.
 
-## Version 2 (2026-11-26)
+## History
 
-v2 moves the whole product to a **light, calm financial interface**. The brand stays: the ribbon logo, deep navy (`#031419`) as the root of the ink and "night" surfaces, and mint (`#80f6db`) as the signature accent. What changed:
+- **v1 (2026-11-24):** tokens on the established dark brand.
+- **v2 (2026-11-26, reverted the same day):** a light theme. The owner preferred the established dark brand, so the visuals were restored and only the UX improvements kept.
+- **v2.1 (current):** the dark brand, plus the v2 component set (stepper, activity rows, slide-over receipts, skeletons, honest empty and error states). New public-site sections use **Tailwind utilities** with brand theme colours (`bg-sb-surface`, `text-sb-mint`, `text-sb-sky`, `text-sb-amber`, `border-sb-line`, `ease-sb-enter`, `ease-sb-expo`).
 
-- **Canvas** `--sb-canvas #f4f6f5`, white surfaces, hairline `--sb-line`. **Ink** `--sb-ink #0a1a1f` (navy-derived), `--sb-ink-2/-3` for secondary text.
-- **Action colour**: on light surfaces mint fails contrast, so primary actions use ink (`sb-btn-primary`) or the deep brand teal `--sb-brand #0b7a66` (`sb-btn-brand`, links, verified state). **Mint is reserved for dark `sb-night` surfaces** (balance card, CTA bands, the product stage) via `sb-btn-mint`.
-- **Type**: Geist and Geist Mono via `next/font` (`--font-geist-sans/-mono`). All money uses `sb-num`/mono with tabular figures.
-- **Legacy screens** in `globals.css` were mechanically re-lit (lightness inversion, shadows kept dark) so older components sit in the light theme until they are rebuilt. The `Button` component's variants now map onto the v2 tokens with an unchanged API.
-- **Motion**: CSS entrance (`sb-enter`), a skeleton shimmer, a success pop on confirmation and a slide-over for detail panels. Public pages use GSAP ScrollTrigger reveals only for content below the fold, so nothing starts hidden. All of it is off under `prefers-reduced-motion`.
+## Colour roles (dark brand)
 
-### App shell
+| Role | Value | Use |
+|---|---|---|
+| Canvas / surface / raised | `#031419` / `#092129` / `#0e2f37` | Page, cards, inputs |
+| Ink / muted / subtle | `#eaf9f6` / `#a3c2c1` / `#7a9c9d` | Text hierarchy |
+| Mint | `#80f6db` | Primary action, verified or protected state; one primary CTA per view |
+| Sky | `#8cc8f5` | Secondary accent; "in development" and informational state |
+| Amber | `#f5cf86` | **Public on the ledger** and warnings. Never used for success. |
 
-`AppShell` (`src/components/app-shell.tsx`): a desktop sidebar (`navigation "Product areas"`, grouped Money · Planning · Business · Account) and a top bar with the page title, Testnet pill, account chip and sign-out. Below 1024px: a bottom tab bar (`navigation "Quick navigation"`: Home, Send, Activity, Accounts, More) and a "More" bottom sheet (`dialog`). Overlays (side panels, sheets) render through a portal because animated ancestors create containing blocks for `position: fixed`.
+## Motion (public site, GSAP)
 
-### v2 primitives (additions)
+Guided by the ui-animation rules: motion must explain, pace or emphasize, and content is visible without JavaScript.
 
-Shell: `sb-app`, `sb-sidebar`, `sb-nav`/`sb-nav-item[aria-current]`, `sb-topbar`, `sb-network`, `sb-account-chip`, `sb-content`, `sb-tabbar`, `sb-drawer`, `sb-side-panel`. Layout: `sb-split`, `sb-grid-2/3`, `sb-section-head`. Data: `sb-stat`, `sb-night`, `sb-list`/`sb-row`/`sb-row-button`, `sb-amount-out`, `sb-receipt-amount`, `sb-segmented`. Flow: `sb-stepper li[data-state]`, `sb-amount` (large amount input with asset select), `sb-result-icon[data-tone]`, `sb-spin`. States: `sb-skeleton`, `sb-empty`, `sb-field-hint`/`sb-field-error`, `sb-input[aria-invalid]`. Public site: `mk-header`, `mk-hero`, `mk-stage` (illustration, captioned as not real data), `mk-facts`, `mk-steps`, `mk-audience`, `mk-capabilities` ("working today" vs "in development"), `mk-band`, `mk-footer`.
+1. **Hero:** a one-time intro (blur-and-rise stagger). Ambient loops run only while the hero is on screen (a ScrollTrigger plays and pauses them).
+2. **Reveals:** `.lp-reveal` / `.lp-reveal-item`. They play once, only for content below the fold, and items are hidden only at the moment their animation starts.
+3. **How it works:** a CSS-sticky device whose screen follows the step in view (ScrollTrigger `onToggle`), plus a scrubbed progress rail (linear, no duration).
+4. **Privacy, honestly:** the "in development" record conceals its fields one by one, once. Without JS it shows the final, labelled state.
+5. **Roadmap:** a scrubbed line draw.
 
-### Data honesty in v2
+Under `prefers-reduced-motion` no GSAP runs. `data-stealthbridge-gsap-triggers` still reports the trigger count for leak tests.
 
-Money data comes from one hook, `useMoney` (`src/lib/use-money.ts`): deployments, live balances read from Stellar, and payment history from the backend. A failed read is shown as **unavailable** and is never rendered as zero or "no payments". Statuses map 1:1 to backend states (`confirmed` → Completed, `submitted` → Processing, …). Every receipt states that a standard Stellar payment is **public**.
+### Authenticated app
 
+The app keeps the established header and horizontal product navigation (`AccountShell`, `AccountNavigation`), now with Overview, Activity, Smart accounts, Send money, Cross-border routes, Instructions, the business pages and Settings. Overlays render through a portal. Money data comes only from `useMoney` (`src/lib/use-money.ts`); a failed read is shown as unavailable, never as zero or "no payments".
 
 ## Brand (v1 notes, still true for the logo and night surfaces)
 
@@ -64,19 +73,18 @@ Status: ✅ on design system v1 · 🔶 functional, legacy styling · ⛔ previe
 
 | Route | Status | Notes |
 |---|---|---|
-| `/app` Home | ✅ v2 | Live balances, security checklist, recent activity, profile greeting, shortcuts |
-| `/app/send` Send | ✅ v2 | Stepper: recipient → amount → review (fees, privacy facts) → passkey → result. Corridor deep links redirect to `/app/routes` |
-| `/app/activity` | ✅ v2 (new) | Filterable history; slide-over receipt with status timeline and ledger link |
-| `/app/routes` | 🔶 | Corridor planner moved here from `/app/send`; legacy component, re-lit |
-| `/app/accounts` Smart accounts | ✅ v1 | Real passkey creation; inherits v2 tokens |
-| `/app/instructions`, `/app/settings`, `/app/business*` | 🔶 | Inside the v2 shell; legacy components re-lit; rebuild next |
-| `/`, `/send`, `/business`, `/discover/*` | ✅ v2 | Shared header/footer; honest "working today / in development" capability split |
-| `/platform`, `/routes`, `/login` | 🔶 | Re-lit legacy layouts; rebuild on `mk-` primitives next |
+| `/app` Overview | ✅ | Live balances, security, recent activity, profile, shortcuts |
+| `/app/send` | ✅ | Stepper with review, fees, privacy facts, passkey and ledger-confirmed result |
+| `/app/activity` | ✅ | Filters, slide-over receipt, status timeline |
+| `/app/accounts` | ✅ | Passkey account creation |
+| `/app/routes`, `/app/instructions`, `/app/settings`, `/app/business*` | 🔶 | Working; legacy styling |
+| `/` | ✅ | Rebuilt sections and GSAP motion (2.1) |
+| `/send`, `/business`, `/platform`, `/routes`, `/discover/*`, `/login` | 🔶 | Original design; bring onto the Tailwind sections next |
 | `/preview/*`, `/explorer`, `/wallet` | ⛔ | Developer and operator surfaces |
 
 ## Marketing surfaces, motion and existing primitives
 
-Carried over from the previous marketing design guide. v2 note: the home page no longer uses MotionPathPlugin packets or a dark canvas, and the colour values below describe the original dark theme (now used only on `sb-night`/`mk-stage` surfaces). The accessibility, reduced-motion, CTA-contrast and GSAP lifecycle rules all still apply. Where it conflicts with the rules above (for example raw hex values), the token rules win for new work.
+Carried over from the previous marketing design guide and still in force. 2.1 note: the home page no longer draws MotionPathPlugin packets; its motion is described under "Motion" above. Where it conflicts with the rules above (for example raw hex values), the token rules win for new work.
 
 **Thesis:** Move value. Not exposure. Express a world of connected opportunities through subtle, directional light, protected routes, translucent architectural objects and substantial editorial typography. Product sites must never route a public visitor to a codebase, engineering issues or source roadmaps.
 

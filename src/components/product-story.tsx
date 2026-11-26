@@ -1,11 +1,12 @@
 "use client";
 
-import {useEffect,useState} from "react";
-import Image from "next/image";
+import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,Check,ChevronDown,Globe2,Layers3,LockKeyhole,Menu,X} from "lucide-react";
+import gsap from "gsap";
+import {ScrollTrigger} from "gsap/ScrollTrigger";
+import {ArrowRight,ArrowUpRight,Check,ChevronDown,EyeOff,Globe2,Layers3,LockKeyhole,Menu,ShieldCheck,X} from "lucide-react";
+import {Brand} from "@/components/brand";
 import {ProductNavigation,EditorialSectionHeading,StoryActionGroup,NarrativeFeatureBlock} from "@/components/marketing/primitives";
-import {SiteFooter,useReveal} from "@/components/marketing/site-chrome";
 
 type Product = "business" | "send" | "platform";
 type Story = {
@@ -60,12 +61,12 @@ const stories:Record<Product,Story>={
    {index:"C",title:"Support for real life",body:"Designing for interruptions, delays, declined transfers and safe recipient recovery."}
   ],
   faqs:[
-    {question:"Is StealthBridge Send available for live remittances?",answer:"Not yet. You can create a passkey smart account and send test payments on Stellar Testnet today. We do not collect deposits, issue FX quotes or carry out real-world payouts."},
+    {question:"Is StealthBridge Send available for live remittances?",answer:"No. It is an in-development product experience. We do not currently collect deposits, issue FX quotes or carry out real-world payouts."},
     {question:"Does a private payment hide every part of the journey?",answer:"No. Different privacy technologies conceal different information. Public deposits and withdrawals, timing patterns, and details disclosed to regulated service providers may still be observable."},
     {question:"How will I know when a recipient has received their money?",answer:"The intended experience separates on-chain progress from external delivery confirmation. We won't show a completed payout without evidence from the actual provider."}
    ],
   closing:"Distance should feel smaller.",
-  closingSub:"Passkey payments between Stellar addresses work today on Testnet. Real-money transfers and local-currency payouts are not yet available.",
+  closingSub:"StealthBridge Send is under active development. Real transfers and fiat payouts are not yet available.",
   nextHref:"/business",nextLabel:"Discover StealthBridge Business"
  },
  platform:{
@@ -96,7 +97,7 @@ const stories:Record<Product,Story>={
 };
 
 export function ProductStory({product}:{product:Product}){
- const page=useReveal();
+ const page=useRef<HTMLDivElement>(null);
  const [menuOpen,setMenuOpen]=useState(false);
  useEffect(()=>{
   if(!menuOpen)return;
@@ -105,82 +106,98 @@ export function ProductStory({product}:{product:Product}){
   return ()=>window.removeEventListener("keydown",onKey);
  },[menuOpen]);
  const data=stories[product];
- const Icon=product==="business"?Layers3:product==="send"?Globe2:LockKeyhole;
- return <div className={"mk story-page story-"+product} ref={page}>
- <header className="mk-header story-nav">
-  <div className="mk-wrap"><div className="mk-header-inner">
-   <Link href="/" className="mk-logo" aria-label="StealthBridge home">
-    <Image src="/brand/stealthbridge-symbol.svg" alt="" width={30} height={30} priority/><span aria-hidden>StealthBridge</span>
-   </Link>
-   <ProductNavigation current={product} menuOpen={menuOpen} onNavigate={()=>setMenuOpen(false)}/>
-   <div className="mk-header-cta"><Link href="/" className="sb-btn sb-btn-ghost sb-btn-sm story-back">Back to home <ArrowUpRight size={15} aria-hidden/></Link></div>
-   <button type="button" className="sb-icon-btn mk-menu-btn" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?<X size={18} aria-hidden/>:<Menu size={18} aria-hidden/>}</button>
-  </div></div>
+ useEffect(()=>{
+  if(!page.current||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  gsap.registerPlugin(ScrollTrigger);
+  const ctx=gsap.context(()=>{
+   gsap.timeline({defaults:{ease:"power3.out"}})
+    .fromTo(".story-nav",{opacity:0,y:-18},{opacity:1,y:0,duration:.7})
+    .fromTo(".story-enter",{opacity:0,y:55,filter:"blur(9px)"},{opacity:1,y:0,filter:"blur(0px)",duration:1,stagger:.12},-.3)
+    .fromTo(".story-art",{opacity:0,scale:.88,y:28},{opacity:1,scale:1,y:0,duration:1.2},-.7);
+   gsap.to(".story-halo",{scale:1.18,opacity:.65,duration:4,repeat:-1,yoyo:true,ease:"sine.inOut"});
+   gsap.to(".story-core",{rotation:360,duration:45,repeat:-1,ease:"none",transformOrigin:"50% 50%"});
+   gsap.to(".story-float",{y:-13,duration:4.2,repeat:-1,yoyo:true,ease:"sine.inOut"});
+   gsap.utils.toArray<HTMLElement>(".story-reveal").forEach(item=>{
+    gsap.fromTo(item,{opacity:0,y:48},{opacity:1,y:0,duration:1.1,ease:"power3.out",scrollTrigger:{trigger:item,start:"top 90%",once:true}});
+   });
+  },page);
+  // Browser-test observable count: never expose wallet or network state.
+  // Compare repeated client-side navigation to detect retained ScrollTriggers.
+  document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  return ()=>{
+   ctx.revert();
+   document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
+  };
+ },[product]);
+ return <div className={"story-page story-"+product} ref={page}>
+ <div className="story-grain" aria-hidden="true"/>
+ <header className="story-nav container-wide"><Brand/>
+  <ProductNavigation current={product} menuOpen={menuOpen} onNavigate={()=>setMenuOpen(false)}/>
+  <Link href="/" className="story-back">Back to home <ArrowUpRight size={15} aria-hidden/></Link>
+  <button className="mobile-toggle story-mobile-toggle" aria-label={menuOpen?"Close menu":"Open menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?<X/>:<Menu/>}</button>
  </header>
  <main id="main-content">
-  <div className="mk-wrap">
-   <section className="mk-hero story-hero">
-    <div className="story-content">
-     <span className="mk-kicker story-enter mk-hero-anim"><b>{product==="send"?"Personal":product==="business"?"Business":"Platform"}</b> {data.label}</span>
-     <h1 className="mk-h1 story-enter mk-hero-anim">{data.word}<br/><em>{data.emph}</em></h1>
-     <p className="mk-lead story-enter mk-hero-anim">{data.description}</p>
-     <div className="mk-hero-ctas mk-hero-anim">
-      {product!=="platform"?<Link className="sb-btn sb-btn-primary sb-btn-lg story-wallet-entry" href={"/login?next=/app/"+product}>Sign in to StealthBridge <ArrowUpRight size={16} aria-hidden/></Link>:null}
-      <StoryActionGroup/>
-     </div>
-     {product!=="platform"?<p className="mk-hero-note"><Link className="sb-link" href="/routes">Explore configured corridors <ArrowRight size={14} aria-hidden/></Link></p>:null}
-    </div>
-    <div className="mk-stage story-art" role="img" aria-label={"Conceptual illustration for "+data.label+", not a live transaction"}>
-     <div className="story-diagram" aria-hidden>
-      {data.legs.map((name,index)=><div className="story-diagram-node" key={name} data-core={index===1}>
-       <span>{index===1?<Icon size={26} strokeWidth={1.5}/>:index===0?<Layers3 size={22} strokeWidth={1.5}/>:<Check size={22} strokeWidth={1.8}/>}</span>
-       <strong>{name}</strong>
-      </div>)}
-     </div>
-     <span className="mk-stage-caption">{data.label} · product concept</span>
-    </div>
-   </section>
-  </div>
-  <section id="story-perspective" className="mk-section story-overview" style={{paddingTop:48}}>
-   <div className="mk-wrap">
-    <EditorialSectionHeading eyebrow="What we're building" title={data.visualTitle} description={data.visualSub}/>
+  <section className="story-hero container-wide">
+   <div className="story-content">
+    <span className="section-index story-enter"><span className="signal-dot"/> {data.eyebrow}</span>
+    <h1 className="story-enter">{data.word}<br/><em>{data.emph}</em></h1>
+    <p className="story-enter">{data.description}</p>
+    <StoryActionGroup/>
+    {product!=="platform"?<Link className="story-primary story-wallet-entry" href={"/login?next=/app/"+product}>Sign in to StealthBridge <ArrowUpRight size={16} aria-hidden/></Link>:null}
+    {product!=="platform"?<Link className="story-route-entry" href="/routes">
+     Explore configured corridors <ArrowRight size={16} aria-hidden/>
+    </Link>:null}
+   </div>
+   <div className="story-art" role="img" aria-label={"Conceptual illustration for "+data.label+", not a live transaction"}>
+    <div className="story-halo"/>
+    <div className="story-ring story-ring-outer"/>
+    <div className="story-ring story-ring-inner"/>
+    <div className="story-orbit-track story-core"><span className="story-orbit-point"/></div>
+    <div className="story-shield story-float">{product==="business"?<Layers3 size={42} strokeWidth={1.4}/>:product==="send"?<Globe2 size={42} strokeWidth={1.4}/>:<LockKeyhole size={42} strokeWidth={1.4}/>}</div>
+    <div className="story-side-note story-note-one story-float"><ShieldCheck size={15}/> Thoughtful privacy</div>
+    <div className="story-side-note story-note-two"><EyeOff size={15}/> Responsible disclosure</div>
+    <div className="story-art-caption">{data.label} <span>— Product concept</span></div>
+   </div>
+  </section>
+  <section id="story-perspective" className="story-overview">
+   <div className="container-wide">
+    <EditorialSectionHeading eyebrow="WHAT WE'RE BUILDING" title={data.visualTitle} description={data.visualSub}/>
     <div className="story-flow story-reveal" aria-label="Illustrative product journey">
      {data.legs.map((name,index)=><div className="story-flow-item" key={name}>
        <span className="flow-index">0{index+1}</span>
+       <div className="story-flow-icon">{index===1?<LockKeyhole size={26}/>:index===0?<Layers3 size={26}/>:<Check size={26}/>}</div>
        <strong>{name}</strong>
-       {index!==2&&<span className="flow-connector" aria-hidden="true"><ArrowRight size={18}/></span>}
+       {index!==2&&<span className="flow-connector" aria-hidden="true"><ArrowRight size={19}/></span>}
      </div>)}
     </div>
    </div>
   </section>
-  <section className="mk-wrap story-chapters">
-   {data.sections.map((section)=><article className="story-chapter story-reveal" key={section.number}>
-    <span className="story-chapter-number">{section.number}</span>
-    <div><span className="mk-label">{section.eyebrow.replace(/^\d+ \/ /,"").toLowerCase().replace(/^./,c=>c.toUpperCase())}</span><h2>{section.title}</h2></div>
-    <p className="mk-body">{section.description}</p>
+  <section className="story-chapters container-wide">
+   {data.sections.map((section,index)=><article className="story-chapter story-reveal" key={section.number}>
+    <span className="story-chapter-number">{section.number}<span>/03</span></span>
+    <div><span className="section-index">{section.eyebrow}</span><h2>{section.title}</h2></div>
+    <p>{section.description}</p>
    </article>)}
   </section>
-  <section className="mk-section story-values">
-   <div className="mk-wrap"><EditorialSectionHeading eyebrow="Product principles" title="Considered at every layer." description="Designed around the real responsibilities of moving value."/>
+  <section className="story-values">
+   <div className="container-wide"><EditorialSectionHeading eyebrow="OUR PRODUCT PRINCIPLES" title="Considered at every layer." description="Designed around the real responsibilities of moving value."/>
     <div className="story-value-grid">{data.features.map(x=><NarrativeFeatureBlock key={x.index} index={x.index} title={x.title} body={x.body}/>)}</div>
    </div>
   </section>
-  <section className="mk-section mk-wrap story-faq" style={{paddingTop:0}} aria-labelledby="product-questions">
-   <EditorialSectionHeading eyebrow="Questions worth asking" title="Clarity at every step." id="product-questions" description="What StealthBridge is building, what privacy can and cannot mean, and what is not yet available."/>
+  <section className="story-faq container-wide" aria-labelledby="product-questions">
+   <EditorialSectionHeading eyebrow="QUESTIONS WORTH ASKING" title="Clarity at every step." id="product-questions" description="Know what StealthBridge is building, what privacy can and cannot mean, and what is not yet available."/>
    <div className="story-faq-list">
     {data.faqs.map((item,index)=><details className="story-faq-item story-reveal" key={item.question}>
-      <summary><span className="story-faq-index">0{index+1}</span><span>{item.question}</span><ChevronDown size={20} aria-hidden="true"/></summary>
+      <summary><span className="story-faq-index">0{index+1}</span><span>{item.question}</span><ChevronDown size={21} aria-hidden="true"/></summary>
       <p>{item.answer}</p>
     </details>)}
    </div>
   </section>
-  <div className="mk-wrap">
-   <section className="mk-band story-ending story-reveal">
-    <div><span className="mk-label" style={{color:"var(--sb-mint)"}}>Looking ahead</span><h2 className="mk-h2" style={{color:"#fff"}}>{data.closing}</h2><p className="mk-body">{data.closingSub}</p></div>
-    <Link className="sb-btn sb-btn-mint sb-btn-lg" href={data.nextHref}>{data.nextLabel} <ArrowUpRight size={17} aria-hidden/></Link>
-   </section>
-  </div>
+  <section className="story-ending container-wide story-reveal">
+   <div><span className="section-index">STEALTHBRIDGE · LOOKING AHEAD</span><h2>{data.closing}</h2><p>{data.closingSub}</p></div>
+   <Link className="story-primary" href={data.nextHref}>{data.nextLabel}<ArrowUpRight size={18}/></Link>
+  </section>
  </main>
- <SiteFooter/>
+ <footer className="story-footer container-wide"><Brand/><nav aria-label="Footer navigation"><Link href="/platform">Platform</Link><Link href="/business">Business</Link><Link href="/send">Send</Link><Link href="/">Home</Link></nav><span>Confidential payments. Without borders.</span></footer>
  </div>;
 }
