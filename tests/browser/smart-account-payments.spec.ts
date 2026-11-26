@@ -76,8 +76,10 @@ test("passkey approves the exact reviewed payment and the UI waits for chain con
 
  await page.goto("/app/send");
  await expect(page.getByRole("heading",{level:1,name:"Send money"})).toBeVisible();
- await expect(page.getByText("Available: 100 XLM")).toBeVisible();
+ await expect(page.getByRole("list",{name:"Payment steps"})).toBeVisible();
  await page.getByLabel("Recipient Stellar address").fill(DEST);
+ await page.getByRole("button",{name:"Continue",exact:true}).click();
+ await expect(page.getByText("Available: 100 XLM")).toBeVisible();
  await page.getByLabel("Amount to send").fill("12.5");
  await page.getByRole("button",{name:"Continue to review"}).click();
  await expect(page.getByRole("heading",{name:"Review and approve"})).toBeVisible();
@@ -117,6 +119,7 @@ test("a compromised backend cannot get the passkey to sign a different recipient
  });
  await page.goto("/app/send");
  await page.getByLabel("Recipient Stellar address").fill("GBXXE7JVT6JPUOLBYZM4ECD63DUVGGPJZXYMVVLUZT42GFPHXG3UEARH");
+ await page.getByRole("button",{name:"Continue",exact:true}).click();
  await page.getByLabel("Amount to send").fill("12.5");
  await page.getByRole("button",{name:"Continue to review"}).click();
  await page.getByRole("button",{name:"Approve with passkey"}).click();
@@ -136,6 +139,7 @@ test("cancelling the passkey prompt sends nothing",async({page,context})=>{
  });
  await page.goto("/app/send");
  await page.getByLabel("Recipient Stellar address").fill(DEST);
+ await page.getByRole("button",{name:"Continue",exact:true}).click();
  await page.getByLabel("Amount to send").fill("12.5");
  await page.getByRole("button",{name:"Continue to review"}).click();
  await page.getByRole("button",{name:"Approve with passkey"}).click();

@@ -53,7 +53,7 @@ test("signed-in customer saves and restores ciphertext only, with no automatic p
   throw Error("Unexpected method "+method);
  });
 
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await expect(page.getByRole("heading",{name:"Save an encrypted payment draft"})).toBeVisible();
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
@@ -81,7 +81,7 @@ test("customer can download encrypted draft backup without backend availability"
  await page.route(/\/api\/public\/corridors(?:\?.*)?$/,requestRoute=>requestRoute.fulfill({json:{items:[route],next_cursor:null}}));
  await page.route("**/api/public/status",route=>route.fulfill({status:503,body:""}));
  await page.route("**/api/account/drafts",route=>route.fulfill({status:503,json:{code:"NOT_RELEASED"}}));
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
  await page.getByLabel("Amount").fill("72.00");
@@ -120,7 +120,7 @@ test("customer updates an encrypted draft in place, rotates its passphrase and r
   if(current)records.splice(records.indexOf(current),1,next);else records.push(next);
   return request.fulfill({status:204,body:""});
  });
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
  await page.getByLabel("Amount").fill("42.50");
@@ -187,7 +187,7 @@ test("encrypted backup can be imported after a fresh page load and explicitly sy
   records.push({id:data.id,revision:1,updated_at_unix:Math.floor(Date.now()/1000),encrypted:data.encrypted});
   return request.fulfill({status:204,body:""});
  });
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
  await page.getByLabel("Amount").fill("73.00");

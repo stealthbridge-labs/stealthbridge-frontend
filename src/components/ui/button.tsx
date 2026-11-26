@@ -5,16 +5,16 @@ import {cn} from "@/lib/utils";
 
 /** Accessible product buttons; asChild also styles Next.js links without nested buttons. */
 export const buttonVariants=cva(
- "relative isolate inline-flex select-none items-center justify-center gap-3 overflow-hidden whitespace-normal text-center rounded-full border text-sm font-bold tracking-[-0.01em] outline-none transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-out focus-visible:ring-[3px] focus-visible:ring-[#8cfce6]/70 focus-visible:ring-offset-[3px] focus-visible:ring-offset-[#031419] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 active:scale-[0.985] motion-reduce:transform-none motion-reduce:transition-none",
+ "relative isolate inline-flex select-none items-center justify-center gap-3 overflow-hidden whitespace-normal text-center rounded-full border text-sm font-semibold tracking-[-0.01em] outline-none transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300 ease-out focus-visible:ring-[3px] focus-visible:ring-[var(--sb-brand)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--sb-canvas)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 active:scale-[0.985] motion-reduce:transform-none motion-reduce:transition-none",
  {
   variants:{
    variant:{
-    primary:"border-[#8cfce6] bg-[#8cfce6] text-[#031e23] shadow-[0_8px_32px_-14px_rgba(111,242,211,.65)] hover:-translate-y-0.5 hover:border-[#d1fff0] hover:bg-[#d1fff0] hover:shadow-[0_14px_42px_-14px_rgba(111,242,211,.65)]",
-    secondary:"border-[#1b555c] bg-[#17434c] text-[#e8fffa] hover:-translate-y-0.5 hover:bg-[#205861] hover:border-[#70e7cf]",
-    outline:"border-white/30 bg-white/[.045] text-[#eefcf8] shadow-[inset_0_1px_0_rgba(255,255,255,.06)] hover:-translate-y-0.5 hover:border-[#91f7de]/70 hover:bg-[#a2f7e8]/[.12]",
-    glass:"border-[#90ead6]/25 bg-[#0d363f]/75 text-[#eafffa] backdrop-blur-xl hover:-translate-y-0.5 hover:border-[#8af7dc]/70 hover:bg-[#1b5257]",
-    ghost:"border-transparent bg-transparent text-[#c6e5de] hover:bg-white/10 hover:text-white",
-    danger:"border-[#fa9888]/45 bg-[#692c34]/35 text-[#ffd1c8] hover:border-[#ffb4a9] hover:bg-[#78353d]/60"
+    primary:"border-[var(--sb-ink)] bg-[var(--sb-ink)] text-white hover:bg-[#183139] hover:border-[#183139]",
+    secondary:"border-[var(--sb-brand)] bg-[var(--sb-brand)] text-white hover:bg-[var(--sb-brand-strong)] hover:border-[var(--sb-brand-strong)]",
+    outline:"border-[var(--sb-line-strong)] bg-[var(--sb-surface)] text-[var(--sb-ink)] hover:bg-[var(--sb-surface-2)]",
+    glass:"border-[var(--sb-line)] bg-[var(--sb-surface)]/90 text-[var(--sb-ink)] backdrop-blur-xl hover:bg-[var(--sb-surface-2)]",
+    ghost:"border-transparent bg-transparent text-[var(--sb-ink-2)] hover:bg-[var(--sb-surface-2)] hover:text-[var(--sb-ink)]",
+    danger:"border-[var(--sb-danger)]/30 bg-[var(--sb-danger-soft)] text-[var(--sb-danger)] hover:border-[var(--sb-danger)]/60"
    },
    size:{
     sm:"min-h-9 gap-1.5 px-4 py-2 text-xs",

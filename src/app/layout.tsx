@@ -1,6 +1,8 @@
 import type {Metadata,Viewport} from "next";
+import {Geist,Geist_Mono} from "next/font/google";
 import "./globals.css";
 import "./design-system.css";
+import "./marketing.css";
 import { SITE_ORIGIN } from "./site-metadata";
 import {SiteEnhancements} from "@/components/site-enhancements";
 export const metadata:Metadata={
@@ -18,7 +20,9 @@ export const metadata:Metadata={
   url:"/"
  }
 };
-export const viewport:Viewport={themeColor:"#031419"};
+const geistSans=Geist({subsets:["latin"],variable:"--font-geist-sans",display:"swap"});
+const geistMono=Geist_Mono({subsets:["latin"],variable:"--font-geist-mono",display:"swap"});
+export const viewport:Viewport={themeColor:"#f4f6f5"};
 export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){
- return <html lang="en"><body><a className="skip-link" href="#main-content">Skip to main content</a>{children}<SiteEnhancements/></body></html>;
+ return <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}><body><a className="skip-link" href="#main-content">Skip to main content</a>{children}<SiteEnhancements/></body></html>;
 }

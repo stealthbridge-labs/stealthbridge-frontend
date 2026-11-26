@@ -1,112 +1,192 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ArrowRight, ShieldCheck, LockKeyhole, Globe2, Layers3, Menu, X, Sparkles, MoveDownRight, Waypoints, Fingerprint } from "lucide-react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import gsap from "gsap";
-import { Brand } from "./brand";
-import { Button } from "./ui/button";
-export function Home(){
- const root=useRef<HTMLDivElement>(null);
- const [mobileMenu,setMobileMenu]=useState(false);
- useEffect(()=>{
-  if(!mobileMenu)return;
-  const handleKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobileMenu(false);};
-  window.addEventListener("keydown",handleKey);
-  return ()=>window.removeEventListener("keydown",handleKey);
- },[mobileMenu]);
- const [rail,setRail]=useState<"business"|"send">("business");
- useEffect(()=>{
-  if(!root.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
-  const ctx=gsap.context(()=>{
-    const intro=gsap.timeline({defaults:{ease:"power3.out"}});
-    intro.fromTo(".site-header",{opacity:0,y:-20},{opacity:1,y:0,duration:.8})
-      .fromTo(".hero-reveal",{opacity:0,y:54,filter:"blur(12px)"},{opacity:1,y:0,filter:"blur(0px)",stagger:.13,duration:1.05},-.4)
-      .fromTo(".routing-board",{opacity:0,y:50,rotateY:10,scale:.94},{opacity:1,y:0,rotateY:-5,scale:1,duration:1.35,ease:"power4.out"},-.8)
-      .fromTo(".floating-receipt",{opacity:0,x:-32,y:18},{opacity:1,x:0,y:0,duration:1},-.35)
-      .fromTo(".rail-drawing",{strokeDasharray:600,strokeDashoffset:600},{strokeDashoffset:0,duration:1.8,stagger:.19,ease:"power2.inOut"},-.95);
-    gsap.to(".ambient-halo",{scale:1.14,opacity:.7,duration:4.7,repeat:-1,yoyo:true,ease:"sine.inOut"});
-    gsap.to(".routing-board",{y:-10,duration:5.5,repeat:-1,yoyo:true,ease:"sine.inOut"});
-    gsap.to(".floating-receipt",{y:-14,duration:3.8,repeat:-1,yoyo:true,ease:"sine.inOut"});
-    gsap.to(".signal-dot,.board-live span",{opacity:.35,scale:.85,duration:1.2,repeat:-1,yoyo:true,stagger:.5,ease:"sine.inOut"});
-    const pathEls=gsap.utils.toArray<SVGPathElement>(".rail-drawing");
-    const packets=gsap.utils.toArray<SVGCircleElement>(".route-packet");
-    packets.forEach((packet,index)=>{
-      const path=pathEls[index];
-      if(path)gsap.to(packet,{motionPath:{path,align:path,alignOrigin:[.5,.5]},duration:3.6+index*.65,delay:1.35+index*.58,repeat:-1,repeatDelay:1.05,ease:"none"});
-    });
-    gsap.utils.toArray<HTMLElement>(".scroll-rise").forEach((section)=>{
-      gsap.fromTo(section,{opacity:0,y:50},{opacity:1,y:0,duration:1.1,ease:"power3.out",
-        scrollTrigger:{trigger:section,start:"top 90%",once:true}});
-    });
-    gsap.utils.toArray<HTMLElement>(".principle-grid article").forEach((item,index)=>{
-      gsap.fromTo(item,{opacity:0,y:55,rotateX:7},{opacity:1,y:0,rotateX:0,duration:1,ease:"power3.out",
-        delay:index*.1,scrollTrigger:{trigger:".principle-grid",start:"top 85%",once:true}});
-    });
-  },root);
-  // Browser-test observable count: never expose wallet or network state.
-  // Compare repeated client-side navigation to detect retained ScrollTriggers.
-  document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
-  return ()=>{
-   ctx.revert();
-   document.documentElement.dataset.stealthbridgeGsapTriggers=String(ScrollTrigger.getAll().length);
-  };
- },[]);
- useEffect(()=>{
-  if(!root.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  const item=root.current.querySelector(".product-feature");
-  if(!item)return;
-  gsap.fromTo(item,{opacity:.65,y:14},{opacity:1,y:0,duration:.55,ease:"power2.out",overwrite:true});
- },[rail]);
- return <div ref={root} className="page-frame">
- <div className="noise" aria-hidden="true"/>
- <header className="site-header container-wide"><Brand/>
- <nav id="stealthbridge-site-navigation" className={mobileMenu?"nav-links nav-open":"nav-links"} aria-label="Main navigation">
- <Link href="/platform" onClick={()=>setMobileMenu(false)}>Privacy & trust</Link>
- <Link href="/business" onClick={()=>setMobileMenu(false)}>For business</Link>
- <Link href="/send" onClick={()=>setMobileMenu(false)}>For people</Link>
- <a href="#principles" onClick={()=>setMobileMenu(false)}>Our approach</a>
- </nav>
- <div className="header-actions"><span className="network-chip"><i/> Privacy-minded payments</span>
- <Link className="nav-cta" href="/login">Sign in <ArrowUpRight size={15}/></Link></div>
- <button type="button" className="mobile-toggle" aria-controls="stealthbridge-site-navigation" aria-label={mobileMenu?"Close navigation":"Open navigation"} aria-expanded={mobileMenu} onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button></header>
- <main id="main-content">
- <section className="hero container-wide">
- <div className="hero-copy">
- <div className="hero-reveal kicker"><span className="signal-dot"/> For the people behind every payment <span className="kicker-rule"/></div>
- <h1 className="hero-reveal">Money moves.<br/><span className="quiet-title">Life stays yours.</span></h1>
- <p className="hero-reveal hero-lead">Sending money should feel effortless, not exposed. Explore a private-minded experience for loved ones, teams and businesses across borders.</p>
- <div className="hero-reveal hero-buttons">
- <Button size="lg" asChild><Link href="/business">StealthBridge Business <ArrowUpRight size={17}/></Link></Button>
- <Button size="lg" variant="outline" asChild><Link href="/send">StealthBridge Send <ArrowRight size={17}/></Link></Button>
- <Button size="lg" variant="outline" asChild><Link href="/routes">Explore where to send <ArrowRight size={17}/></Link></Button>
- </div>
- <div className="hero-reveal hero-note"><ShieldCheck size={16}/><span>In development on Stellar. Payment services are not yet available.</span></div>
- </div>
- <div className="hero-art" role="group" aria-label="Conceptual confidential payment rail diagram, not actual transaction data">
- <div className="ambient-halo"/><div className="orbital orbital-one" aria-hidden="true"/><div className="orbital orbital-two" aria-hidden="true"/>
- <div className="routing-board">
-  <div className="board-top"><div><span className="board-eyebrow">YOUR TRANSFER, YOUR TERMS</span>
-   <strong>One clear journey, from start to finish.</strong></div><span className="board-live"><span/> Experience preview</span></div>
-  <div className="consumer-journey">
-   <div className="consumer-journey-hero"><span>01 · YOUR PEOPLE</span><h3>Closer, even across borders.</h3>
-    <p>Choose where you are sending and who matters on the other side.</p></div>
-   <div className="consumer-journey-step"><span className="consumer-step-symbol"><Globe2 size={21}/></span><div><strong>Where should it go?</strong><small>Explore real route information by country</small></div><ArrowRight size={19}/></div>
-   <div className="consumer-journey-step"><span className="consumer-step-symbol"><ShieldCheck size={21}/></span><div><strong>Know before you approve</strong><small>Clear costs, privacy boundaries and consent</small></div><ArrowRight size={19}/></div>
-   <div className="consumer-journey-step"><span className="consumer-step-symbol"><LockKeyhole size={21}/></span><div><strong>Follow the real outcome</strong><small>Provider confirmation is distinct from on-chain progress</small></div><ArrowRight size={19}/></div>
-  </div>
-  <div className="board-footer"><span>Experience in development · No transfers available yet</span><Link href="/routes">Explore routes <ArrowRight size={14}/></Link></div>
- </div>
- <div className="floating-receipt"><div className="floating-icon"><ShieldCheck size={17}/></div><div><span>No imaginary delivery</span><strong>Clarity first</strong></div><span className="receipt-tag">Trust</span></div> </div>
- </section>
- <section id="infrastructure" className="trust-strip"><div className="container-wide trust-inner"><span>OUR FOUNDATIONS</span><strong>Purpose-built privacy</strong><strong>Borderless ambition</strong><strong>Thoughtful compliance</strong><strong>Open infrastructure</strong></div></section>
- <section id="products" className="products-section container-wide scroll-rise"><div className="section-heading"><div><span className="section-index">Our products</span><h2>One purpose.<br/>Built for real life.</h2></div><p>One vision, two distinct experiences. Designed around the needs of institutions and the people who move money internationally.</p></div>
- <div className="product-switch" role="group" aria-label="Product preview"><button aria-pressed={rail==="business"} onClick={()=>setRail("business")} className={rail==="business"?"selected":""}>Business settlement</button><button aria-pressed={rail==="send"} onClick={()=>setRail("send")} className={rail==="send"?"selected":""}>Personal remittance</button></div>
- <div className="product-feature"><div className="feature-text"><div className="feature-icon">{rail==="business"?<Layers3 size={24}/>:<Globe2 size={24}/>}</div><h3>{rail==="business"?"Confidentiality for business-critical payments.":"A quieter way to send money home."}</h3><p>{rail==="business"?"A future settlement workspace where businesses can manage cross-border transactions with clearer oversight, thoughtful privacy boundaries, and transparent payment progress.":"A future remittance experience centered on people—designed for clarity, dignity, and more control over the information shared during cross-border transfers."}</p><Link href={rail==="business"?"/business":"/send"} className="text-link">Discover StealthBridge {rail==="business"?"Business":"Send"} <ArrowUpRight size={17}/></Link></div><div className="feature-visual"><span className="diagram-caption">PRODUCT CONCEPT · NOT LIVE PAYMENT DATA</span><div className="demo-path"><div className="path-node"><span>{rail==="business"?"Institution A":"Sender"}</span><strong>Origin</strong></div><div className="path-line"><i/><small>Privacy rail</small></div><div className="path-node shielded"><LockKeyhole/><span>Privacy layer</span></div><div className="path-line"><i/></div><div className="path-node"><span>{rail==="business"?"Institution B":"Recipient"}</span><strong>Destination</strong></div></div><div className="diagram-bottom"><span>Visible infrastructure</span><span>Protected information</span></div></div></div></section>
- <section id="principles" className="principles-section"><div className="container-wide"><div className="section-heading"><div><span className="section-index">Built with restraint</span><h2>Privacy you can reason about.</h2></div><p>Progress without shortcuts. Privacy and trustworthy settlement require both powerful technology and real-world operational care.</p></div><div className="principle-grid"><article><ShieldCheck/><h3>Auditable by design</h3><p>Building toward clear payment stages, responsible oversight, and information access that is appropriate to the task.</p></article><article><LockKeyhole/><h3>Protected where it matters</h3><p>Exploring different privacy approaches for business amounts and personal payment relationships.</p></article><article><Sparkles/><h3>Interoperable from day one</h3><p>A modular foundation designed to grow across payment corridors and partners without starting again.</p></article></div></div></section>
- <section className="closing-section container-wide scroll-rise"><div className="closing-panel"><div><span className="section-index">THE NEXT CHAPTER OF PAYMENTS</span><h2>The future of payments<br/>doesn't need an audience.</h2></div><Button asChild size="lg"><Link href="/send">Discover StealthBridge Send <ArrowUpRight size={17}/></Link></Button></div></section>
- </main><footer className="site-footer container-wide"><Brand/><p>Confidential payments. Without borders.</p><div className="footer-links"><Link href="/business">Business</Link><Link href="/send">Send</Link><Link href="/platform">Privacy & trust</Link><Link href="/login">Sign in</Link></div><span>© {new Date().getFullYear()} StealthBridge · Building for what’s next</span></footer>
- </div>;
+import { useState } from "react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Building2,
+  CircleCheck,
+  CircleDashed,
+  Eye,
+  Fingerprint,
+  Globe2,
+  KeyRound,
+  Loader2,
+  ReceiptText,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
+import { SiteFooter, SiteHeader, useReveal } from "@/components/marketing/site-chrome";
+
+/**
+ * Public home. Everything stated as working is live on Stellar Testnet today;
+ * everything else is labelled as in development. The product demo is an
+ * illustration with no amounts and no real account data.
+ */
+function DemoPhone() {
+  return (
+    <div className="mk-phone" aria-hidden>
+      <div className="mk-phone-top"><span>Send money</span><span className="sb-badge" data-tone="warning">Testnet</span></div>
+      <div className="mk-phone-row" style={{ marginTop: 18, borderTop: 0 }}><span>From</span><strong>Everyday account</strong></div>
+      <div className="mk-phone-row"><span>To</span><span className="sb-mono">GDQ4…7KXM</span></div>
+      <div className="mk-phone-row"><span>Network fee</span><span>Covered by StealthBridge</span></div>
+      <div className="mk-demo-steps">
+        <div className="mk-demo-step"><span className="mk-demo-icon"><ReceiptText size={22} /></span><strong>Review the exact payment</strong><small>Recipient, asset and amount, checked in your browser</small></div>
+        <div className="mk-demo-step"><span className="mk-demo-icon"><Fingerprint size={22} /></span><strong>Approve with your passkey</strong><small>Face ID, fingerprint or device PIN</small></div>
+        <div className="mk-demo-step" data-tone="done"><span className="mk-demo-icon"><CircleCheck size={22} /></span><strong>Confirmed on Stellar</strong><small>Completed only when the ledger proves it</small></div>
+      </div>
+    </div>
+  );
+}
+
+const PREVIEW = {
+  business: {
+    title: "Confidentiality for business-critical payments.",
+    body: "A workspace for teams: organization profiles, roles, payment instructions and batch planning with validation before anything is signed. Amount-confidential settlement is in development and is not live.",
+    href: "/business",
+    label: "Business",
+    points: ["Team roles and invitations", "Batch payment planning with preflight checks", "Encrypted instruction drafts"],
+  },
+  send: {
+    title: "A quieter way to send money home.",
+    body: "A passkey smart account you control, payments you approve one by one, and a clear receipt for each. Cross-border payouts to local currency need licensed partners and aren't live yet.",
+    href: "/send",
+    label: "Send",
+    points: ["Passkey approval for every payment", "Network fees covered", "Live status from the ledger"],
+  },
+} as const;
+
+export function Home() {
+  const root = useReveal();
+  const [rail, setRail] = useState<"business" | "send">("business");
+  const preview = PREVIEW[rail];
+
+  return (
+    <div className="mk" ref={root}>
+      <SiteHeader />
+      <main id="main-content">
+        <div className="mk-wrap">
+          <section className="mk-hero">
+            <div>
+              <span className="mk-kicker hero-reveal mk-hero-anim"><b>Live on Testnet</b> Passkey payments on Stellar</span>
+              <h1 className="mk-h1 hero-reveal mk-hero-anim">Money moves.<br /><em>Life stays yours.</em></h1>
+              <p className="mk-lead hero-reveal mk-hero-anim">
+                StealthBridge gives you a smart account secured by your device&apos;s passkey. You approve every payment yourself, we cover the network fee, and nothing counts as sent until the Stellar ledger confirms it.
+              </p>
+              <div className="mk-hero-ctas hero-reveal mk-hero-anim">
+                <Link className="sb-btn sb-btn-primary sb-btn-lg" href="/login">Open the app <ArrowRight size={17} aria-hidden /></Link>
+                <Link className="sb-btn sb-btn-secondary sb-btn-lg" href="/platform">How we protect you</Link>
+              </div>
+              <p className="mk-hero-note hero-reveal mk-hero-anim"><ShieldCheck size={15} aria-hidden /> Testnet only. No real money moves, and confidential amounts are not yet live.</p>
+            </div>
+            <div className="mk-stage hero-reveal" role="img" aria-label="Illustration of the StealthBridge send flow: review, approve with passkey, confirmed on Stellar. Not real account data.">
+              <span className="mk-float mk-float-a" aria-hidden><KeyRound size={15} /> Only your device can approve</span>
+              <span className="mk-float mk-float-b" aria-hidden><Eye size={15} /> Ledger-verified status</span>
+              <DemoPhone />
+              <span className="mk-stage-caption" aria-hidden>Product illustration · not real account data</span>
+            </div>
+          </section>
+
+          <section className="mk-facts mk-reveal" aria-label="What works today">
+            <div className="mk-fact"><strong>Passkey smart accounts</strong><span>Created on Stellar in seconds, controlled by your device.</span></div>
+            <div className="mk-fact"><strong>You approve every payment</strong><span>Signed on your device. We can&apos;t move your funds.</span></div>
+            <div className="mk-fact"><strong>Fees covered</strong><span>StealthBridge pays the Stellar network fee.</span></div>
+            <div className="mk-fact"><strong>Open source</strong><span>Contracts, backend, SDK and app, all public.</span></div>
+          </section>
+        </div>
+
+        <section className="mk-section" aria-labelledby="how-title">
+          <div className="mk-wrap">
+            <div className="mk-section-head mk-reveal">
+              <div><span className="mk-label">How it works</span><h2 id="how-title" className="mk-h2">Three steps. No seed phrase.</h2></div>
+              <p className="mk-body">Sign in with a Stellar wallet once, create a smart account protected by a passkey, and from then on every payment is a review and a tap.</p>
+            </div>
+            <div className="mk-steps">
+              <article className="mk-step mk-reveal">
+                <h3>Create your smart account</h3>
+                <p className="mk-body">Your device makes a passkey. Its public key goes into a new Stellar smart account; the private key never leaves your device.</p>
+                <div className="mk-step-visual"><Fingerprint size={18} aria-hidden /> Passkey registered on this device</div>
+              </article>
+              <article className="mk-step mk-reveal">
+                <h3>Review and approve</h3>
+                <p className="mk-body">Enter a recipient and amount. Your browser checks that the request matches before your passkey signs exactly that payment, once.</p>
+                <div className="mk-step-visual"><KeyRound size={18} aria-hidden /> One approval, one payment</div>
+              </article>
+              <article className="mk-step mk-reveal">
+                <h3>See it confirmed</h3>
+                <p className="mk-body">We submit it and cover the fee, then read the ledger. It&apos;s marked complete only when Stellar records the transfer you approved.</p>
+                <div className="mk-step-visual"><CircleCheck size={18} aria-hidden /> Verified against the ledger</div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="products" className="mk-section" style={{ paddingTop: 0 }} aria-labelledby="products-title">
+          <div className="mk-wrap">
+            <div className="mk-section-head mk-reveal">
+              <div><span className="mk-label">For people and for business</span><h2 id="products-title" className="mk-h2">One account model. Two ways to use it.</h2></div>
+              <div className="sb-segmented" role="group" aria-label="Product preview" style={{ justifySelf: "start" }}>
+                <button type="button" aria-pressed={rail === "business"} onClick={() => setRail("business")}>Business settlement</button>
+                <button type="button" aria-pressed={rail === "send"} onClick={() => setRail("send")}>Personal remittance</button>
+              </div>
+            </div>
+            <div className={"mk-audience mk-reveal " + (rail === "business" ? "mk-audience-dark" : "mk-audience-light")} key={rail} style={{ minHeight: 0 }}>
+              <span className="mk-label">{rail === "business" ? <Building2 size={16} aria-hidden /> : <UserRound size={16} aria-hidden />} StealthBridge {preview.label}</span>
+              <h3>{preview.title}</h3>
+              <p className="mk-body" style={{ maxWidth: 640 }}>{preview.body}</p>
+              <ul>{preview.points.map((p) => <li key={p}><CircleCheck size={16} aria-hidden />{p}</li>)}</ul>
+              <Link href={preview.href} className="mk-audience-go" style={{ color: "inherit" }}>Discover StealthBridge {preview.label} <ArrowUpRight size={16} aria-hidden /></Link>
+            </div>
+            <div className="mk-audiences" style={{ marginTop: 18 }}>
+              <Link href="/send" aria-label="StealthBridge Send" className="mk-audience mk-audience-light mk-reveal" style={{ minHeight: 0 }}>
+                <span className="mk-label">Personal</span>
+                <h3 style={{ fontSize: 24 }}>StealthBridge Send</h3>
+                <span className="mk-audience-go">Explore <ArrowRight size={16} aria-hidden /></span>
+              </Link>
+              <Link href="/business" aria-label="StealthBridge Business" className="mk-audience mk-audience-light mk-reveal" style={{ minHeight: 0 }}>
+                <span className="mk-label">Business</span>
+                <h3 style={{ fontSize: 24 }}>StealthBridge Business</h3>
+                <span className="mk-audience-go">Explore <ArrowRight size={16} aria-hidden /></span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="principles" className="mk-section" style={{ background: "var(--sb-surface)", borderTop: "1px solid var(--sb-line)", borderBottom: "1px solid var(--sb-line)" }} aria-labelledby="principles-title">
+          <div className="mk-wrap">
+            <div className="mk-section-head mk-reveal">
+              <div><span className="mk-label">Our approach</span><h2 id="principles-title" className="mk-h2">Privacy you can reason about.</h2></div>
+              <p className="mk-body">We tell you what is protected, what is public, and what isn&apos;t built yet. A privacy claim appears here only after the mechanism behind it is implemented and verified.</p>
+            </div>
+            <div className="mk-capabilities">
+              <div className="mk-cap-col mk-reveal">
+                <h3><CircleCheck size={18} aria-hidden style={{ color: "var(--sb-success)" }} /> Working today on Testnet</h3>
+                <div className="mk-cap-item"><CircleCheck size={17} aria-hidden style={{ color: "var(--sb-success)" }} /><div><strong>Self-custody by passkey</strong><span>Only your device&apos;s passkey can authorize spending from your smart account.</span></div></div>
+                <div className="mk-cap-item"><CircleCheck size={17} aria-hidden style={{ color: "var(--sb-success)" }} /><div><strong>Encrypted drafts</strong><span>Payment instructions you save are encrypted before storage. This protects stored data; it doesn&apos;t make on-chain payments private.</span></div></div>
+                <div className="mk-cap-item"><CircleCheck size={17} aria-hidden style={{ color: "var(--sb-success)" }} /><div><strong>Ledger-verified status</strong><span>&ldquo;Completed&rdquo; is derived from the Stellar ledger, never from a client claim.</span></div></div>
+              </div>
+              <div className="mk-cap-col mk-reveal">
+                <h3><CircleDashed size={18} aria-hidden style={{ color: "var(--sb-warning)" }} /> In development, not live</h3>
+                <div className="mk-cap-item"><Loader2 size={17} aria-hidden style={{ color: "var(--sb-ink-3)" }} /><div><strong>Confidential amounts</strong><span>Today, Stellar payments show sender, recipient, asset and amount publicly. We&apos;ll say so on every receipt until that changes.</span></div></div>
+                <div className="mk-cap-item"><Globe2 size={17} aria-hidden style={{ color: "var(--sb-ink-3)" }} /><div><strong>Local-currency payouts</strong><span>Cross-border delivery to bank accounts or mobile money needs licensed partners. Routes are published for planning only.</span></div></div>
+                <div className="mk-cap-item"><ShieldCheck size={17} aria-hidden style={{ color: "var(--sb-ink-3)" }} /><div><strong>Mainnet</strong><span>Real-money payments stay off until the security review and integration checks pass.</span></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="mk-wrap" style={{ paddingTop: 96 }}>
+          <section className="mk-band mk-reveal" aria-labelledby="cta-title">
+            <div>
+              <span className="mk-label" style={{ color: "var(--sb-mint)" }}>Try it on Testnet</span>
+              <h2 id="cta-title" className="mk-h2" style={{ color: "#fff" }}>The future of payments doesn&apos;t need an audience.</h2>
+              <p className="mk-body">Sign in with a Stellar wallet, create a passkey account, and send a test payment in under a minute.</p>
+            </div>
+            <Link className="sb-btn sb-btn-mint sb-btn-lg" href="/login">Open the app <ArrowRight size={17} aria-hidden /></Link>
+          </section>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
 }

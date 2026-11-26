@@ -52,7 +52,7 @@ test("signed-in transfer verifies a classic account only on consent, and retains
    observed_at_unix:Math.floor(Date.now()/1000),classic_account_found:true,
    ownership_verified:false,asset_acceptance_verified:false,payment_execution_enabled:false}});
  });
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
@@ -109,7 +109,7 @@ test("local randomized draft fingerprint verifies without sending amount or reci
   observed_at_unix:Math.floor(Date.now()/1000),classic_account_found:true,
   ownership_verified:false,asset_acceptance_verified:false,payment_execution_enabled:false
  }}));
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);
  await page.getByLabel("Recipient Stellar wallet address").fill(recipient);
  await page.getByLabel("Amount").fill("42.50");
@@ -146,7 +146,7 @@ test("workspace supports 69-char CAP-84 W and M recipients and rejects non-canon
    recipient_asset_eligibility_verified:false,privacy_verified:false,payment_execution_enabled:false
   }});
  });
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);
 
  await page.getByLabel("Recipient Stellar wallet address").fill(wBadBit);

@@ -12,7 +12,7 @@ test("technical operator surfaces are gated; customer trust and routes hide deve
  const files=await Promise.all([
   "src/app/wallet/page.tsx","src/app/api/public/contract/[address]/route.ts",
   "src/app/platform/page.tsx","src/components/customer-route-explorer.tsx",
-  "src/components/home.tsx","src/app/app/page.tsx"].map(f=>readFile(f,"utf8")));
+  "src/components/home.tsx","src/components/app/dashboard.tsx"].map(f=>readFile(f,"utf8")));
  assert.match(files[0],/STEALTHBRIDGE_SITE_MODE!=="preview"/);
  assert.match(files[1],/STEALTHBRIDGE_SITE_MODE!=="preview"/);
  assert.match(files[2],/Your money is personal/);

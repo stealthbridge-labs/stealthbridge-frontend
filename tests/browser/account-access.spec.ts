@@ -131,8 +131,8 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   }});
  });
  await page.goto("/app");
- await expect(page.getByRole("heading",{name:"Welcome to your account."})).toBeVisible();
- await expect(page.getByRole("link",{name:"Overview",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("heading",{level:1,name:/Welcome to StealthBridge|Good to see you/})).toBeVisible();
+ await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Home",exact:true})).toHaveAttribute("aria-current","page");
  await expect(page.getByRole("heading",{name:"Business access, in one place."})).toHaveCount(0);
  await page.goto("/app/business");
  await expect(page.getByRole("link",{name:"Workspace",exact:true})).toHaveAttribute("aria-current","page");
@@ -146,8 +146,10 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"Business access, in one place."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
  await expect(page.getByText("Current membership")).toBeVisible();
- await expect(page.getByRole("link",{name:"Transfers",exact:true})).toHaveAttribute("href","/app/send");
- await page.goto("/app/send");
+ const areas=page.getByRole("navigation",{name:"Product areas"});
+ await expect(areas.getByRole("link",{name:"Send",exact:true})).toHaveAttribute("href","/app/send");
+ await expect(areas.getByRole("link",{name:"Cross-border routes",exact:true})).toHaveAttribute("href","/app/routes");
+ await page.goto("/app/routes");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await expect(page.getByText("Signed in securely")).toBeVisible();
  await expect(page.getByRole("button",{name:"Confirm and send"})).toBeDisabled();
@@ -227,7 +229,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Good to see you, Customer."})).toBeVisible();
  await expect(page.getByText("Based in Nigeria")).toBeVisible();
- await expect(page.getByRole("link",{name:/Prepare a personal transfer/})).toHaveAttribute("href","/app/send");
+ await expect(page.getByRole("link",{name:/Plan a cross-border transfer/})).toHaveAttribute("href","/app/routes");
  await expect(page.getByRole("link",{name:/Manage business payments/})).toHaveAttribute("href","/app/business");
  await expect(page.getByRole("link",{name:/Edit preferences/})).toHaveAttribute("href","/app/settings");
 

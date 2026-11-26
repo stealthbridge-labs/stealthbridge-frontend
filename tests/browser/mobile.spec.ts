@@ -66,23 +66,26 @@ test("signed-in product navigation stays usable on a narrow phone, with no payme
  });
  expect(verified.status()).toBe(200);
  await page.goto("/app");
- const nav=page.getByRole("navigation",{name:"Product areas"});
- await expect(nav).toBeVisible();
- await expect(nav.getByRole("link",{name:"Overview"})).toHaveAttribute("aria-current","page");
+ // Phones get a bottom tab bar for daily money tasks and a "More" sheet for everything else.
+ const tabs=page.getByRole("navigation",{name:"Quick navigation"});
+ await expect(tabs).toBeVisible();
+ await expect(page.getByRole("navigation",{name:"Product areas"})).toBeHidden();
+ await expect(tabs.getByRole("link",{name:"Home"})).toHaveAttribute("aria-current","page");
  const dimensions=await page.evaluate(()=>({
   pageWidth:document.documentElement.scrollWidth,
-  viewportWidth:window.innerWidth,
-  navScrollable:(document.querySelector(".account-nav-scroll")?.scrollWidth??0)>
-   (document.querySelector(".account-nav-scroll")?.clientWidth??0)
+  viewportWidth:window.innerWidth
  }));
  expect(dimensions.pageWidth).toBeLessThanOrEqual(dimensions.viewportWidth+1);
- expect(dimensions.navScrollable).toBe(true);
- await nav.getByRole("link",{name:"Single payment"}).click();
+ await tabs.getByRole("button",{name:"More"}).click();
+ const sheet=page.getByRole("dialog",{name:"More"});
+ await expect(sheet).toBeVisible();
+ await sheet.getByRole("link",{name:"Single payment"}).click();
  await expect(page).toHaveURL(/\/app\/business\/payments$/);
- await expect(nav.getByRole("link",{name:"Single payment"})).toHaveAttribute("aria-current","page");
+ await expect(sheet).toBeHidden();
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
- await nav.getByRole("link",{name:"Workspace"}).click();
+ await tabs.getByRole("button",{name:"More"}).click();
+ await page.getByRole("dialog",{name:"More"}).getByRole("link",{name:"Workspace"}).click();
  await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"New business payment"})).toHaveCount(0);
 });

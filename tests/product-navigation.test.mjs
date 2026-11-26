@@ -7,7 +7,7 @@ test("the customer product has separate Home, Business and planning journeys",as
   get("src/app/app/page.tsx"),get("src/app/app/business/page.tsx"),
   get("src/app/app/business/payments/page.tsx"),
   get("src/app/app/business/batch/page.tsx"),
-  get("src/components/account-shell.tsx"),get("src/components/account-navigation.tsx"),
+  get("src/components/app-shell.tsx"),get("src/components/app-shell.tsx"),
   get("src/app/layout.tsx")
  ]);
  assert.doesNotMatch(home,/<AccountOrganizations|<TeamInvitations|<CustomerPaymentWorkspace/);
@@ -23,10 +23,10 @@ test("the customer product has separate Home, Business and planning journeys",as
  assert.match(shell,/id="main-content"/);
  assert.match(root,/className="skip-link" href="#main-content"/);
  assert.doesNotMatch(shell,/className="account-skip-link"/);
- for(const route of ["/app","/app/send","/app/business",
+ for(const route of ["/app","/app/send","/app/activity","/app/accounts","/app/routes","/app/business",
   "/app/business/payments","/app/business/batch","/app/settings"])
-  assert.ok(nav.includes('href:"'+route+'"'),"Missing navigation route "+route);
- assert.match(nav,/aria-current=\{pathname===href/);
+  assert.ok(nav.includes('href: "'+route+'"'),"Missing navigation route "+route);
+ assert.match(nav,/aria-current=\{isActive\(pathname, href\)/);
  assert.match(nav,/businessDetail\.test\(pathname\)/);
  assert.doesNotMatch(nav,/walletSecret|fakeBalance|submitPayment/);
 });

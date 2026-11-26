@@ -32,7 +32,7 @@ test("authenticated customer creates ciphertext, unlocks it after navigation and
   }
   return r.fulfill({status:204});
  });
- await page.goto("/app/send");
+ await page.goto("/app/routes");
  await page.getByLabel("Payment route").selectOption(id);await page.getByLabel("Recipient Stellar wallet address").fill(recipient);await page.getByLabel("Amount",{exact:true}).fill("42.50");
  await page.getByRole("button",{name:"Check recipient account"}).click();
  await page.getByRole("checkbox",{name:/I have checked this full address/}).check();
