@@ -1521,3 +1521,6 @@ a.business-readiness-item:hover{border-color:#146543;background:#bfdcd6}
 .business-ops-strip a{display:flex;align-items:center;min-height:44px;padding:.65rem .9rem;border:1px solid #b4c8ca;border-radius:12px;background:#f5f8f8;color:#0b1c18;font-size:.875rem;font-weight:500;text-decoration:none;transition:border-color .16s ease,background-color .16s ease}
 .business-ops-strip a:hover{border-color:#097f64;background:#f3f5f6}
 @media(prefers-reduced-motion:reduce){.beneficiary-chip>button,.business-ops-strip a{transition:none}}
+
+/* v2: Geist metrics are wider than the old Arial stack; let preview headers wrap instead of overflowing. */
+.workspace-header{flex-wrap:wrap;row-gap:10px;min-height:92px;height:auto}
