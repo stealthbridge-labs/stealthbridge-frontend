@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Cross-border routes — StealthBridg
 export default async function RoutesPage() {
   const identity = await requireWalletIdentity();
   return (
-    <div className="sb-page">
+    <div className="sb-page sb-legacy">
       <header className="sb-page-header">
         <div>
           <span className="sb-eyebrow">Planning</span>

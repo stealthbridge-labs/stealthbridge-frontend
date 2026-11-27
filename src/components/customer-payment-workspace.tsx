@@ -483,7 +483,9 @@ export function CustomerPaymentWorkspace({flow,identityAddress,embedded=false}:{
       <Link href="/platform" className="payment-inline-link">Learn about privacy & trust <ArrowUpRight size={15} aria-hidden/></Link>
      </section>:null}
     {identityAddress?<PaymentInstructions key={identityAddress} address={identityAddress} draft={reviewed&&canReview?persistableDraft:null} route={corridor}/>:null}
-    {identityAddress?<SettlementLifecyclePanel key={"sl-"+identityAddress} address={identityAddress} route={corridor} recipientAddress={parsedRecipient?.address??""} amount={amount}/>:null}
+    {identityAddress?<details className="sb-card sb-diagnostics"><summary>Testnet settlement diagnostics</summary>
+     <SettlementLifecyclePanel key={"sl-"+identityAddress} address={identityAddress} route={corridor} recipientAddress={parsedRecipient?.address??""} amount={amount}/>
+    </details>:null}
     {identityAddress?<CustomerDraftVault address={identityAddress} draft={persistableDraft} onRestore={restoreDraft}/>:null}
     </div>
     <aside className="payment-stack" aria-label="Payment account and summary">

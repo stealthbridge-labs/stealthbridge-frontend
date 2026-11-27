@@ -28,7 +28,7 @@ export default function PrivacyAndTrust(){
     </div>
     <div className="trust-visual" role="img" aria-label="Privacy illustration showing money held under your control, with permissions chosen intentionally">
      <div className="trust-orbit trust-orbit-one"/><div className="trust-orbit trust-orbit-two"/>
-     <span className="trust-orbit-note note-a"><LockKeyhole size={16} aria-hidden/> Private by intention</span>
+     <span className="trust-orbit-note note-a"><LockKeyhole size={16} aria-hidden/> Honest about privacy</span>
      <span className="trust-orbit-note note-b"><ShieldCheck size={16} aria-hidden/> Clear permissions</span>
      <div className="trust-core"><Fingerprint size={64} strokeWidth={1.2} aria-hidden/><strong>Stay in control</strong><span>Only you decide when to authorize</span></div>
     </div>

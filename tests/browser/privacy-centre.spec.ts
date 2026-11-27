@@ -18,7 +18,7 @@ test("privacy centre states what is public and keeps NO_GO rails unavailable",as
  await page.goto("/app/privacy");
  await expect(page.getByRole("heading",{level:1,name:"Privacy centre"})).toBeVisible();
  await expect(page.getByText("Your payments today are public on Stellar.")).toBeVisible();
- await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Privacy centre"})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("navigation",{name:"More"}).getByRole("link",{name:"Privacy"})).toHaveAttribute("aria-current","page");
  for(const name of ["Passkey payments","Encrypted drafts"])
   await expect(page.getByRole("article",{name}).getByText("Live on Testnet")).toBeVisible();
  await expect(page.getByRole("article",{name:"Personal: shielded pool"}).getByText("Research only · not available")).toBeVisible();

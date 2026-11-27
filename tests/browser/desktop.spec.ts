@@ -71,7 +71,7 @@ test("product selector supports pointer and keyboard interaction",async({page})=
 
  await business.click();
  await expect(business).toHaveAttribute("aria-pressed","true");
- await expect(page.getByRole("heading",{level:3,name:"Confidentiality for business-critical payments."})).toBeVisible();
+ await expect(page.getByRole("heading",{level:3,name:"One workspace for business payments."})).toBeVisible();
 });
 
 test("privacy and trust page explains real-world boundaries without developer infrastructure",async({page})=>{

@@ -29,7 +29,7 @@ for(const product of productPages){
   await expect(page.locator('[data-slot="story-actions"]')).toHaveCount(1);
   await expect(page.locator('[data-slot="product-availability"]')).toHaveCount(1);
   await expect(page.locator('[data-slot="narrative-feature"]')).toHaveCount(3);
-  await expect(page.locator('[data-slot="product-availability"]')).toContainText("In development");
+  await expect(page.locator('[data-slot="product-availability"]')).toContainText("payments are public");
   const action=page.getByRole("link",{name:/Explore the experience/});
   await expect(action).toHaveAttribute("href","#story-perspective");
   await action.focus();

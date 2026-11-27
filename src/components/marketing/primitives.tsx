@@ -25,10 +25,10 @@ export function EditorialSectionHeading({eyebrow,title,description,id}:{
  </div>;
 }
 
-/** Deliberately says in development, never "available" or settled. */
+/** Deliberately says Testnet and public, never "available", private or settled. */
 export function AvailabilityDisclosure(){
  return <span data-slot="product-availability" className="story-availability">
-  <span aria-hidden="true"/> In development
+  <span aria-hidden="true"/> Testnet only · payments are public
  </span>;
 }
 

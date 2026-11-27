@@ -136,24 +136,26 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   }});
  });
  await page.goto("/app");
- await expect(page.getByRole("heading",{level:1,name:/Welcome to StealthBridge|Good to see you/})).toBeVisible();
+ await expect(page.getByRole("heading",{level:1,name:/Welcome back|Good to see you/})).toBeVisible();
  await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Home",exact:true})).toHaveAttribute("aria-current","page");
- await expect(page.getByRole("heading",{name:"Business access, in one place."})).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Business workspace"})).toHaveCount(0);
  await page.goto("/app/business");
- await expect(page.getByRole("link",{name:"Workspace",exact:true})).toHaveAttribute("aria-current","page");
- await expect(page.getByRole("link",{name:/Prepare one payment/})).toHaveAttribute("href","/app/business/payments");
+ await expect(page.getByRole("navigation",{name:"Business sections"}).getByRole("link",{name:"Overview",exact:true})).toHaveAttribute("aria-current","page");
+ // Business records are unavailable here (no onboarding fixture yet): planning tools stay reachable via tabs.
+ await expect(page.getByText("We couldn't load your business applications. Nothing was changed.")).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Set up your business"})).toHaveCount(0);
+ await expect(page.getByRole("navigation",{name:"Business sections"}).getByRole("link",{name:"Payments",exact:true})).toHaveAttribute("href","/app/business/payments");
  await expect(page.getByRole("heading",{name:"New business payment"})).toHaveCount(0);
  await expect(page.getByRole("heading",{name:"Invitations for you"})).toBeVisible();
  await expect(page.getByText("Invitation Test Only")).toBeVisible();
  await page.getByRole("button",{name:"Accept viewer invitation"}).click();
  await expect(page.getByText("You have no pending invitations for this account.")).toBeVisible();
  expect(acceptedInvite).toBe(true);
- await expect(page.getByRole("heading",{name:"Business access, in one place."})).toBeVisible();
  await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
  await expect(page.getByText("Current membership")).toBeVisible();
  const areas=page.getByRole("navigation",{name:"Product areas"});
  await expect(areas.getByRole("link",{name:"Send",exact:true})).toHaveAttribute("href","/app/send");
- await expect(areas.getByRole("link",{name:"Cross-border routes",exact:true})).toHaveAttribute("href","/app/routes");
+ await expect(page.getByRole("navigation",{name:"More"}).getByRole("link",{name:"Cross-border routes",exact:true})).toHaveAttribute("href","/app/routes");
  await page.goto("/app/routes");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
  await expect(page.getByText("Signed in securely")).toBeVisible();
@@ -233,10 +235,10 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   use_case:"both",residence_country:"NG"});
  await page.goto("/app");
  await expect(page.getByRole("heading",{name:"Good to see you, Customer."})).toBeVisible();
- await expect(page.getByText("Based in Nigeria")).toBeVisible();
- await expect(page.getByRole("link",{name:/Plan a cross-border transfer/})).toHaveAttribute("href","/app/routes");
- await expect(page.getByRole("link",{name:/Manage business payments/})).toHaveAttribute("href","/app/business");
- await expect(page.getByRole("link",{name:/Edit preferences/})).toHaveAttribute("href","/app/settings");
+ // Home stays focused: profile detail and secondary shortcuts live in Settings and the sidebar.
+ await expect(page.getByText("Based in Nigeria")).toHaveCount(0);
+ await expect(page.getByRole("navigation",{name:"More"}).getByRole("link",{name:"Cross-border routes"})).toHaveAttribute("href","/app/routes");
+ await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Business"})).toHaveAttribute("href","/app/business");
 
  // A browser test can exercise UX with isolated API fixtures; it must never
  // create a real organization in Neon or claim a fictitious customer in prod.
@@ -268,13 +270,14 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
   }});
  });
  await page.goto("/app/business");
- await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
- await expect(page.getByRole("heading",{name:"Build your business space."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Business workspace"})).toBeVisible();
+ // This account already holds a viewer membership, so registering is secondary.
+ await page.getByText("Register another business").click();
  await page.getByLabel("Business or organization name").fill("Browser Test Only Ltd");
  await page.getByRole("button",{name:"Register business application"}).click();
  await expect(page.getByRole("heading",{name:"Browser Test Only Ltd"})).toBeVisible();
- await expect(page.getByText("Pending onboarding")).toBeVisible();
- await expect(page.getByText(/do not establish legal identity/)).toBeVisible();
+ await expect(page.getByText("Awaiting review",{exact:true}).last()).toBeVisible();
+ await expect(page.getByText(/establish legal identity or approve payments/)).toBeVisible();
  await page.getByRole("button",{name:"Correct application name"}).click();
  await page.getByLabel("Correct organization name").fill("Browser Corrected Ltd");
  await page.getByRole("button",{name:"Save corrected name"}).click();
@@ -298,18 +301,18 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByText(/Transfers, settlement, fiat payouts and platform fee claims remain disabled/)).toBeVisible();
  await expect(page.getByRole("button",{name:/Invite|Submit settlement|Approve payment/})).toHaveCount(0);
  await page.goto("/app/business");
- await expect(page.getByRole("heading",{name:"Your business, across borders."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Business workspace"})).toBeVisible();
  await page.getByRole("button",{name:"Withdraw",exact:true}).click();
  await expect(page.getByText(/Permanent withdrawal/)).toBeVisible();
  await expect(page.getByRole("button",{name:"Permanently withdraw application"})).toBeDisabled();
  await page.getByLabel("Type the exact application name to confirm").fill("Browser Corrected Ltd");
  await page.getByRole("button",{name:"Permanently withdraw application"}).click();
- await expect(page.getByText(/haven't registered a business workspace yet/)).toBeVisible();
  await expect(page.getByRole("heading",{name:"Browser Corrected Ltd"})).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Awaiting review"})).toHaveCount(0);
  await page.getByRole("link",{name:/Prepare one payment/}).click();
  await expect(page).toHaveURL(/\/app\/business\/payments$/);
  await expect(page.getByRole("heading",{name:"New business payment"})).toBeVisible();
- await expect(page.getByRole("link",{name:"Single payment",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("navigation",{name:"Business sections"}).getByRole("link",{name:"Payments",exact:true})).toHaveAttribute("aria-current","page");
  await expect(page.getByRole("button",{name:"Submit settlement"})).toBeDisabled();
  const logout=await page.request.post("/api/auth/logout",{headers:{origin}});
  expect(logout.status()).toBe(200);
@@ -430,22 +433,27 @@ test("Business snapshot distinguishes real records, empty state and API failure"
    organization_payment_authorized:false}
  }));
  await page.goto("/app/business");
- const overview=page.locator(".business-readiness");
- await expect(overview.getByText("No pending applications")).toBeVisible();
- await expect(overview.getByText("No linked organizations")).toBeVisible();
- await expect(overview.getByText("Transfers not available")).toBeVisible();
- expect(await overview.getByText(/available for transfer/).count()).toBe(0);
+ // Empty: one clear way to start, and nothing that looks like an organization.
+ await expect(page.getByRole("heading",{name:"Set up your business"})).toBeVisible();
+ await expect(page.getByText("Current membership")).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Awaiting review"})).toHaveCount(0);
  hasPending=true;hasMembership=true;
- await overview.getByRole("button",{name:"Refresh"}).click();
- await expect(overview.getByText("1 pending application")).toBeVisible();
- await expect(overview.getByText("1 current membership")).toBeVisible();
- await expect(overview.getByRole("link",{name:/Review people and access/})).toHaveAttribute(
-  "href","#business-organizations");
+ await page.getByRole("button",{name:"Refresh business records"}).click();
+ await expect(page.getByRole("heading",{name:"Actual Organization"})).toBeVisible();
+ await expect(page.getByText("Current membership")).toBeVisible();
+ await expect(page.getByText(/Membership doesn.t authorize payments/)).toBeVisible();
+ await expect(page.getByRole("article",{name:"Saved Business Example"}).getByText("Awaiting review")).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Set up your business"})).toHaveCount(0);
+ // Viewers do not get team management.
+ await expect(page.getByRole("link",{name:/Team and invitations/})).toHaveCount(0);
  unavailable=true;
- await overview.getByRole("button",{name:"Refresh"}).click();
- await expect(overview.getByText("Some business information could not be verified.")).toBeVisible();
- await expect(overview.getByText("1 current membership")).toHaveCount(0);
- await expect(overview.getByText("Transfers not available")).toHaveCount(0);
+ await page.getByRole("button",{name:"Refresh business records"}).click();
+ // Applications fail: they are hidden and reported; the separately verified membership stays.
+ await expect(page.getByText("We couldn't load your business applications. Nothing was changed.")).toBeVisible();
+ await expect(page.getByRole("article",{name:"Saved Business Example"})).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Set up your business"})).toHaveCount(0);
+ await expect(page.getByText("Register another business")).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Actual Organization"})).toBeVisible();
  await expect(page.getByRole("button",{name:/Submit settlement|Confirm and send/})).toHaveCount(0);
 });
 
@@ -636,6 +644,9 @@ test("wallet security separates sign-in, local passkey support and public kit ob
  await page.clock.install();
  await page.goto("/app/settings");
  const security=page.getByRole("region",{name:"Wallet security & account access"});
+ // Infrastructure detail is secondary: collapsed until the customer asks for it.
+ await expect(security.getByText(/7\/7 healthy/)).toBeHidden();
+ await security.getByText("Technical diagnostics",{exact:true}).click();
  await expect(security.getByText(/7\/7 healthy/)).toBeVisible();
  await expect(security.getByText("Not checked on this device")).toBeVisible();
  expect(localChecks).toBe(0);
@@ -651,9 +662,10 @@ test("wallet security separates sign-in, local passkey support and public kit ob
  expect(localChecks).toBe(1);
  await security.getByText("View seven infrastructure observations",{exact:true}).click();
  await expect(security.locator(".account-security-artifacts li")).toHaveCount(7);
- // Status reflects what is actually live: passkey accounts on Testnet, privacy still in development.
+ // Status reflects what is actually live: passkey accounts on Testnet, private payments research only.
  await expect(security.getByText("Available on Testnet",{exact:true})).toBeVisible();
- await expect(security.getByText("In development",{exact:true})).toBeVisible();
+ await expect(security.getByText("Research only · not available",{exact:true})).toBeVisible();
+ await expect(security.getByText("In development",{exact:true})).toHaveCount(0);
  await expect(security.getByText("Not yet enabled",{exact:true})).toBeVisible();
  await expect(security.getByRole("button",{name:/deploy|enroll|create account|send funds/i})).toHaveCount(0);
  await testInfo.attach("wallet-security-desktop",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});

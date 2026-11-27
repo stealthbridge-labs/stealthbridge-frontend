@@ -32,8 +32,8 @@ try{
  await expectPage("/send",["Close to home","Across borders","Sign in to StealthBridge","/login"]);
  await expectPage("/login",["Sign in","Stellar","Connect a Stellar wallet"]);
  await expectPage("/platform",["StealthBridge","Your money is personal","Payment services are in development"]);
- await expectPage("/discover/send",["StealthBridge Send","Close to home","In development"]);
- await expectPage("/discover/business",["StealthBridge Business","Confidentiality","In development"]);
+ await expectPage("/discover/send",["StealthBridge Send","Close to home","payments are public"]);
+ await expectPage("/discover/business",["StealthBridge Business","Confidentiality","payments are public"]);
  const logo=await fetch(BASE+"/brand/stealthbridge-symbol.svg");
  assert.equal(logo.status,200,"Logo asset must exist");
  for(const path of ["/explorer","/preview/business","/preview/send","/api/bridge/v1/network"]){

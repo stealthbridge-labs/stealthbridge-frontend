@@ -7,10 +7,9 @@ test("onboarding is based only on signed-in saved preferences, never fabricated 
  const settings=await readFile("src/components/customer-profile-settings.tsx","utf8");
  assert.match(home,/loadCustomerProfile\(address, ctl.signal\)/);
  assert.match(home,/setProfile\(r.profile\)/);
- assert.match(home,/Personalize your account/);
  assert.match(home,/useMoney\(address/);
- assert.match(home,/profile\?\.use_case/);
- assert.match(home,/Your profile is not identity verification/);
+ assert.match(home,/profile\?\.display_name/);
+ assert.match(settings,/not identity verification/);
  assert.doesNotMatch(home,/localStorage|fakeBalance|mockLedger|exampleTransaction|transferFunds/);
  assert.match(overview,/STEALTHBRIDGE_CUSTOMER_PROFILE_ENABLED/);
  assert.match(settings,/COUNTRIES\.map/);

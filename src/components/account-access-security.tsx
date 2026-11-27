@@ -54,7 +54,7 @@ export function AccountAccessSecurity({address}:{address:string}){
   <header className="account-security-heading">
    <ShieldCheck aria-hidden size={28}/>
    <div><h2 id="account-security-title">Wallet security & account access</h2>
-    <p>StealthBridge is building confidential cross-border payments for people and businesses. Keep track of your access today and what still needs verification before you can move money.</p></div>
+    <p>How you sign in, approve payments and recover access. Payments are public on Stellar.</p></div>
   </header>
   <div className="account-security-row">
    <div><h3>Your wallet sign-in</h3><p>A signature from your Stellar wallet (Freighter, xBull, LOBSTR, Albedo and others) authenticates your session. It never authorizes a transfer.</p></div>
@@ -86,12 +86,13 @@ export function AccountAccessSecurity({address}:{address:string}){
     <div><dt>Passkey smart accounts</dt><dd>Available on Testnet</dd></div>
     <div><dt>Credential recovery</dt><dd>Not verified</dd></div>
     <div><dt>Instruction passphrase reset</dt><dd>Impossible (client-side only)</dd></div>
-    <div><dt>On-chain privacy (ZK)</dt><dd>In development</dd></div>
+    <div><dt>Private payments</dt><dd>Research only · not available</dd></div>
     <div><dt>Mainnet</dt><dd>Not yet enabled</dd></div>
     <div><dt>Payments</dt><dd>Stellar Testnet only</dd></div>
    </dl>
   </div>
-  <div className="account-security-infrastructure">
+  <details className="account-security-infrastructure sb-diagnostics">
+   <summary>Technical diagnostics</summary>
    <div className="account-security-infrastructure-heading"><div><h3>Supporting infrastructure</h3>
     <p>Public upstream Testnet smart-account kit observations from Stellar RPC. These describe shared infrastructure, not your customer account or a StealthBridge deployment.</p></div>
     <Button type="button" variant="outline" size="sm" disabled={state==="loading"} onClick={()=>{setKit(null);setState("loading");refresh(v=>v+1);}}>
@@ -112,6 +113,6 @@ export function AccountAccessSecurity({address}:{address:string}){
     </details>
    </>:null}
    <p className="account-security-boundary">Even if every artifact is healthy, customer account creation, recovery and privacy verification remain incomplete. No payment can be executed.</p>
-  </div>
+  </details>
  </section>;
 }

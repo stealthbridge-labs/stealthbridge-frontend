@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 
 /** Standard page header for every authenticated screen. */
-export function PageHeader({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="sb-page-header">
       <div>
-        <span className="sb-eyebrow">{eyebrow}</span>
+        {eyebrow ? <span className="sb-eyebrow">{eyebrow}</span> : null}
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>

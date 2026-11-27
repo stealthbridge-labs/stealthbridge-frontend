@@ -20,5 +20,6 @@ test("technical operator surfaces are gated; customer trust and routes hide deve
  assert.doesNotMatch(files[3],/Record ID:|Catalog record|railLabel\(/);
  assert.match(files[3],/countryName\(row.origin_country\)/);
  assert.match(files[4],/Money moves/);
- assert.match(files[5],/View my account ID/);
+ assert.match(files[5],/Create your passkey account/);
+ assert.match(files[5],/Recent activity/);
 });

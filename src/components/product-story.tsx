@@ -27,7 +27,7 @@ const stories:Record<Product,Story>={
   legs:["Initiate","Protect","Reconcile"],
   sections:[
    {eyebrow:"01 / AN INSTITUTIONAL PERSPECTIVE",title:"Built around the way businesses move.",description:"Cross-border settlement involves more than a transaction. Counterparties, permissions, currency movement, policy checks and reconciliation all matter. We're creating a workspace designed to bring that journey into focus.",number:"01"},
-   {eyebrow:"02 / RIGHT-SIZED DISCLOSURE",title:"Privacy without losing oversight.",description:"Amount-confidential payment mechanisms can help protect sensitive financial information. Known business counterparties still need appropriate visibility, authorization and auditability. Both requirements inform the product design.",number:"02"},
+   {eyebrow:"02 / RIGHT-SIZED DISCLOSURE",title:"Privacy without losing oversight.",description:"Confidential-amount payments are research only and not available today. If they ship, they could protect sensitive values. Known business counterparties still need appropriate visibility, authorization and auditability. Both requirements inform the product design.",number:"02"},
    {eyebrow:"03 / REAL-WORLD OPERATIONS",title:"Settlement doesn't end on-chain.",description:"A confirmed blockchain transaction is not proof that a bank or payout provider completed its obligation. Our architecture separates settlement events, partner confirmations and eventual reconciliation.",number:"03"}
   ],
   features:[
@@ -49,7 +49,7 @@ const stories:Record<Product,Story>={
   description:"Sending money across the world is personal. We're imagining a remittance experience that feels simpler, clearer and more respectful of the information people share.",
   icon:"send",label:"Personal remittances",
   visualTitle:"A more human payment journey",visualSub:"Concept illustration · Not an active payout service",
-  legs:["Send","Shield","Receive"],
+  legs:["Send","Approve","Confirm"],
   sections:[
    {eyebrow:"01 / ABOUT PEOPLE",title:"A journey that feels like yours.",description:"A transfer should be easy to understand before you approve it. Our consumer experience is being designed around clear steps, transparent eligibility and meaningful status updates.",number:"01"},
    {eyebrow:"02 / PERSONAL PRIVACY",title:"Your payments are personal.",description:"We're investigating privacy mechanisms that protect amounts and relationships where supported. Public funding and withdrawal steps, and information held by regulated providers, can still expose details.",number:"02"},
