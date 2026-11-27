@@ -15,6 +15,7 @@ import {
   Receipt,
   Send,
   ShieldCheck,
+  EyeOff,
   X,
 } from "lucide-react";
 import { AccountLogout } from "@/components/account-logout";
@@ -52,7 +53,10 @@ function groups(profilesEnabled: boolean): Group[] {
     },
     {
       name: "Account",
-      items: profilesEnabled ? [{ href: "/app/settings", label: "Security & settings", Icon: ShieldCheck }] : [],
+      items: [
+        ...(profilesEnabled ? [{ href: "/app/settings", label: "Security & settings", Icon: ShieldCheck }] : []),
+        { href: "/app/privacy", label: "Privacy centre", Icon: EyeOff },
+      ],
     },
   ].filter((g) => g.items.length > 0);
 }
@@ -74,6 +78,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/app\/business\/batch/, "Batch planner"],
   [/^\/app\/business/, "Business"],
   [/^\/app\/settings/, "Security & settings"],
+  [/^\/app\/privacy/, "Privacy centre"],
 ];
 
 function short(address: string) {

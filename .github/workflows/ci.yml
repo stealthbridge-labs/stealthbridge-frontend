@@ -23,6 +23,8 @@ jobs:
         run: node scripts/verify-soroban-interface.mjs
       - name: Reject frontend/SDK generated wire-model drift
         run: node scripts/verify-sdk-wire.mjs
+      - name: Reject privacy-centre drift from the canonical contracts lock
+        run: node scripts/check-privacy-capabilities.mjs
       - name: Reject a stale generated light theme (app-light.css from globals.css)
         run: python3 scripts/generate-app-light-css.py --check
       - run: npm run typecheck
