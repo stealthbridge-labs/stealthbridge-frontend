@@ -7,5 +7,5 @@ export const metadata:Metadata={title:"Batch planner — StealthBridge Business"
  robots:{index:false,follow:false}};
 export default async function BusinessBatchPage(){
  await requireWalletIdentity();
- return <BusinessBatchPlanner/>;
+ return <div className="sb-page"><BusinessBatchPlanner/></div>;
 }

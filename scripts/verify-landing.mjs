@@ -30,7 +30,7 @@ try{
  await expectPage("/",["StealthBridge","Money moves","Life stays yours","/business","/send","/platform"]);
  await expectPage("/business",["Confidentiality","means business","Sign in to StealthBridge","/login"]);
  await expectPage("/send",["Close to home","Across borders","Sign in to StealthBridge","/login"]);
- await expectPage("/login",["Sign in","Stellar","Continue with Freighter"]);
+ await expectPage("/login",["Sign in","Stellar","Connect a Stellar wallet"]);
  await expectPage("/platform",["StealthBridge","Your money is personal","Payment services are in development"]);
  await expectPage("/discover/send",["StealthBridge Send","Close to home","In development"]);
  await expectPage("/discover/business",["StealthBridge Business","Confidentiality","In development"]);

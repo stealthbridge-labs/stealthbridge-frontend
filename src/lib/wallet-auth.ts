@@ -1,4 +1,5 @@
 import {createHash,createHmac,createPublicKey,randomBytes,timingSafeEqual,verify as ed25519Verify} from "node:crypto";
+import {Account,FeeBumpTransaction,Keypair,Operation,TransactionBuilder} from "@stellar/stellar-sdk";
 import {canonicalStellarAccountAddress} from "./stellar-address";
 
 export const TESTNET_PASSPHRASE="Test SDF Network ; September 2015";
@@ -132,5 +133,48 @@ export function validSameOrigin(request:Request){
   if(from.host!==host)return false;
   return destination.protocol===from.protocol||
    destination.hostname==="localhost"||destination.hostname==="127.0.0.1";
+ }catch{return false;}
+}
+
+/*
+ * SEP-10 style challenge transaction, for wallets that sign transactions but
+ * not SEP-53 messages (e.g. Albedo, Rabet, hardware wallets, WalletConnect).
+ *
+ * The transaction is rebuilt deterministically from the HMAC-protected
+ * challenge, so nothing is stored. Its source is the user's own account with
+ * sequence number 0, which the network always rejects (txBAD_SEQ): it cannot
+ * execute or charge a fee even if submitted. Its only operation is a SEP-10
+ * style `manage_data "<host> auth" = nonce`, valid only inside the challenge's
+ * five-minute time bounds.
+ */
+export function challengeTransactionXdr(challenge:Challenge):string|null{
+ const tx=buildChallengeTransaction(challenge);
+ return tx?tx.toXDR():null;
+}
+function buildChallengeTransaction(challenge:Challenge){
+ try{
+  const host=new URL(challenge.origin).host.slice(0,59);
+  return new TransactionBuilder(new Account(challenge.address,"-1"),{
+   fee:"100",networkPassphrase:TESTNET_PASSPHRASE,
+   timebounds:{minTime:challenge.expires-CHALLENGE_SECONDS,maxTime:challenge.expires}
+  }).addOperation(Operation.manageData({
+   source:challenge.address,name:host+" auth",value:Buffer.from(challenge.nonce,"utf8")
+  })).build();
+ }catch{return null;}
+}
+/** Accepts a wallet-signed envelope only if it is exactly the challenge and the account key signed it. */
+export function verifyChallengeTransaction(challenge:Challenge,signedXdr:string):boolean{
+ if(typeof signedXdr!=="string"||signedXdr.length>4096||!/^[A-Za-z0-9+/]+={0,2}$/.test(signedXdr))return false;
+ const expected=buildChallengeTransaction(challenge);
+ if(!expected)return false;
+ try{
+  const signed=TransactionBuilder.fromXDR(signedXdr,TESTNET_PASSPHRASE);
+  if(signed instanceof FeeBumpTransaction)return false;
+  const hash=Buffer.from(signed.hash());
+  if(!hash.equals(Buffer.from(expected.hash())))return false;
+  const key=Keypair.fromPublicKey(challenge.address);
+  const hint=Buffer.from(key.signatureHint());
+  return signed.signatures.length>=1&&signed.signatures.length<=4&&signed.signatures.some(s=>
+   Buffer.from(s.hint.toBytes()).equals(hint)&&key.verify(hash,s.signature.toBytes()));
  }catch{return false;}
 }

@@ -19,8 +19,10 @@
     "smoke:customer": "node scripts/smoke-customer-journey.mjs"
   },
   "dependencies": {
+    "@creit-tech/stellar-wallets-kit": "npm:@jsr/creit-tech__stellar-wallets-kit@2.8.0",
     "@radix-ui/react-slot": "^1.2.0",
     "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "17.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gsap": "^3.14.0",

@@ -37,7 +37,7 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
   await page.goto(path);
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
   await expect(page.getByRole("heading",{name:/Your world of payments/})).toBeVisible();
-  await expect(page.getByRole("button",{name:/Continue with Freighter/})).toBeVisible();
+  await expect(page.getByRole("button",{name:/Connect a Stellar wallet/})).toBeVisible();
  }
  const withoutSession=await page.request.get("/api/account/directory");
  expect(withoutSession.status()).toBe(401);
@@ -65,8 +65,13 @@ test("unauthenticated dashboard and payment pages are redirected to sign-in",asy
  expect(unauthorizedTeam.status()).toBe(401);
  await page.goto("/app/business/9a1a395f-249c-4907-b657-d48df4b38d28");
  await expect(page).toHaveURL(/\/login(?:\?|$)/);
- await page.getByRole("button",{name:/Continue with Freighter/}).click();
- await expect(page.locator(".access-error")).toContainText(/Freighter isn't available/);
+ // The Stellar Wallets Kit picker opens with the ecosystem's wallets (no wallet is installed here),
+ // and closing it signs nothing and creates no session.
+ await page.getByRole("button",{name:/Connect a Stellar wallet/}).click();
+ await expect(page.getByText("Connect Wallet").first()).toBeVisible();
+ for(const wallet of ["xBull","Albedo","LOBSTR"])await expect(page.getByText(wallet,{exact:true}).first()).toBeVisible();
+ await page.keyboard.press("Escape");
+ expect(await (await page.request.get("/api/auth/session")).json()).toMatchObject({authenticated:false});
  await expect(page.getByRole("heading",{name:"Welcome to your account."})).toHaveCount(0);
 });
 test("SEP-53 signed challenge creates real short-lived session; invalid proof and cross-origin fail",async({page})=>{
@@ -132,7 +137,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  });
  await page.goto("/app");
  await expect(page.getByRole("heading",{level:1,name:/Welcome to StealthBridge|Good to see you/})).toBeVisible();
- await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Overview",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(page.getByRole("navigation",{name:"Product areas"}).getByRole("link",{name:"Home",exact:true})).toHaveAttribute("aria-current","page");
  await expect(page.getByRole("heading",{name:"Business access, in one place."})).toHaveCount(0);
  await page.goto("/app/business");
  await expect(page.getByRole("link",{name:"Workspace",exact:true})).toHaveAttribute("aria-current","page");
@@ -147,7 +152,7 @@ test("SEP-53 signed challenge creates real short-lived session; invalid proof an
  await expect(page.getByRole("heading",{name:"CI ONLY Organization"})).toBeVisible();
  await expect(page.getByText("Current membership")).toBeVisible();
  const areas=page.getByRole("navigation",{name:"Product areas"});
- await expect(areas.getByRole("link",{name:"Send money",exact:true})).toHaveAttribute("href","/app/send");
+ await expect(areas.getByRole("link",{name:"Send",exact:true})).toHaveAttribute("href","/app/send");
  await expect(areas.getByRole("link",{name:"Cross-border routes",exact:true})).toHaveAttribute("href","/app/routes");
  await page.goto("/app/routes");
  await expect(page.getByRole("heading",{name:"New transfer"})).toBeVisible();
@@ -646,7 +651,9 @@ test("wallet security separates sign-in, local passkey support and public kit ob
  expect(localChecks).toBe(1);
  await security.getByText("View seven infrastructure observations",{exact:true}).click();
  await expect(security.locator(".account-security-artifacts li")).toHaveCount(7);
- await expect(security.getByText("Not available yet",{exact:true})).toBeVisible();
+ // Status reflects what is actually live: passkey accounts on Testnet, privacy still in development.
+ await expect(security.getByText("Available on Testnet",{exact:true})).toBeVisible();
+ await expect(security.getByText("In development",{exact:true})).toBeVisible();
  await expect(security.getByText("Not yet enabled",{exact:true})).toBeVisible();
  await expect(security.getByRole("button",{name:/deploy|enroll|create account|send funds/i})).toHaveCount(0);
  await testInfo.attach("wallet-security-desktop",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});

@@ -8,11 +8,11 @@ export const metadata:Metadata={title:"Prepare a business payment — StealthBri
  robots:{index:false,follow:false}};
 export default async function BusinessPaymentPage(){
  const identity=await requireWalletIdentity();
- return <>
-  <div className="business-payment-context">
-   <Link href="/app/business"><ArrowLeft size={16} aria-hidden/> Back to business workspace</Link>
-   <span><LockKeyhole size={14} aria-hidden/> Planning only — no payment will be submitted</span>
+ return <div className="sb-page">
+  <div className="sb-card-row" style={{alignItems:"center"}}>
+   <Link className="sb-link" href="/app/business"><ArrowLeft size={16} aria-hidden/> Back to business workspace</Link>
+   <span className="sb-badge" data-tone="info"><LockKeyhole size={12} aria-hidden/> Planning only: nothing is submitted</span>
   </div>
   <CustomerPaymentWorkspace flow="business" identityAddress={identity.address}/>
- </>;
+ </div>;
 }

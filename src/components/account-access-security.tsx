@@ -57,7 +57,7 @@ export function AccountAccessSecurity({address}:{address:string}){
     <p>StealthBridge is building confidential cross-border payments for people and businesses. Keep track of your access today and what still needs verification before you can move money.</p></div>
   </header>
   <div className="account-security-row">
-   <div><h3>Your wallet sign-in</h3><p>A Freighter wallet signature authenticates your login session. It does not authorize a transfer. Freighter sign-in works today.</p></div>
+   <div><h3>Your wallet sign-in</h3><p>A signature from your Stellar wallet (Freighter, xBull, LOBSTR, Albedo and others) authenticates your session. It never authorizes a transfer.</p></div>
    <div className="account-security-value">
     <strong>{account?"Signed in with your wallet":"Wallet identity unavailable"}</strong>
     {account?<>
@@ -81,14 +81,14 @@ export function AccountAccessSecurity({address}:{address:string}){
    </div>
   </div>
   <div className="account-security-row">
-   <div><h3>Your future smart account &amp; recovery</h3><p>StealthBridge’s operator manages smart-account deployment. Your Freighter wallet retains full custody; passphrases used to lock encrypted payment instructions are never stored on our servers and cannot be recovered by support.</p></div>
+   <div><h3>Smart accounts &amp; recovery</h3><p>Create a passkey smart account under Smart accounts: each payment is approved with the passkey on your device, and your Stellar wallet stays its recovery guardian. Passphrases that lock encrypted payment instructions are never stored on our servers and cannot be recovered by support.</p></div>
    <dl className="account-security-gates">
-    <div><dt>Customer account enrollment</dt><dd>Not available yet</dd></div>
+    <div><dt>Passkey smart accounts</dt><dd>Available on Testnet</dd></div>
     <div><dt>Credential recovery</dt><dd>Not verified</dd></div>
     <div><dt>Instruction passphrase reset</dt><dd>Impossible (client-side only)</dd></div>
-    <div><dt>Privacy & ZK proofs</dt><dd>Not verified</dd></div>
+    <div><dt>On-chain privacy (ZK)</dt><dd>In development</dd></div>
     <div><dt>Mainnet</dt><dd>Not yet enabled</dd></div>
-    <div><dt>Transfers & financial execution</dt><dd>Not enabled</dd></div>
+    <div><dt>Payments</dt><dd>Stellar Testnet only</dd></div>
    </dl>
   </div>
   <div className="account-security-infrastructure">
